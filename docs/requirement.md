@@ -12,6 +12,7 @@
 2. [Yêu cầu Tính năng Khách hàng](#2-yêu-cầu-tính-năng-khách-hàng)
 3. [Yêu cầu Tính năng Quản trị (Back-end)](#3-yêu-cầu-tính-năng-quản-trị-back-end)
 4. [Yêu cầu Phi chức năng & Kỹ thuật](#4-yêu-cầu-phi-chức-năng--kỹ-thuật)
+5. [Đề xuất Thiết kế Hệ thống thích ứng Requirement (Quick Win)](#5-đề-xuất-thiết-kế-hệ-thống-thích-ứng-requirement-quick-win)
 
 ---
 
@@ -208,3 +209,123 @@
 - Giao diện Responsive: Hiển thị và thao tác chuẩn xác trên đa thiết bị (Desktop, Tablet, Mobile).
 - Hỗ trợ đổi màu chủ đề (Theme color) toàn website miễn phí 1 lần.
 - Đội ngũ triển khai hỗ trợ nhập liệu ban đầu tối đa 25 bài viết hoặc sản phẩm.
+
+---
+
+## 5. ĐỀ XUẤT THIẾT KẾ HỆ THỐNG THÍCH ỨNG REQUIREMENT (QUICK WIN)
+
+### 5.1. Nguyên tắc thiết kế
+- Ưu tiên kiến trúc Modular Monolith (đơn khối phân mô-đun: 1 ứng dụng, tách domain rõ ràng) để triển khai nhanh, giảm rủi ro vận hành.
+- Tách module theo domain, giao tiếp qua contract/interface ổn định để dễ thay đổi requirement.
+- Áp dụng cấu hình động (config-driven) cho các phần hay thay đổi: homepage block, menu, banner, form, theme color.
+- Chuẩn hóa database migration có rollback để thích ứng thay đổi schema an toàn.
+- Tối ưu vận hành đơn giản theo hiện trạng hạ tầng: 1 ứng dụng + 1 database + lưu trữ media.
+
+### 5.2. Đề xuất module cốt lõi
+- Identity & RBAC (REQ-011)
+- Catalog (REQ-013)
+- Cart & Order Request (REQ-009)
+- CMS Content (REQ-012)
+- Media Library (REQ-014)
+- Lead/Form & Support (REQ-010, REQ-014)
+- Homepage Composition (REQ-001 đến REQ-004)
+- Search & Filter (REQ-006)
+- SEO & Metadata (REQ-015)
+
+### 5.3. Lộ trình triển khai nhanh
+**Giai đoạn 1 (Quick Win / MVP, 6-8 tuần):**
+- Hoàn thành luồng bán hàng, quản trị nội dung cốt lõi, phân quyền admin.
+- Scope ưu tiên: REQ-001, REQ-002, REQ-003, REQ-006, REQ-007, REQ-009, REQ-010, REQ-011, REQ-012, REQ-013, REQ-015 (cơ bản).
+
+**Giai đoạn 2 (Tối ưu & mở rộng, 4-6 tuần):**
+- Tăng khả năng thay đổi bằng cấu hình nâng cao và tác vụ nền (queue/job).
+- Chuẩn bị tách module tải cao (Search/Media/Lead) khi cần scale.
+
+### 5.4. KPI đo lường khả năng thích ứng
+- Lead time cho thay đổi requirement nhỏ (không sửa schema DB, ảnh hưởng tối đa 1 module; ví dụ đổi rule validation, thêm block homepage dùng cấu hình): <= 3 ngày làm việc, tính từ lúc requirement được duyệt (có ticket, scope và tiêu chí nghiệm thu được Product Owner xác nhận) đến lúc deploy production.
+- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên tổng số yêu cầu thay đổi đã triển khai trong mỗi quý (thiết lập baseline ở giai đoạn 1 bằng cách gắn nhãn ticket `config-only`/`code-change`, hiệu chỉnh mục tiêu sau quý đầu).
+- Tỷ lệ lỗi nghiêm trọng sau release: < 3% trên tổng số hạng mục release trong kỳ (feature + bug fix); lỗi nghiêm trọng là lỗi ngăn mua hàng, đăng nhập admin hoặc mất dữ liệu.
+- Uptime hệ thống theo tháng: >= 99.5% cho luồng người dùng công khai và admin, đo qua monitoring/health check; không tính thời gian bảo trì đã thông báo trước tối thiểu 24 giờ.
+
+### 5.5. Rủi ro chính và giảm thiểu
+- Requirement đổi liên tục: quản lý scope theo sprint, ưu tiên config-driven.
+- Phụ thuộc chéo giữa module: áp dụng quy tắc dependency rõ ràng, review kiến trúc định kỳ.
+- Rủi ro thay đổi schema DB: dùng mô hình migration mở rộng-thu gọn (expand/contract) và có kế hoạch rollback.
+- Media tăng nhanh gây áp lực lưu trữ: nén ảnh, policy dọn dẹp và tách lưu trữ media khi cần.
+
+### 5.6. Bổ sung kiến trúc (Diagram)
+
+#### A) System Context (mức hệ thống)
+
+```mermaid
+flowchart LR
+    KH[Khách hàng] -->|Duyệt sản phẩm, tìm kiếm, gửi yêu cầu| SYS[(Website TMĐT & Nội dung)]
+    AD[Admin/Editor] -->|Quản trị sản phẩm, bài viết, media, SEO| SYS
+    CS[CSKH/Sales] -->|Xử lý lead & order request| SYS
+    SYS -->|Gửi thông báo| NOTI[Email/SMS/Zalo]
+    SYS -->|Đẩy/đọc media| STORE[Media Storage]
+    SYS -->|Lập chỉ mục & truy vấn| SEARCH[Search Engine]
+```
+
+#### B) Container/Module Diagram (mức triển khai nhanh)
+
+```mermaid
+flowchart TB
+    subgraph Client
+      FE[Web UI\nPublic Site]
+      BE[Backoffice UI\nAdmin/CMS]
+    end
+
+    subgraph App["Modular Monolith API"]
+      ID[Identity & RBAC]
+      CAT[Catalog]
+      CART[Cart & Order Request]
+      CMS[CMS Content]
+      MED[Media Library]
+      LEAD[Lead/Form & Support]
+      HOME[Homepage Composition]
+      SF[Search & Filter]
+      SEO[SEO & Metadata]
+    end
+
+    DB[(Relational DB)]
+    OBJ[(Object Storage)]
+    IDX[(Search Index)]
+    MSG[Email/SMS Adapter]
+
+    FE --> HOME
+    FE --> CAT
+    FE --> SF
+    FE --> CART
+    FE --> LEAD
+    FE --> SEO
+
+    BE --> ID
+    BE --> CMS
+    BE --> CAT
+    BE --> MED
+    BE --> HOME
+    BE --> LEAD
+    BE --> SEO
+
+    HOME --> CMS
+    HOME --> CAT
+    CAT --> MED
+    SF --> IDX
+    CMS --> SEO
+    CART --> MSG
+    LEAD --> MSG
+
+    App --> DB
+    MED --> OBJ
+```
+
+#### C) Nguyên tắc mapping Diagram -> Quick Win triển khai
+
+- Một ứng dụng nhiều module domain: triển khai MVP nhanh, vẫn giữ ranh giới để tách dần khi cần.
+- Identity & RBAC là cổng vào backoffice để khóa quyền truy cập ngay từ giai đoạn đầu.
+- Catalog + Media + Search & Filter được ưu tiên cùng nhau để bảo đảm luồng duyệt/tìm sản phẩm.
+- CMS Content + Homepage Composition + SEO giúp phần lớn thay đổi nội dung/giao diện thực hiện qua cấu hình.
+- Cart & Order Request + Lead/Form tái sử dụng adapter thông báo để giảm effort tích hợp.
+- DB tập trung cho dữ liệu nghiệp vụ, Object Storage tách riêng cho media để tăng khả năng mở rộng.
+- Search Index đi theo lộ trình: MVP có thể chạy DB filter, giai đoạn sau nâng cấp indexing.
