@@ -242,8 +242,8 @@
 - Chuẩn bị tách module tải cao (Search/Media/Lead) khi cần scale.
 
 ### 5.4. KPI đo lường khả năng thích ứng
-- Lead time cho thay đổi requirement nhỏ: <= 3 ngày.
-- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60%.
+- Lead time cho thay đổi requirement nhỏ (thay đổi không cần sửa schema DB và ảnh hưởng tối đa 1 module): <= 3 ngày làm việc.
+- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên mỗi quý.
 - Tỷ lệ lỗi nghiêm trọng sau release: < 3%.
 - Uptime hệ thống theo tháng: >= 99.5%.
 
