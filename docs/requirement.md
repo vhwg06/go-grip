@@ -252,3 +252,80 @@
 - Phụ thuộc chéo giữa module: áp dụng quy tắc dependency rõ ràng, review kiến trúc định kỳ.
 - Rủi ro thay đổi schema DB: dùng mô hình migration mở rộng-thu gọn (expand/contract) và có kế hoạch rollback.
 - Media tăng nhanh gây áp lực lưu trữ: nén ảnh, policy dọn dẹp và tách lưu trữ media khi cần.
+
+### 5.6. Bổ sung kiến trúc (Diagram)
+
+#### A) System Context (mức hệ thống)
+
+```mermaid
+flowchart LR
+    KH[Khách hàng] -->|Duyệt sản phẩm, tìm kiếm, gửi yêu cầu| SYS[(Website TMĐT & Nội dung)]
+    AD[Admin/Editor] -->|Quản trị sản phẩm, bài viết, media, SEO| SYS
+    CS[CSKH/Sales] -->|Xử lý lead & order request| SYS
+    SYS -->|Gửi thông báo| NOTI[Email/SMS/Zalo]
+    SYS -->|Đẩy/đọc media| STORE[Media Storage]
+    SYS -->|Lập chỉ mục & truy vấn| SEARCH[Search Engine]
+```
+
+#### B) Container/Module Diagram (mức triển khai nhanh)
+
+```mermaid
+flowchart TB
+    subgraph Client
+      FE[Web UI\n(Public Site)]
+      BE[Backoffice UI\n(Admin/CMS)]
+    end
+
+    subgraph App["Modular Monolith API"]
+      ID[Identity & RBAC]
+      CAT[Catalog]
+      CART[Cart & Order Request]
+      CMS[CMS Content]
+      MED[Media Library]
+      LEAD[Lead/Form & Support]
+      HOME[Homepage Composition]
+      SF[Search & Filter]
+      SEO[SEO & Metadata]
+    end
+
+    DB[(Relational DB)]
+    OBJ[(Object Storage)]
+    IDX[(Search Index)]
+    MSG[Email/SMS Adapter]
+
+    FE --> HOME
+    FE --> CAT
+    FE --> SF
+    FE --> CART
+    FE --> LEAD
+    FE --> SEO
+
+    BE --> ID
+    BE --> CMS
+    BE --> CAT
+    BE --> MED
+    BE --> HOME
+    BE --> LEAD
+    BE --> SEO
+
+    HOME --> CMS
+    HOME --> CAT
+    CAT --> MED
+    SF --> IDX
+    CMS --> SEO
+    CART --> MSG
+    LEAD --> MSG
+
+    App --> DB
+    MED --> OBJ
+```
+
+#### C) Nguyên tắc mapping Diagram -> Quick Win triển khai
+
+- Một ứng dụng nhiều module domain: triển khai MVP nhanh, vẫn giữ ranh giới để tách dần khi cần.
+- Identity & RBAC là cổng vào backoffice để khóa quyền truy cập ngay từ giai đoạn đầu.
+- Catalog + Media + Search & Filter được ưu tiên cùng nhau để bảo đảm luồng duyệt/tìm sản phẩm.
+- CMS Content + Homepage Composition + SEO giúp phần lớn thay đổi nội dung/giao diện thực hiện qua cấu hình.
+- Cart & Order Request + Lead/Form tái sử dụng adapter thông báo để giảm effort tích hợp.
+- DB tập trung cho dữ liệu nghiệp vụ, Object Storage tách riêng cho media để tăng khả năng mở rộng.
+- Search Index đi theo lộ trình: MVP có thể chạy DB filter, giai đoạn sau nâng cấp indexing.
