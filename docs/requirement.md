@@ -242,10 +242,10 @@
 - Chuẩn bị tách module tải cao (Search/Media/Lead) khi cần scale.
 
 ### 5.4. KPI đo lường khả năng thích ứng
-- Lead time cho thay đổi requirement nhỏ (không sửa schema DB, ảnh hưởng tối đa 1 module; ví dụ đổi rule validation, thêm block homepage dùng cấu hình): <= 3 ngày làm việc.
-- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên tổng số yêu cầu thay đổi đã triển khai trong mỗi quý.
-- Tỷ lệ lỗi nghiêm trọng sau release: < 3% trên tổng số hạng mục đã release trong kỳ; lỗi nghiêm trọng là lỗi ngăn mua hàng, đăng nhập admin hoặc mất dữ liệu.
-- Uptime hệ thống theo tháng: >= 99.5% cho luồng người dùng công khai và admin, không tính thời gian bảo trì đã thông báo trước.
+- Lead time cho thay đổi requirement nhỏ (không sửa schema DB, ảnh hưởng tối đa 1 module; ví dụ đổi rule validation, thêm block homepage dùng cấu hình): <= 3 ngày làm việc, tính từ lúc requirement được duyệt đến lúc deploy production.
+- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên tổng số yêu cầu thay đổi đã triển khai trong mỗi quý (thiết lập baseline ở giai đoạn 1 và hiệu chỉnh mục tiêu sau quý đầu).
+- Tỷ lệ lỗi nghiêm trọng sau release: < 3% trên tổng số hạng mục release trong kỳ (feature + bug fix); lỗi nghiêm trọng là lỗi ngăn mua hàng, đăng nhập admin hoặc mất dữ liệu.
+- Uptime hệ thống theo tháng: >= 99.5% cho luồng người dùng công khai và admin, đo qua monitoring/health check; không tính thời gian bảo trì đã thông báo trước tối thiểu 24 giờ.
 
 ### 5.5. Rủi ro chính và giảm thiểu
 - Requirement đổi liên tục: quản lý scope theo sprint, ưu tiên config-driven.
