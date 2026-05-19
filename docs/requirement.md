@@ -1,0 +1,210 @@
+# TÀI LIỆU YÊU CẦU DỰ ÁN 
+
+**Dự án:** Website Bán hàng / Thương mại điện tử & Tin tức
+**Phiên bản:** 1.0
+**Trạng thái:** Bản nháp (Draft)
+**Ngày tạo:** [Ngày hiện tại]
+
+---
+
+## MỤC LỤC
+1. [Yêu cầu Giao diện Người dùng (Front-end)](#1-yêu-cầu-giao-diện-người-dùng-front-end)
+2. [Yêu cầu Tính năng Khách hàng](#2-yêu-cầu-tính-năng-khách-hàng)
+3. [Yêu cầu Tính năng Quản trị (Back-end)](#3-yêu-cầu-tính-năng-quản-trị-back-end)
+4. [Yêu cầu Phi chức năng & Kỹ thuật](#4-yêu-cầu-phi-chức-năng--kỹ-thuật)
+
+---
+
+## 1. YÊU CẦU GIAO DIỆN NGƯỜI DÙNG (FRONT-END)
+
+**ID:** REQ-001
+**Title:** Header & Điều hướng (Trang chủ)
+**Description:** Khu vực đầu trang hiển thị trên toàn bộ website giúp người dùng tìm kiếm và điều hướng.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Tích hợp thanh tìm kiếm cho phép người dùng tìm sản phẩm bằng từ khóa.
+- Hiển thị Module Menu (Topbar) dẫn đến các trang nội dung chính.
+- Hiển thị Logo công ty (quản trị viên có thể thay đổi linh hoạt trong admin).
+
+**ID:** REQ-002
+**Title:** Banner & Danh mục nổi bật (Trang chủ)
+**Description:** Khu vực quảng bá chiến dịch và lối tắt đến các ngành hàng.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Hiển thị Banner chính (quản trị viên có thể thêm/sửa/xóa hoặc thay thế).
+- Hiển thị nhóm sản phẩm chính dưới dạng Icon (vd: Điện thoại, Phụ kiện, Máy ảnh...).
+- Click vào Icon sẽ dẫn đến trang danh sách sản phẩm của danh mục tương ứng.
+
+**ID:** REQ-003
+**Title:** Khối sản phẩm theo danh mục (Trang chủ)
+**Description:** Hiển thị danh sách sản phẩm thuộc từng danh mục cụ thể ngay trên trang chủ.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Mỗi danh mục (Điện thoại, Gia dụng...) là 1 block riêng biệt có tiêu đề và link "Xem tất cả".
+- Hiển thị sản phẩm dạng lưới (Grid).
+- Thẻ sản phẩm phải gồm: Ảnh, Tên, Giá bán (kèm giá gốc nếu có giảm giá), % Giảm giá, Nhãn (Mới, Bán chạy, Hot), Nút "Thêm vào giỏ hàng".
+- (Tùy chọn) Có banner quảng cáo phụ hiển thị bên trái hoặc phía trên block.
+
+**ID:** REQ-004
+**Title:** Footer, Tin tức mới & Tiện ích (Trang chủ)
+**Description:** Khu vực chân trang, bài viết mới và các nút hỗ trợ trôi nổi (Floating buttons).
+**Priority:** Trung bình
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Khối tin tức hiển thị bài viết mới nhất (Ảnh, Tiêu đề, Mô tả ngắn, Ngày đăng). Số lượng do Admin cấu hình.
+- Footer chia thành các cột: Thông tin công ty, Chính sách, Hướng dẫn mua hàng, Liên hệ, Mạng xã hội.
+- Nút Floating góc màn hình bao gồm: Cuộn lên đầu trang, Zalo, Messenger, Hotline (Admin có thể bật/tắt và cài đặt link).
+
+**ID:** REQ-005
+**Title:** Trang Giới thiệu
+**Description:** Trang thông tin tĩnh giới thiệu về doanh nghiệp.
+**Priority:** Trung bình
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Hiển thị nội dung văn bản kết hợp hình ảnh.
+- Tích hợp thư viện ảnh (Gallery) của công ty.
+- Có khu vực hiển thị các tin bài liên quan.
+
+**ID:** REQ-006
+**Title:** Trang Danh sách Sản phẩm (Product Category)
+**Description:** Nơi khách hàng duyệt sản phẩm theo bộ lọc và sắp xếp.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Sidebar bên trái hiển thị cây danh mục để chuyển đổi nhanh.
+- Tích hợp thanh kéo (slider) lọc theo khoảng giá (Min - Max) và nút "Lọc".
+- Lọc theo thương hiệu kèm số lượng sản phẩm tương ứng.
+- Tính năng Sắp xếp (Sorting): Tên A-Z / Z-A, Giá thấp-cao / cao-thấp, Mới nhất, Cũ nhất.
+- Danh sách hiển thị dạng lưới (Grid) với đầy đủ thông tin: Ảnh, % giảm giá, Tên, Giá, Nút thêm giỏ hàng, Icon Xem nhanh (Quick view).
+
+**ID:** REQ-007
+**Title:** Trang Chi tiết Sản phẩm
+**Description:** Trang hiển thị thông tin đầy đủ của một sản phẩm.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Khu vực ảnh: Có ảnh chính lớn, ảnh thumbnail nhỏ bên dưới để chọn, có nhãn % giảm giá.
+- Thông tin cơ bản: Tên, Thương hiệu, Mã SKU, Giá bán, Giá gốc, Số tiền tiết kiệm, Quà tặng kèm.
+- Nút Call-to-action: "Thêm vào giỏ / Đặt mua" và "Yêu cầu tư vấn".
+- Khu vực Tab thông tin: Tab Chi tiết sản phẩm, Tab Hướng dẫn, Tab Đánh giá (kèm số lượng đánh giá).
+
+**ID:** REQ-008
+**Title:** Trang Tin tức & Trang Liên hệ
+**Description:** Giao diện đọc blog/tin tức và cổng thông tin liên hệ.
+**Priority:** Trung bình
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Trang Bản tin hiển thị dạng lưới (Grid) gồm Ảnh đại diện, Tiêu đề, Giới thiệu ngắn.
+- Trang Liên hệ hiển thị: Text thông tin công ty, Bản đồ (Google Maps), Form điền yêu cầu tư vấn.
+- Trang Liên hệ có khu vực hiển thị danh sách Câu hỏi thường gặp (FAQ).
+
+---
+
+## 2. YÊU CẦU TÍNH NĂNG KHÁCH HÀNG
+
+**ID:** REQ-009
+**Title:** Tính năng Mua hàng & Giỏ hàng
+**Description:** Luồng thao tác mua sản phẩm của khách hàng trên website.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Khách hàng có thể click "Thêm vào giỏ hàng" từ trang chủ, trang danh sách hoặc trang chi tiết.
+- Quản lý giỏ hàng: Xem danh sách sp đã chọn, thay đổi số lượng, xóa sản phẩm.
+- Gửi yêu cầu đặt hàng thành công tới hệ thống (Không yêu cầu cổng thanh toán online phức tạp theo mô tả hiện tại).
+
+**ID:** REQ-010
+**Title:** Tương tác & Hỗ trợ trực tuyến
+**Description:** Các phương thức khách hàng liên hệ với doanh nghiệp.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Product Owner
+**Conditions of Satisfaction:**
+- Người dùng có thể điền Form yêu cầu tư vấn trên trang Chi tiết sản phẩm và trang Liên hệ.
+- Khách hàng có thể click vào các nút Hỗ trợ trực tuyến (Live chat, Gọi điện, Zalo, Facebook) để kết nối ngay lập tức.
+
+---
+
+## 3. YÊU CẦU TÍNH NĂNG QUẢN TRỊ (BACK-END)
+
+**ID:** REQ-011
+**Title:** Quản lý Tài khoản & Phân quyền
+**Description:** Chức năng kiểm soát quyền truy cập hệ thống quản trị.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** System Admin
+**Conditions of Satisfaction:**
+- Hỗ trợ thêm/sửa/xóa/khóa người dùng.
+- Hỗ trợ phân quyền ít nhất 5 cấp độ: Administrator, Editor, Author, Contributor, Subscriber.
+- Cho phép người dùng đăng nhập cập nhật hồ sơ cá nhân.
+
+**ID:** REQ-012
+**Title:** Quản lý Nội dung (Tin bài & Trang tĩnh)
+**Description:** Chức năng viết blog và tạo trang nội dung.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Content Manager
+**Conditions of Satisfaction:**
+- Quản lý Bài viết: Thêm/Sửa/Xóa, soạn thảo nội dung, gắn tiêu đề, ảnh đại diện, danh mục, thẻ (tags).
+- Tính năng Lên lịch xuất bản bài viết theo thời gian cài đặt.
+- Quản lý Trang: Thêm/Sửa/Xóa các trang tĩnh (Giới thiệu, Liên hệ...).
+- Cho phép áp dụng các Template (Mẫu trang) khác nhau cho từng trang tĩnh.
+
+**ID:** REQ-013
+**Title:** Quản lý Sản phẩm & Danh mục
+**Description:** Nền tảng quản lý kho dữ liệu hàng hóa trên website.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Store Manager
+**Conditions of Satisfaction:**
+- Thêm/Sửa/Xóa sản phẩm với đầy đủ trường dữ liệu (Tiêu đề, mô tả, ảnh, giá, SKU...).
+- Quản lý cây danh mục sản phẩm và gắn thẻ (tags).
+- Tùy chỉnh các cấu hình, thuộc tính riêng của sản phẩm.
+
+**ID:** REQ-014
+**Title:** Quản lý Kho lưu trữ & Tương tác
+**Description:** Quản lý Media, Form liên hệ và phản hồi.
+**Priority:** Trung bình
+**Status:** Draft
+**Owner:** System Admin
+**Conditions of Satisfaction:**
+- Thư viện đa phương tiện (Media): Tải lên, lưu trữ, quản lý, xóa hình ảnh, video, âm thanh.
+- Quản lý Form: Tạo và tùy chỉnh các trường thông tin của Form liên hệ.
+- Quản lý Phản hồi: Xem danh sách các form khách hàng đã submit, đánh dấu trạng thái xử lý.
+
+---
+
+## 4. YÊU CẦU PHI CHỨC NĂNG & KỸ THUẬT
+
+**ID:** REQ-015
+**Title:** Thông số Kỹ thuật & Hạ tầng
+**Description:** Cấu hình hosting và yêu cầu kỹ thuật nền tảng.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** DevOps / IT
+**Conditions of Satisfaction:**
+- Hệ thống chạy ổn định trên gói Hosting/Server dung lượng lưu trữ 4GB.
+- Website được cài đặt Chứng chỉ bảo mật SSL miễn phí (Let's Encrypt hoặc tương đương), truy cập qua HTTPS.
+- Website hỗ trợ tối ưu SEO Onpage (Thẻ Meta, URL thân thiện, Heading, Alt tag...).
+
+**ID:** REQ-016
+**Title:** Thích ứng Giao diện & Dịch vụ hỗ trợ
+**Description:** Yêu cầu về độ tương thích và các dịch vụ bàn giao đi kèm.
+**Priority:** Cao
+**Status:** Draft
+**Owner:** Development Team
+**Conditions of Satisfaction:**
+- Giao diện Responsive: Hiển thị và thao tác chuẩn xác trên đa thiết bị (Desktop, Tablet, Mobile).
+- Hỗ trợ đổi màu chủ đề (Theme color) toàn website miễn phí 1 lần.
+- Đội ngũ triển khai hỗ trợ nhập liệu ban đầu tối đa 25 bài viết hoặc sản phẩm.
