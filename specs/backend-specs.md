@@ -1,6 +1,36 @@
 # BACK-END SPECS (Derived from `docs/requirement.md`)
 
-Tài liệu này đặc tả phần back-end dựa trên các yêu cầu REQ-011 đến REQ-014.
+Tài liệu này đặc tả phần back-end hỗ trợ toàn bộ yêu cầu REQ-001 đến REQ-016.
+
+## 0) Traceability — Back-end support cho toàn bộ requirement
+
+### 0.1 Nhóm Front-end (REQ-001 đến REQ-008)
+
+- **REQ-001 (Header & Điều hướng):** Cung cấp API tìm kiếm sản phẩm theo từ khóa; API cấu hình menu/topbar; API cấu hình logo.
+- **REQ-002 (Banner & Danh mục nổi bật):** Cung cấp API CRUD banner; API danh mục nổi bật + icon; API liên kết icon -> danh mục.
+- **REQ-003 (Khối sản phẩm theo danh mục):** API trả block sản phẩm theo danh mục, hỗ trợ giá gốc/giá bán/% giảm, nhãn sản phẩm, trạng thái còn hàng để thêm giỏ.
+- **REQ-004 (Footer, Tin tức mới, Floating):** API cấu hình footer theo cột; API tin tức mới nhất có giới hạn số lượng; API cấu hình nút floating (bật/tắt, link).
+- **REQ-005 (Trang Giới thiệu):** API quản lý trang giới thiệu, gallery, và danh sách tin liên quan.
+- **REQ-006 (Danh sách sản phẩm):** API cây danh mục, lọc giá, lọc thương hiệu, sorting, phân trang; API dữ liệu sản phẩm dạng grid.
+- **REQ-007 (Chi tiết sản phẩm):** API chi tiết sản phẩm (ảnh, thumbnail, giá, SKU, quà tặng); API tab nội dung và tổng hợp số lượng đánh giá.
+- **REQ-008 (Tin tức & Liên hệ):** API danh sách bài viết dạng lưới; API thông tin liên hệ + map config; API FAQ; API submit form tư vấn.
+
+### 0.2 Nhóm Tính năng Khách hàng (REQ-009 đến REQ-010)
+
+- **REQ-009 (Mua hàng & Giỏ hàng):** API giỏ hàng (thêm/sửa số lượng/xóa/xem); API tạo đơn hàng/yêu cầu đặt hàng.
+- **REQ-010 (Tương tác & Hỗ trợ):** API tiếp nhận form tư vấn từ trang chi tiết và liên hệ; API cấu hình các kênh hỗ trợ trực tuyến (live chat, gọi điện, Zalo, Facebook).
+
+### 0.3 Nhóm Quản trị (REQ-011 đến REQ-014)
+
+- **REQ-011:** Account & phân quyền.
+- **REQ-012:** Quản lý bài viết/trang tĩnh + lịch xuất bản.
+- **REQ-013:** Quản lý sản phẩm/danh mục/tags/thuộc tính.
+- **REQ-014:** Media + Form builder + quản lý phản hồi.
+
+### 0.4 Nhóm Phi chức năng & Kỹ thuật (REQ-015 đến REQ-016)
+
+- **REQ-015:** Vận hành trong giới hạn hạ tầng, bắt buộc HTTPS/SSL, hỗ trợ dữ liệu SEO.
+- **REQ-016:** Dữ liệu/API tương thích đa thiết bị; hỗ trợ cấu hình theme; hỗ trợ nhập liệu khởi tạo.
 
 ## 1) SPEC-BE-011 — Quản lý Tài khoản & Phân quyền
 
