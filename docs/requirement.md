@@ -12,6 +12,7 @@
 2. [Yêu cầu Tính năng Khách hàng](#2-yêu-cầu-tính-năng-khách-hàng)
 3. [Yêu cầu Tính năng Quản trị (Back-end)](#3-yêu-cầu-tính-năng-quản-trị-back-end)
 4. [Yêu cầu Phi chức năng & Kỹ thuật](#4-yêu-cầu-phi-chức-năng--kỹ-thuật)
+5. [Đề xuất Thiết kế Hệ thống thích ứng Requirement (Quick Win)](#5-đề-xuất-thiết-kế-hệ-thống-thích-ứng-requirement-quick-win)
 
 ---
 
@@ -208,3 +209,46 @@
 - Giao diện Responsive: Hiển thị và thao tác chuẩn xác trên đa thiết bị (Desktop, Tablet, Mobile).
 - Hỗ trợ đổi màu chủ đề (Theme color) toàn website miễn phí 1 lần.
 - Đội ngũ triển khai hỗ trợ nhập liệu ban đầu tối đa 25 bài viết hoặc sản phẩm.
+
+---
+
+## 5. ĐỀ XUẤT THIẾT KẾ HỆ THỐNG THÍCH ỨNG REQUIREMENT (QUICK WIN)
+
+### 5.1. Nguyên tắc thiết kế
+- Ưu tiên kiến trúc Modular Monolith để triển khai nhanh, giảm rủi ro vận hành.
+- Tách module theo domain, giao tiếp qua contract/interface ổn định để dễ thay đổi requirement.
+- Áp dụng cấu hình động (config-driven) cho các phần hay thay đổi: homepage block, menu, banner, form, theme color.
+- Chuẩn hóa database migration có rollback để thích ứng thay đổi schema an toàn.
+- Tối ưu vận hành đơn giản theo hiện trạng hạ tầng: 1 ứng dụng + 1 database + lưu trữ media.
+
+### 5.2. Đề xuất module cốt lõi
+- Identity & RBAC (REQ-011)
+- Catalog (REQ-013)
+- Cart & Order Request (REQ-009)
+- CMS Content (REQ-012)
+- Media Library (REQ-014)
+- Lead/Form & Support (REQ-010, REQ-014)
+- Homepage Composition (REQ-001 đến REQ-004)
+- Search & Filter (REQ-006)
+- SEO & Metadata (REQ-015)
+
+### 5.3. Lộ trình triển khai nhanh
+**Giai đoạn 1 (Quick Win / MVP, 6-8 tuần):**
+- Hoàn thành luồng bán hàng, quản trị nội dung cốt lõi, phân quyền admin.
+- Scope ưu tiên: REQ-001, REQ-002, REQ-003, REQ-006, REQ-007, REQ-009, REQ-010, REQ-011, REQ-012, REQ-013, REQ-015 (cơ bản).
+
+**Giai đoạn 2 (Tối ưu & mở rộng, 4-6 tuần):**
+- Tăng khả năng thay đổi bằng cấu hình nâng cao và tác vụ nền (queue/job).
+- Chuẩn bị tách module tải cao (Search/Media/Lead) khi cần scale.
+
+### 5.4. KPI đo lường khả năng thích ứng
+- Lead time cho thay đổi requirement nhỏ: <= 3 ngày.
+- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60%.
+- Tỷ lệ lỗi nghiêm trọng sau release: < 3%.
+- Uptime hệ thống theo tháng: >= 99.5%.
+
+### 5.5. Rủi ro chính và giảm thiểu
+- Requirement đổi liên tục: quản lý scope theo sprint, ưu tiên config-driven.
+- Phụ thuộc chéo giữa module: áp dụng quy tắc dependency rõ ràng, review kiến trúc định kỳ.
+- Rủi ro thay đổi schema DB: dùng mô hình migration mở rộng-thu gọn (expand/contract) và có kế hoạch rollback.
+- Media tăng nhanh gây áp lực lưu trữ: nén ảnh, policy dọn dẹp và tách lưu trữ media khi cần.
