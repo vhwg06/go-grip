@@ -215,7 +215,7 @@
 ## 5. ĐỀ XUẤT THIẾT KẾ HỆ THỐNG THÍCH ỨNG REQUIREMENT (QUICK WIN)
 
 ### 5.1. Nguyên tắc thiết kế
-- Ưu tiên kiến trúc Modular Monolith để triển khai nhanh, giảm rủi ro vận hành.
+- Ưu tiên kiến trúc Modular Monolith (đơn khối phân mô-đun: 1 ứng dụng, tách domain rõ ràng) để triển khai nhanh, giảm rủi ro vận hành.
 - Tách module theo domain, giao tiếp qua contract/interface ổn định để dễ thay đổi requirement.
 - Áp dụng cấu hình động (config-driven) cho các phần hay thay đổi: homepage block, menu, banner, form, theme color.
 - Chuẩn hóa database migration có rollback để thích ứng thay đổi schema an toàn.
@@ -242,8 +242,8 @@
 - Chuẩn bị tách module tải cao (Search/Media/Lead) khi cần scale.
 
 ### 5.4. KPI đo lường khả năng thích ứng
-- Lead time cho thay đổi requirement nhỏ (không sửa schema DB, ảnh hưởng tối đa 1 module; ví dụ đổi rule validation, thêm block homepage dùng cấu hình): <= 3 ngày làm việc, tính từ lúc requirement được duyệt đến lúc deploy production.
-- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên tổng số yêu cầu thay đổi đã triển khai trong mỗi quý (thiết lập baseline ở giai đoạn 1 và hiệu chỉnh mục tiêu sau quý đầu).
+- Lead time cho thay đổi requirement nhỏ (không sửa schema DB, ảnh hưởng tối đa 1 module; ví dụ đổi rule validation, thêm block homepage dùng cấu hình): <= 3 ngày làm việc, tính từ lúc requirement được duyệt (có ticket, scope và tiêu chí nghiệm thu được Product Owner xác nhận) đến lúc deploy production.
+- Tỷ lệ thay đổi không cần sửa code (chỉ qua cấu hình/CMS): >= 60% trên tổng số yêu cầu thay đổi đã triển khai trong mỗi quý (thiết lập baseline ở giai đoạn 1 bằng cách gắn nhãn ticket `config-only`/`code-change`, hiệu chỉnh mục tiêu sau quý đầu).
 - Tỷ lệ lỗi nghiêm trọng sau release: < 3% trên tổng số hạng mục release trong kỳ (feature + bug fix); lỗi nghiêm trọng là lỗi ngăn mua hàng, đăng nhập admin hoặc mất dữ liệu.
 - Uptime hệ thống theo tháng: >= 99.5% cho luồng người dùng công khai và admin, đo qua monitoring/health check; không tính thời gian bảo trì đã thông báo trước tối thiểu 24 giờ.
 
