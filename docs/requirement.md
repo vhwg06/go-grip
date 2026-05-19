@@ -272,8 +272,8 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Client
-      FE[Web UI\n(Public Site)]
-      BE[Backoffice UI\n(Admin/CMS)]
+      FE[Web UI\nPublic Site]
+      BE[Backoffice UI\nAdmin/CMS]
     end
 
     subgraph App["Modular Monolith API"]
