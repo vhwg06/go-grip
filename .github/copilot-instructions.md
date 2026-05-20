@@ -70,3 +70,8 @@ The following instructions are only to be applied when performing a code review.
 - [ ] If `items` is present, each item has `path` and `kind` fields.
 - [ ] The `kind` field value is one of: `prompt`, `agent`, `instruction`, `skill`, or `hook`.
 - [ ] The plugin does not reference non-existent files.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
