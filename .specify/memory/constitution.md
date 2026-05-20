@@ -1,50 +1,41 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: [TEMPLATE] -> 1.0.0 (Initial Creation)
+- Added sections: Clean Architecture Separation, Transport Agnosticism, Idiomatic Go Quality, Test-Driven and Mocking, Robust Integration Testing
+- Removed sections: Template placeholders
+- Templates requiring updates:
+  ✅ .specify/templates/tasks-template.md (Tests marked mandatory)
+- Follow-up TODOs: None
+-->
+# Go Grip Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Clean Architecture Separation
+Domain logic (Entities and UseCases) **MUST** be independent of frameworks, transport layers (gRPC, REST, AMQP), and databases. All outer layer dependencies (repositories, web APIs) **MUST** be hidden behind interfaces defined in the `entity` or `usecase` layers, strictly adhering to dependency inversion.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Transport Agnosticism
+Business logic **MUST** be reusable across all supported transport layers (REST API, gRPC, NATS, RabbitMQ). Controllers are strictly limited to handling transport-specific serialization/deserialization, auth wiring, and delegating execution directly to the underlying UseCases.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Idiomatic Go Quality
+All code **MUST** follow standard Go formatting and idioms. Errors **MUST** be handled explicitly without `panic` in business logic, properly categorized within `entity/errors.go`, and propagated with context wrapping where appropriate. Proper project layout (like `cmd`, `internal`, `pkg`) is mandatory.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Test-Driven and Mocking
+Unit tests are **MANDATORY** for all UseCases and Repositories. Generated mocks (e.g. `mocks_repo_test.go`, `mocks_usecase_test.go`) **MUST** be utilized to achieve high test coverage for core business logic. Testing should lead the implementation process where feasible.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Robust Integration Testing
+Integration tests **MUST** verify true end-to-end behavior by spinning up actual dependencies (such as Postgres and RabbitMQ) via Docker (e.g., `docker-compose-integration-test.yml`). Core external dependencies **MUST NOT** be heavily mocked during integration tests to guarantee infrastructure reliability.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Application Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+Technology stack is restricted to Go for backend services. Data persistence relies on PostgreSQL, and asynchronous communication/RPC utilizes RabbitMQ and NATS. gRPC is the primary protocol for strict synchronous internal communication.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+All new features start with defining interfaces within the UseCase/Entity layers before moving onto outer layer implementations. Ensure mock generation scripts are run whenever repository interfaces change. PR reviews must include validation of test coverage and integration test successful runs.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes ad-hoc coding practices. All Pull Requests and code reviews **MUST** verify compliance with these architectural and testing principles. Architectural changes require an explicit amendment to this document.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-05-20 | **Last Amended**: 2026-05-20
