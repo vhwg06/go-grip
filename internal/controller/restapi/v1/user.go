@@ -122,3 +122,64 @@ func (r *V1) profile(ctx *fiber.Ctx) error {
 
 	return ctx.Status(http.StatusOK).JSON(user)
 }
+
+func (r *V1) listUsers(ctx *fiber.Ctx) error {
+	users, total, err := r.u.List(ctx.UserContext(), ctx.QueryInt("limit", 20), ctx.QueryInt("offset", 0))
+	if err != nil {
+		return errorResponse(ctx, http.StatusInternalServerError, err.Error())
+	}
+	return ctx.JSON(listResponse{Data: users, Meta: entity.Page{Limit: ctx.QueryInt("limit", 20), Offset: ctx.QueryInt("offset", 0), Total: total}})
+}
+
+func (r *V1) createAdminUser(ctx *fiber.Ctx) error {
+	var body struct {
+		Username string          `json:"username"`
+		Email    string          `json:"email"`
+		Password string          `json:"password"`
+		Role     entity.RoleName `json:"role"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, "invalid request body")
+	}
+	user, err := r.u.CreateAdminUser(ctx.UserContext(), "", body.Username, body.Email, body.Password, body.Role)
+	if err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+	return ctx.Status(http.StatusCreated).JSON(user)
+}
+
+func (r *V1) getUser(ctx *fiber.Ctx) error {
+	user, err := r.u.GetUser(ctx.UserContext(), ctx.Params("id"))
+	if err != nil {
+		return errorResponse(ctx, http.StatusNotFound, "user not found")
+	}
+	return ctx.JSON(user)
+}
+
+func (r *V1) updateUserProfile(ctx *fiber.Ctx) error {
+	var body struct {
+		DisplayName string `json:"display_name"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, "invalid request body")
+	}
+	user, err := r.u.UpdateProfile(ctx.UserContext(), ctx.Params("id"), body.DisplayName)
+	if err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+	return ctx.JSON(user)
+}
+
+func (r *V1) lockUser(ctx *fiber.Ctx) error {
+	if err := r.u.Lock(ctx.UserContext(), "", ctx.Params("id")); err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (r *V1) unlockUser(ctx *fiber.Ctx) error {
+	if err := r.u.Unlock(ctx.UserContext(), "", ctx.Params("id")); err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+	return ctx.SendStatus(http.StatusNoContent)
+}

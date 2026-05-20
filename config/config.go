@@ -10,16 +10,18 @@ import (
 type (
 	// Config -.
 	Config struct {
-		App     app
-		HTTP    http
-		Log     log
-		PG      pg
-		GRPC    grpc
-		RMQ     rmq
-		NATS    nats
-		JWT     jwt
-		Metrics metrics
-		Swagger swagger
+		App          app
+		HTTP         http
+		Log          log
+		PG           pg
+		GRPC         grpc
+		RMQ          rmq
+		NATS         nats
+		JWT          jwt
+		Metrics      metrics
+		Swagger      swagger
+		Ecommerce    ecommerce
+		Notification notification
 	}
 
 	// App -.
@@ -77,6 +79,20 @@ type (
 	// Swagger -.
 	swagger struct {
 		Enabled bool `env:"SWAGGER_ENABLED" envDefault:"false"`
+	}
+
+	// Ecommerce -.
+	ecommerce struct {
+		ThemeColor        string        `env:"ECOMMERCE_THEME_COLOR" envDefault:"#0f766e"`
+		MediaMaxBytes     int64         `env:"ECOMMERCE_MEDIA_MAX_BYTES" envDefault:"5242880"`
+		InitialImportMax  int           `env:"ECOMMERCE_INITIAL_IMPORT_MAX" envDefault:"25"`
+		SchedulerInterval time.Duration `env:"ECOMMERCE_SCHEDULER_INTERVAL" envDefault:"1m"`
+	}
+
+	// Notification -.
+	notification struct {
+		Enabled bool   `env:"NOTIFICATION_ENABLED" envDefault:"false"`
+		From    string `env:"NOTIFICATION_FROM" envDefault:"noreply@example.com"`
 	}
 )
 

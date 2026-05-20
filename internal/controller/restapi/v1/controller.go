@@ -8,9 +8,16 @@ import (
 
 // V1 -.
 type V1 struct {
-	t  usecase.Translation
-	u  usecase.User
-	tk usecase.Task
-	l  logger.Interface
-	v  *validator.Validate
+	t        usecase.Translation
+	u        usecase.User
+	tk       usecase.Task
+	catalog  usecase.Catalog
+	media    usecase.Media
+	homepage usecase.Homepage
+	cart     usecase.Cart
+	lead     usecase.Lead
+	content  usecase.Content
+	importer usecase.Importer
+	l        logger.Interface
+	v        *validator.Validate
 }

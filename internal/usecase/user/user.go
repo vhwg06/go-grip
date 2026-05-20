@@ -81,3 +81,63 @@ func (uc *UseCase) GetUser(ctx context.Context, userID string) (entity.User, err
 
 	return user, nil
 }
+
+// List -.
+func (uc *UseCase) List(ctx context.Context, limit, offset int) ([]entity.User, int, error) {
+	page := entity.Pagination{Limit: limit, Offset: offset}.Normalize()
+
+	users, total, err := uc.repo.List(ctx, repo.UserFilter{Limit: uint64(page.Limit), Offset: uint64(page.Offset)})
+	if err != nil {
+		return nil, 0, fmt.Errorf("UserUseCase - List - uc.repo.List: %w", err)
+	}
+
+	return users, total, nil
+}
+
+// CreateAdminUser -.
+func (uc *UseCase) CreateAdminUser(ctx context.Context, _ string, username, email, password string, role entity.RoleName) (entity.User, error) {
+	user, err := uc.Register(ctx, username, email, password)
+	if err != nil {
+		return entity.User{}, err
+	}
+	user.Role = role
+	user.Status = entity.UserStatusActive
+
+	return user, nil
+}
+
+// UpdateProfile -.
+func (uc *UseCase) UpdateProfile(ctx context.Context, userID, displayName string) (entity.User, error) {
+	user, err := uc.repo.GetByID(ctx, userID)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("UserUseCase - UpdateProfile - uc.repo.GetByID: %w", err)
+	}
+
+	user.DisplayName = displayName
+	user.Username = displayName
+	user.UpdatedAt = time.Now().UTC()
+
+	if err = uc.repo.Update(ctx, &user); err != nil {
+		return entity.User{}, fmt.Errorf("UserUseCase - UpdateProfile - uc.repo.Update: %w", err)
+	}
+
+	return user, nil
+}
+
+// Lock -.
+func (uc *UseCase) Lock(ctx context.Context, _ string, userID string) error {
+	if err := uc.repo.SetStatus(ctx, userID, entity.UserStatusLocked); err != nil {
+		return fmt.Errorf("UserUseCase - Lock - uc.repo.SetStatus: %w", err)
+	}
+
+	return nil
+}
+
+// Unlock -.
+func (uc *UseCase) Unlock(ctx context.Context, _ string, userID string) error {
+	if err := uc.repo.SetStatus(ctx, userID, entity.UserStatusActive); err != nil {
+		return fmt.Errorf("UserUseCase - Unlock - uc.repo.SetStatus: %w", err)
+	}
+
+	return nil
+}

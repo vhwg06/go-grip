@@ -1,6 +1,10 @@
 # IDE
 .idea
 .vscode
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
 
 # Config
 .env
