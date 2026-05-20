@@ -8,6 +8,16 @@
 
 **Input**: User description: "Parse @file:requirement.md and @file:backend-specs.md to implement the formal feature specification based on our system templates."
 
+## Clarifications
+
+### Session 2026-05-20
+- Q: How should shopping cart states be managed between anonymous and authenticated users? → A: UUID-based carts stored in DB for all anonymous sessions.
+- Q: What are the restrictions on Media library uploads? → A: Images only (JPG, PNG, WebP) up to 5MB max size per file.
+- Q: How are admin sessions invalidated if an Administrator locks a user account mid-session? → A: Short-lived JWTs coupled with Refresh Tokens that can be revoked in the DB.
+- Q: What happens when a user attempts to add an out-of-stock or suspended product to their cart? → A: The API rejects the addition; if it becomes out-of-stock later, it is flagged in the cart response blocking the checkout.
+
+- Q: What happens if scheduled post trigger ticks are missed during server downtime? → A: A catch-up cron pattern evaluates any posts with `scheduled` status and timestamp <= current time.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Admin Authentication & RBAC (Priority: P1)
@@ -85,10 +95,10 @@ Content managers write blog posts, schedule them, and manage static pages like "
 
 ### Edge Cases
 
-- What happens when a user attempts to add an out-of-stock or suspended product to their cart?
-- How does the system handle media uploads (e.g. huge images, invalid mime types)?
-- How are admin sessions invalidated if an Administrator locks a user account mid-session?
-- What happens if scheduled post trigger ticks are missed during server downtime?
+- **Out-of-stock items in cart**: The API rejects additions of out-of-stock or suspended products. If a product becomes out-of-stock while already in a cart, it is flagged in the cart payload and order submission is blocked.
+- **Media Upload Invalidities**: If uploads exceed 5MB or are invalid formats, the API responds with a 400 Bad Request detailing the constraints.
+- **Admin Session Revocation**: Administrator sessions are validated using short-lived JWTs. If an account is locked mid-session, their Refresh Token is revoked in the DB, forcing re-authentication (which will fail) within minutes.
+- **Missed Scheduled Publish Ticks**: A catch-up cron pattern evaluates any posts with `scheduled` status and timestamp <= current time, ensuring publication upon server recovery.
 
 ## Assumptions & Dependencies *(mandatory)*
 
@@ -99,13 +109,13 @@ Content managers write blog posts, schedule them, and manage static pages like "
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide authentication and RBAC with rules enforcing Administrator, Editor, Author, Contributor, and Subscriber boundaries.
+- **FR-001**: System MUST provide authentication using short-lived JWTs and revocable Refresh Tokens, and RBAC with rules enforcing Administrator, Editor, Author, Contributor, and Subscriber boundaries.
 - **FR-002**: System MUST provide CRUD features for Products, Categories, and Tags, enforcing uniqueness of SKUs and generating structured responses.
 - **FR-003**: System MUST expose capabilities for catalog querying including pagination, sorting (Price, Name, Date), and filtering (Price Range, Brand).
-- **FR-004**: System MUST allow managing a shopping cart (add, update, delete, view) and converting a cart into a submitted order request.
+- **FR-004**: System MUST allow managing a shopping cart (add, update, delete, view) tied to an anonymous session UUID stored in the DB, and converting a cart into a submitted order request.
 - **FR-005**: System MUST provide ways to manage general CMS Content including Draft, Scheduled, and Published state transitions for articles.
 - **FR-006**: System MUST supply functionality for homepage block composition (Banners, Highlights, Footer).
-- **FR-007**: System MUST validate and handle Media library uploads, restricting file types and sizes, while recording files correctly.
+- **FR-007**: System MUST validate and handle Media library uploads, restricting file types to JPG, PNG, WebP and sizes up to 5MB, while recording files correctly.
 - **FR-008**: System MUST absorb form submissions (Lead/Contact), transition their processing state (`new`, `in_progress`, `done`), and trigger external alerts.
 
 ### Success Criteria
