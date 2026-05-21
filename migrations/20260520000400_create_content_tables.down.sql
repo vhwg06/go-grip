@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS static_pages;
+DROP TABLE IF EXISTS content_articles;

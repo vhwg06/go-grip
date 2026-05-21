@@ -1,7 +1,15 @@
 .idea
+.vscode
 .git
 .github
 nginx
+node_modules
+coverage
+*.log*
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
 
 .dockerignore
 .env

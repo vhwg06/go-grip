@@ -164,6 +164,36 @@ func (mr *MockUserRepoMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUserRepo)(nil).GetByID), ctx, id)
 }
 
+// List mocks base method.
+func (m *MockUserRepo) List(ctx context.Context, filter repo.UserFilter) ([]entity.User, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, filter)
+	ret0, _ := ret[0].([]entity.User)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// List indicates an expected call of List.
+func (mr *MockUserRepoMockRecorder) List(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockUserRepo)(nil).List), ctx, filter)
+}
+
+// SetStatus mocks base method.
+func (m *MockUserRepo) SetStatus(ctx context.Context, id string, status entity.UserStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetStatus", ctx, id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetStatus indicates an expected call of SetStatus.
+func (mr *MockUserRepoMockRecorder) SetStatus(ctx, id, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStatus", reflect.TypeOf((*MockUserRepo)(nil).SetStatus), ctx, id, status)
+}
+
 // Store mocks base method.
 func (m *MockUserRepo) Store(ctx context.Context, user *entity.User) error {
 	m.ctrl.T.Helper()
@@ -176,6 +206,20 @@ func (m *MockUserRepo) Store(ctx context.Context, user *entity.User) error {
 func (mr *MockUserRepoMockRecorder) Store(ctx, user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockUserRepo)(nil).Store), ctx, user)
+}
+
+// Update mocks base method.
+func (m *MockUserRepo) Update(ctx context.Context, user *entity.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockUserRepoMockRecorder) Update(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUserRepo)(nil).Update), ctx, user)
 }
 
 // MockTaskRepo is a mock of TaskRepo interface.

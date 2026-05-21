@@ -10,8 +10,8 @@ import (
 )
 
 // NewRoutes -.
-func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, jwtManager *jwt.Manager, l logger.Interface) {
-	r := &V1{t: t, u: u, tk: tk, l: l, v: validator.New(validator.WithRequiredStructEnabled())}
+func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
+	r := &V1{t: t, u: u, tk: tk, catalog: catalog, media: media, homepage: homepage, cart: cart, lead: lead, content: content, importer: importer, l: l, v: validator.New(validator.WithRequiredStructEnabled())}
 
 	// Public routes
 	authGroup := apiV1Group.Group("/auth")
@@ -26,6 +26,16 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 	userGroup := protected.Group("/user")
 	{
 		userGroup.Get("/profile", r.profile)
+	}
+
+	usersGroup := protected.Group("/users")
+	{
+		usersGroup.Get("/", r.listUsers)
+		usersGroup.Post("/", r.createAdminUser)
+		usersGroup.Get("/:id", r.getUser)
+		usersGroup.Patch("/:id", r.updateUserProfile)
+		usersGroup.Post("/:id/lock", r.lockUser)
+		usersGroup.Post("/:id/unlock", r.unlockUser)
 	}
 
 	taskGroup := protected.Group("/tasks")
@@ -43,4 +53,6 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		translationGroup.Get("/history", r.history)
 		translationGroup.Post("/do-translate", r.doTranslate)
 	}
+
+	r.registerEcommerceRoutes(apiV1Group, protected)
 }
