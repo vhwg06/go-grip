@@ -14,7 +14,7 @@ Required environment groups:
 - App: `APP_NAME`, `APP_VERSION`, `LOG_LEVEL`
 - HTTP: `HTTP_PORT`, optional `HTTP_USE_PREFORK_MODE`
 - PostgreSQL: `PG_URL`, `PG_POOL_MAX`
-- Auth: `JWT_SECRET`, access/refresh token durations, LinuxDO OAuth credentials, GitHub OAuth credentials
+- Auth: `JWT_SECRET`, access/refresh token durations
 - Admin: `ADMIN_USERS`
 - Payment: Epay partner credentials and callback URLs
 - Feature settings: check-in reward/defaults, wishlist default enablement, scheduler intervals

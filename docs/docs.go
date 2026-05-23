@@ -378,90 +378,6 @@ const docTemplate = `{
                 ]
             }
         },
-        "/auth/callback/github": {
-            "get": {
-                "description": "Exchanges callback code and issues access/refresh tokens",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Complete GitHub OAuth callback",
-                "operationId": "grip_auth_callback_github",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "OAuth code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/callback/linuxdo": {
-            "get": {
-                "description": "Exchanges callback code and issues access/refresh tokens",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Complete LinuxDO OAuth callback",
-                "operationId": "grip_auth_callback_linuxdo",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "OAuth code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/login": {
             "post": {
                 "description": "Authenticate user and get JWT token",
@@ -491,7 +407,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Token"
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     },
                     "400": {
@@ -609,60 +525,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ]
-            }
-        },
-        "/auth/oauth/github": {
-            "get": {
-                "description": "Generates GitHub OAuth authorization URL",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Begin GitHub OAuth",
-                "operationId": "grip_auth_oauth_github",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/oauth/linuxdo": {
-            "get": {
-                "description": "Generates LinuxDO OAuth authorization URL",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Begin LinuxDO OAuth",
-                "operationId": "grip_auth_oauth_linuxdo",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    }
-                }
             }
         },
         "/auth/refresh": {
@@ -2511,15 +2373,6 @@ const docTemplate = `{
                 "total": {
                     "type": "integer",
                     "example": 42
-                }
-            }
-        },
-        "v1.Token": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIs..."
                 }
             }
         },

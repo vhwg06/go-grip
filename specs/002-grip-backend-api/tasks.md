@@ -104,22 +104,22 @@
 
 ## Phase 4: User Story 2 - Authenticate and Manage Account Benefits (Priority: P1)
 
-**Goal**: Users can sign in through supported providers, refresh sessions, access profile data, check in daily, spend points, and see account-linked order history.
+**Goal**: Users can sign in with local credentials, refresh sessions, access profile data, check in daily, spend points, and see account-linked order history.
 
-**Independent Test**: Simulate OAuth callbacks for LinuxDO and GitHub, refresh a session, perform one daily check-in, and verify profile and order history values.
+**Independent Test**: Register and log in a user, refresh a session, perform one daily check-in, and verify profile and order history values.
 
 ### Tests for User Story 2
 
-- [x] T050 [P] [US2] Add contract tests for OAuth start, OAuth callback, refresh, logout, auth/me, profile, profile update, and check-in routes in integration-test/grip_store_us2_auth_profile_test.go
-- [x] T051 [P] [US2] Add usecase tests for account merge, refresh rotation, admin flag resolution, profile dashboard, daily check-in uniqueness, and points updates in internal/usecase/auth/auth_test.go
-- [x] T052 [P] [US2] Add repository integration tests for provider identity merge, refresh sessions, check-ins, and profile point updates in internal/repo/persistent/auth_profile_postgres_test.go
+- [x] T050 [P] [US2] Add contract tests for register, login, refresh, logout, auth/me, profile, profile update, and check-in routes in integration-test/grip_store_us2_auth_profile_test.go
+- [x] T051 [P] [US2] Add usecase tests for refresh rotation, admin flag resolution, profile dashboard, daily check-in uniqueness, and points updates in internal/usecase/auth/auth_test.go
+- [x] T052 [P] [US2] Add repository integration tests for refresh sessions, check-ins, and profile point updates in internal/repo/persistent/auth_profile_postgres_test.go
 
 ### Implementation for User Story 2
 
-- [x] T053 [P] [US2] Implement OAuth client interfaces and LinuxDO/GitHub adapters in internal/repo/webapi/oauth.go
-- [x] T054 [P] [US2] Implement GORM auth repository for users, provider identities, refresh sessions, account merge, and admin username lookup in internal/repo/persistent/auth_postgres.go
+- [x] T053 [P] [US2] Remove external OAuth client adapters from internal/repo/webapi
+- [x] T054 [P] [US2] Implement GORM auth repository for users, refresh sessions, and admin username lookup in internal/repo/persistent/auth_postgres.go
 - [x] T055 [P] [US2] Implement GORM profile repository for dashboard data, profile update, daily check-in, and points balance in internal/repo/persistent/profile_postgres.go
-- [x] T056 [US2] Implement auth usecase for OAuth redirect, callback, account merge, token pair issue, refresh rotation, logout, and current user profile in internal/usecase/auth/auth.go
+- [x] T056 [US2] Implement auth usecase for token pair issue, refresh rotation, logout, and current user profile in internal/usecase/auth/auth.go
 - [x] T057 [US2] Implement profile usecase for dashboard, email update, notification preference update, daily check-in reward, and check-in feature gate in internal/usecase/profile/profile.go
 - [x] T058 [US2] Implement auth REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/auth.go
 - [x] T059 [US2] Implement profile REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/profile.go

@@ -1084,40 +1084,10 @@ func (m *MockAuth) EXPECT() *MockAuthMockRecorder {
 	return m.recorder
 }
 
-// BeginGitHub mocks base method.
-func (m *MockAuth) BeginGitHub(ctx context.Context) (string, error) {
+// Login mocks base method.
+func (m *MockAuth) Login(ctx context.Context, email, password string) (entity.User, string, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginGitHub", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BeginGitHub indicates an expected call of BeginGitHub.
-func (mr *MockAuthMockRecorder) BeginGitHub(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginGitHub", reflect.TypeOf((*MockAuth)(nil).BeginGitHub), ctx)
-}
-
-// BeginLinuxDO mocks base method.
-func (m *MockAuth) BeginLinuxDO(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BeginLinuxDO", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BeginLinuxDO indicates an expected call of BeginLinuxDO.
-func (mr *MockAuthMockRecorder) BeginLinuxDO(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginLinuxDO", reflect.TypeOf((*MockAuth)(nil).BeginLinuxDO), ctx)
-}
-
-// CompleteGitHub mocks base method.
-func (m *MockAuth) CompleteGitHub(ctx context.Context, code string) (entity.User, string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CompleteGitHub", ctx, code)
+	ret := m.ctrl.Call(m, "Login", ctx, email, password)
 	ret0, _ := ret[0].(entity.User)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(string)
@@ -1125,27 +1095,10 @@ func (m *MockAuth) CompleteGitHub(ctx context.Context, code string) (entity.User
 	return ret0, ret1, ret2, ret3
 }
 
-// CompleteGitHub indicates an expected call of CompleteGitHub.
-func (mr *MockAuthMockRecorder) CompleteGitHub(ctx, code any) *gomock.Call {
+// Login indicates an expected call of Login.
+func (mr *MockAuthMockRecorder) Login(ctx, email, password any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteGitHub", reflect.TypeOf((*MockAuth)(nil).CompleteGitHub), ctx, code)
-}
-
-// CompleteLinuxDO mocks base method.
-func (m *MockAuth) CompleteLinuxDO(ctx context.Context, code string) (entity.User, string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CompleteLinuxDO", ctx, code)
-	ret0, _ := ret[0].(entity.User)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// CompleteLinuxDO indicates an expected call of CompleteLinuxDO.
-func (mr *MockAuthMockRecorder) CompleteLinuxDO(ctx, code any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteLinuxDO", reflect.TypeOf((*MockAuth)(nil).CompleteLinuxDO), ctx, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockAuth)(nil).Login), ctx, email, password)
 }
 
 // Logout mocks base method.

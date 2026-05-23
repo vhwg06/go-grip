@@ -19,7 +19,6 @@ type (
 		Swagger      swagger
 		Ecommerce    ecommerce
 		Notification notification
-		Auth         auth
 		Admin        admin
 		Payment      payment
 	}
@@ -75,15 +74,6 @@ type (
 	notification struct {
 		Enabled bool   `env:"NOTIFICATION_ENABLED" envDefault:"false"`
 		From    string `env:"NOTIFICATION_FROM" envDefault:"noreply@example.com"`
-	}
-
-	// Auth contains OAuth provider settings.
-	auth struct {
-		LinuxDOClientID     string `env:"AUTH_LINUXDO_CLIENT_ID"`
-		LinuxDOClientSecret string `env:"AUTH_LINUXDO_CLIENT_SECRET"`
-		GitHubClientID      string `env:"AUTH_GITHUB_CLIENT_ID"`
-		GitHubClientSecret  string `env:"AUTH_GITHUB_CLIENT_SECRET"`
-		CallbackBaseURL     string `env:"AUTH_CALLBACK_BASE_URL" envDefault:"http://localhost:8080"`
 	}
 
 	// Admin contains admin access configuration.

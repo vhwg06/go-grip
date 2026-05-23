@@ -8,22 +8,20 @@ import (
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
-	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/usecase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UseCase struct {
 	repo       repo.AuthRepository
-	linuxDO    webapi.OAuthClient
-	gitHub     webapi.OAuthClient
 	jwtManager *jwt.Manager
 	refreshTTL time.Duration
 	adminUsers map[string]struct{}
 }
 
-func New(authRepo repo.AuthRepository, linuxDO webapi.OAuthClient, gitHub webapi.OAuthClient, jwtManager *jwt.Manager, refreshTTL time.Duration, adminUsersCSV string) *UseCase {
+func New(authRepo repo.AuthRepository, jwtManager *jwt.Manager, refreshTTL time.Duration, adminUsersCSV string) *UseCase {
 	adminUsers := make(map[string]struct{})
 	for _, user := range strings.Split(adminUsersCSV, ",") {
 		trimmed := strings.ToLower(strings.TrimSpace(user))
@@ -35,8 +33,6 @@ func New(authRepo repo.AuthRepository, linuxDO webapi.OAuthClient, gitHub webapi
 
 	return &UseCase{
 		repo:       authRepo,
-		linuxDO:    linuxDO,
-		gitHub:     gitHub,
 		jwtManager: jwtManager,
 		refreshTTL: refreshTTL,
 		adminUsers: adminUsers,
@@ -45,34 +41,23 @@ func New(authRepo repo.AuthRepository, linuxDO webapi.OAuthClient, gitHub webapi
 
 var _ usecase.Auth = (*UseCase)(nil)
 
-func (uc *UseCase) BeginLinuxDO(ctx context.Context) (string, error) {
-	if uc.linuxDO == nil {
-		return "", entity.ErrInvalidInput
-	}
-	u, err := uc.linuxDO.BeginAuth(ctx, uuid.NewString())
+func (uc *UseCase) Login(ctx context.Context, email, password string) (entity.User, string, string, error) {
+	user, err := uc.repo.GetUserByEmail(ctx, email)
 	if err != nil {
-		return "", fmt.Errorf("AuthUseCase.BeginLinuxDO - linuxDO.BeginAuth: %w", err)
+		return entity.User{}, "", "", entity.ErrInvalidCredentials
 	}
-	return u, nil
-}
 
-func (uc *UseCase) BeginGitHub(ctx context.Context) (string, error) {
-	if uc.gitHub == nil {
-		return "", entity.ErrInvalidInput
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return entity.User{}, "", "", entity.ErrInvalidCredentials
 	}
-	u, err := uc.gitHub.BeginAuth(ctx, uuid.NewString())
+
+	user.IsAdmin = user.IsAdmin || uc.isAdminUsername(user.Username)
+	accessToken, refreshToken, err := uc.issueTokenPair(ctx, user.ID)
 	if err != nil {
-		return "", fmt.Errorf("AuthUseCase.BeginGitHub - gitHub.BeginAuth: %w", err)
+		return entity.User{}, "", "", err
 	}
-	return u, nil
-}
 
-func (uc *UseCase) CompleteLinuxDO(ctx context.Context, code string) (entity.User, string, string, error) {
-	return uc.completeOAuth(ctx, uc.linuxDO, code)
-}
-
-func (uc *UseCase) CompleteGitHub(ctx context.Context, code string) (entity.User, string, string, error) {
-	return uc.completeOAuth(ctx, uc.gitHub, code)
+	return user, accessToken, refreshToken, nil
 }
 
 func (uc *UseCase) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
@@ -123,39 +108,6 @@ func (uc *UseCase) Me(ctx context.Context, actor entity.Actor) (entity.User, err
 	}
 	user.IsAdmin = user.IsAdmin || uc.isAdminUsername(user.Username)
 	return user, nil
-}
-
-func (uc *UseCase) completeOAuth(ctx context.Context, client webapi.OAuthClient, code string) (entity.User, string, string, error) {
-	if client == nil {
-		return entity.User{}, "", "", entity.ErrInvalidInput
-	}
-	if strings.TrimSpace(code) == "" {
-		return entity.User{}, "", "", entity.ErrInvalidInput
-	}
-
-	identity, err := client.ExchangeCode(ctx, code)
-	if err != nil {
-		return entity.User{}, "", "", fmt.Errorf("AuthUseCase.completeOAuth - client.ExchangeCode: %w", err)
-	}
-
-	user, err := uc.repo.UpsertUser(ctx, entity.User{
-		Provider:   identity.Provider,
-		ProviderID: identity.ProviderID,
-		Username:   identity.Username,
-		Email:      identity.Email,
-		Status:     entity.UserStatusActive,
-	})
-	if err != nil {
-		return entity.User{}, "", "", fmt.Errorf("AuthUseCase.completeOAuth - repo.UpsertUser: %w", err)
-	}
-
-	user.IsAdmin = user.IsAdmin || uc.isAdminUsername(user.Username)
-	accessToken, refreshToken, err := uc.issueTokenPair(ctx, user.ID)
-	if err != nil {
-		return entity.User{}, "", "", err
-	}
-
-	return user, accessToken, refreshToken, nil
 }
 
 func (uc *UseCase) issueTokenPair(ctx context.Context, userID string) (string, string, error) {

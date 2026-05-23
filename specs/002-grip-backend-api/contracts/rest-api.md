@@ -21,10 +21,8 @@
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/v1/auth/oauth/linuxdo` | Public | Start LinuxDO sign-in |
-| GET | `/v1/auth/oauth/github` | Public | Start GitHub sign-in |
-| GET | `/v1/auth/callback/linuxdo` | Public | Complete LinuxDO sign-in |
-| GET | `/v1/auth/callback/github` | Public | Complete GitHub sign-in and account merge |
+| POST | `/v1/auth/register` | Public | Register a local account |
+| POST | `/v1/auth/login` | Public | Authenticate with local credentials |
 | POST | `/v1/auth/refresh` | Refresh credential | Rotate access and refresh credentials |
 | POST | `/v1/auth/logout` | Bearer | Revoke current session |
 | GET | `/v1/auth/me` | Bearer | Return current profile and admin flag |

@@ -99,10 +99,7 @@ type (
 	}
 
 	Auth interface {
-		BeginLinuxDO(ctx context.Context) (string, error)
-		BeginGitHub(ctx context.Context) (string, error)
-		CompleteLinuxDO(ctx context.Context, code string) (entity.User, string, string, error)
-		CompleteGitHub(ctx context.Context, code string) (entity.User, string, string, error)
+		Login(ctx context.Context, email, password string) (entity.User, string, string, error)
 		Refresh(ctx context.Context, refreshToken string) (string, string, error)
 		Logout(ctx context.Context, actor entity.Actor, refreshToken string) error
 		Me(ctx context.Context, actor entity.Actor) (entity.User, error)

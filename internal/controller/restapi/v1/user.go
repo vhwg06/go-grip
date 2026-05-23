@@ -58,7 +58,7 @@ func (r *V1) register(ctx *fiber.Ctx) error {
 // @Accept      json
 // @Produce     json
 // @Param       request body     request.Login true "Login credentials"
-// @Success     200     {object} response.Token
+// @Success     200     {object} envelope
 // @Failure     400     {object} response.Error
 // @Failure     401     {object} response.Error
 // @Failure     500     {object} response.Error
@@ -76,6 +76,25 @@ func (r *V1) login(ctx *fiber.Ctx) error {
 		r.l.Error(err, "restapi - v1 - login")
 
 		return errorResponse(ctx, http.StatusBadRequest, "invalid request body")
+	}
+
+	if r.authUC != nil {
+		user, accessToken, refreshToken, err := r.authUC.Login(ctx.UserContext(), body.Email, body.Password)
+		if err != nil {
+			r.l.Error(err, "restapi - v1 - login")
+
+			if errors.Is(err, entity.ErrInvalidCredentials) {
+				return errorResponse(ctx, http.StatusUnauthorized, "invalid credentials")
+			}
+
+			return errorResponse(ctx, http.StatusInternalServerError, "internal server error")
+		}
+
+		return ctx.Status(http.StatusOK).JSON(apiSuccessEnvelope(gripTokenPairResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			User:         user,
+		}))
 	}
 
 	token, err := r.u.Login(ctx.UserContext(), body.Email, body.Password)

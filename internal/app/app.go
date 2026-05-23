@@ -86,8 +86,6 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	contentRepo := persistent.NewContentRepo(pg)
 	importRepo := persistent.NewImportRepo(pg, catalogRepo, contentRepo)
 	notificationUseCase := notification.New(cfg.Notification.Enabled)
-	linuxDOOAuthClient := webapi.NewLinuxDOOAuthClient(cfg.Auth.LinuxDOClientID, cfg.Auth.LinuxDOClientSecret, cfg.Auth.CallbackBaseURL)
-	gitHubOAuthClient := webapi.NewGitHubOAuthClient(cfg.Auth.GitHubClientID, cfg.Auth.GitHubClientSecret, cfg.Auth.CallbackBaseURL)
 	epayVerifier := webapi.NewEpayVerifier(cfg.Payment.SecretKey)
 	adminNotifier := webapi.NewNoopAdminNotifier()
 
@@ -99,7 +97,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		task:        task.New(taskRepo),
 		translation: translation.New(translationRepo, webapi.New()),
 		catalog:     catalog.NewWithGrip(catalogRepo, gripCatalogRepo),
-		auth:        auth.New(authRepo, linuxDOOAuthClient, gitHubOAuthClient, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
+		auth:        auth.New(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
 		checkout:    checkoutUC,
 		orders:      orders.New(gripOrderRepo),
 		profile:     profile.New(profileRepo, 10),

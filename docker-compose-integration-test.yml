@@ -31,11 +31,6 @@ services:
       SWAGGER_ENABLED: "false"
       JWT_TOKEN_EXPIRY: 24h
       JWT_SECRET: your-secret-key-change-in-production
-      AUTH_LINUXDO_CLIENT_ID: ""
-      AUTH_LINUXDO_CLIENT_SECRET: ""
-      AUTH_GITHUB_CLIENT_ID: ""
-      AUTH_GITHUB_CLIENT_SECRET: ""
-      AUTH_CALLBACK_BASE_URL: http://app:8080
       ADMIN_USERS: ""
       PAYMENT_PROVIDER: epay
       PAYMENT_MERCHANT_ID: ""

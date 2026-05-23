@@ -308,12 +308,6 @@ definitions:
         example: 42
         type: integer
     type: object
-  v1.Token:
-    properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIs...
-        type: string
-    type: object
   v1.TransitionTask:
     properties:
       status:
@@ -596,62 +590,6 @@ paths:
       summary: Update admin user state
       tags:
       - admin
-  /auth/callback/github:
-    get:
-      description: Exchanges callback code and issues access/refresh tokens
-      operationId: grip_auth_callback_github
-      parameters:
-      - description: OAuth code
-        in: query
-        name: code
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-      summary: Complete GitHub OAuth callback
-      tags:
-      - auth
-  /auth/callback/linuxdo:
-    get:
-      description: Exchanges callback code and issues access/refresh tokens
-      operationId: grip_auth_callback_linuxdo
-      parameters:
-      - description: OAuth code
-        in: query
-        name: code
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-      summary: Complete LinuxDO OAuth callback
-      tags:
-      - auth
   /auth/login:
     post:
       consumes:
@@ -671,7 +609,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Token'
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
         "400":
           description: Bad Request
           schema:
@@ -746,42 +684,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Current user profile
-      tags:
-      - auth
-  /auth/oauth/github:
-    get:
-      description: Generates GitHub OAuth authorization URL
-      operationId: grip_auth_oauth_github
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-      summary: Begin GitHub OAuth
-      tags:
-      - auth
-  /auth/oauth/linuxdo:
-    get:
-      description: Generates LinuxDO OAuth authorization URL
-      operationId: grip_auth_oauth_linuxdo
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-      summary: Begin LinuxDO OAuth
       tags:
       - auth
   /auth/refresh:

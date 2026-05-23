@@ -10,10 +10,6 @@ import (
 
 func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Router) {
 	authGroup := apiV1Group.Group("/auth")
-	authGroup.Get("/oauth/linuxdo", r.gripBeginLinuxDO)
-	authGroup.Get("/oauth/github", r.gripBeginGitHub)
-	authGroup.Get("/callback/linuxdo", r.gripCompleteLinuxDO)
-	authGroup.Get("/callback/github", r.gripCompleteGitHub)
 	authGroup.Post("/refresh", r.gripRefresh)
 	authGroup.Post("/logout", middleware.Auth(r.jwtManager), r.gripLogout)
 	authGroup.Get("/me", middleware.Auth(r.jwtManager), r.gripMe)

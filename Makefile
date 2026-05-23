@@ -37,7 +37,7 @@ compose-down: ### Down docker compose
 .PHONY: compose-down
 
 swag-v1: ### swag init
-	swag init --parseDependency -g internal/controller/restapi/router.go
+	go tool swag init --parseDependency --parseInternal -g internal/controller/restapi/router.go
 .PHONY: swag-v1
 
 deps: ### deps tidy + verify
@@ -45,7 +45,7 @@ deps: ### deps tidy + verify
 .PHONY: deps
 
 deps-audit: ### check dependencies vulnerabilities
-	govulncheck ./...
+	go tool govulncheck ./...
 .PHONY: deps-audit
 
 fix-diff: ### Show code changes by `go fix`
@@ -54,8 +54,8 @@ fix-diff: ### Show code changes by `go fix`
 
 format: ### Run code formatter
 	go fix ./...
-	gofumpt -l -w .
-	gci write . --skip-generated -s standard -s default
+	go tool gofumpt -l -w .
+	go tool gci write . --skip-generated -s standard -s default
 .PHONY: format
 
 run: deps swag-v1 ### swag run for API v1
@@ -68,7 +68,7 @@ docker-rm-volume: ### remove docker volume
 .PHONY: docker-rm-volume
 
 linter-golangci: ### check by golangci linter
-	golangci-lint run
+	go tool golangci-lint run
 .PHONY: linter-golangci
 
 linter-hadolint: ### check by hadolint linter
@@ -88,16 +88,16 @@ integration-test: ### run integration-test
 .PHONY: integration-test
 
 mock: ### run mockgen
-	mockgen -source ./internal/repo/contracts.go -package usecase_test > ./internal/usecase/mocks_repo_test.go
-	mockgen -source ./internal/usecase/contracts.go -package usecase_test > ./internal/usecase/mocks_usecase_test.go
+	go tool mockgen -source ./internal/repo/contracts.go -package usecase_test > ./internal/usecase/mocks_repo_test.go
+	go tool mockgen -source ./internal/usecase/contracts.go -package usecase_test > ./internal/usecase/mocks_usecase_test.go
 .PHONY: mock
 
 migrate-create:  ### create new migration
-	migrate create -ext sql -dir migrations '$(word 2,$(MAKECMDGOALS))'
+	go tool migrate create -ext sql -dir migrations '$(word 2,$(MAKECMDGOALS))'
 .PHONY: migrate-create
 
 migrate-up: ### migration up
-	migrate -path migrations -database '$(PG_URL)?sslmode=disable' up
+	go tool migrate -path migrations -database '$(PG_URL)?sslmode=disable' up
 .PHONY: migrate-up
 
 bin-deps: ### install tools

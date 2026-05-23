@@ -110,7 +110,7 @@ Signed-in users create wishlist ideas, vote, review purchased products, and rece
 
 ### Functional Requirements
 
-- **FR-001**: System MUST authenticate users through LinuxDO and GitHub sign-in and support account merge when provider identities match an existing email or username.
+- **FR-001**: System MUST authenticate users through local account credentials and JWT-backed sessions.
 - **FR-002**: System MUST issue renewable authenticated sessions, rotate renewal credentials after each use, and support logout that invalidates future renewal.
 - **FR-003**: System MUST identify admin users by configured usernames and include admin eligibility in the current-user profile.
 - **FR-004**: System MUST expose buyer profile information including points balance, order statistics, notification preference, check-in status, and blocked status effects.
