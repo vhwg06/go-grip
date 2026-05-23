@@ -12,7 +12,7 @@ import (
 )
 
 // NewRoutes -.
-func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
+func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, admin usecase.Admin, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, adminUsers string, l logger.Interface) {
 	r := &V1{
 		t:          t,
 		u:          u,
@@ -22,6 +22,9 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		checkout:   checkout,
 		orders:     orders,
 		profileUC:  profile,
+		adminUC:    admin,
+		wishlistUC: wishlist,
+		notifyUC:   notify,
 		media:      media,
 		homepage:   homepage,
 		cart:       cart,
@@ -29,6 +32,7 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		content:    content,
 		importer:   importer,
 		jwtManager: jwtManager,
+		adminUsers: adminUsers,
 		l:          l,
 		v:          validator.New(validator.WithRequiredStructEnabled()),
 	}

@@ -17,6 +17,9 @@ type V1 struct {
 	checkout   usecase.Checkout
 	orders     usecase.Orders
 	profileUC  usecase.Profile
+	adminUC    usecase.Admin
+	wishlistUC usecase.Wishlist
+	notifyUC   usecase.NotificationCenter
 	media      usecase.Media
 	homepage   usecase.Homepage
 	cart       usecase.Cart
@@ -24,6 +27,7 @@ type V1 struct {
 	content    usecase.Content
 	importer   usecase.Importer
 	jwtManager *jwt.Manager
+	adminUsers string
 	l          logger.Interface
 	v          *validator.Validate
 }

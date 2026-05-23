@@ -3,6 +3,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 )
@@ -200,5 +201,11 @@ type (
 		UpdateUserPoints(ctx context.Context, userID string, points int) error
 		StoreSetting(ctx context.Context, setting entity.Setting) error
 		RebuildProductAggregates(ctx context.Context) error
+	}
+
+	MaintenanceRepository interface {
+		CancelExpiredPendingOrders(ctx context.Context, olderThan time.Time) error
+		CleanupExpiredCards(ctx context.Context, now time.Time) error
+		SyncProductAggregates(ctx context.Context) error
 	}
 )

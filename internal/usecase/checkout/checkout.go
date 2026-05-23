@@ -7,6 +7,7 @@ import (
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
+	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/usecase"
 	"github.com/google/uuid"
 )
@@ -14,10 +15,15 @@ import (
 type UseCase struct {
 	checkoutRepo repo.CheckoutRepository
 	orderRepo    repo.OrderRepository
+	verifier     webapi.PaymentVerifier
 }
 
 func New(checkoutRepo repo.CheckoutRepository, orderRepo repo.OrderRepository) *UseCase {
 	return &UseCase{checkoutRepo: checkoutRepo, orderRepo: orderRepo}
+}
+
+func (uc *UseCase) SetPaymentVerifier(verifier webapi.PaymentVerifier) {
+	uc.verifier = verifier
 }
 
 var _ usecase.Checkout = (*UseCase)(nil)
@@ -88,6 +94,40 @@ func (uc *UseCase) PaymentNotify(ctx context.Context, payload map[string]string)
 	if orderID == "" {
 		return entity.ErrInvalidInput
 	}
+
+	if uc.verifier != nil {
+		ok, err := uc.verifier.Verify(ctx, payload)
+		if err != nil {
+			return fmt.Errorf("CheckoutUseCase - PaymentNotify - verifier.Verify: %w", err)
+		}
+		if !ok {
+			return entity.ErrPaymentInvalidSign
+		}
+	}
+
+	order, err := uc.orderRepo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("CheckoutUseCase - PaymentNotify - orderRepo.GetOrderByID: %w", err)
+	}
+	if order.Status == entity.OrderStatusDelivered {
+		return nil
+	}
+
+	payment := entity.Payment{
+		ID:                uuid.NewString(),
+		OrderID:           orderID,
+		Provider:          "epay",
+		ProviderPaymentID: payload["payment_id"],
+		Amount:            order.Amount,
+		Status:            "success",
+		IsSignatureValid:  true,
+		ProcessedAt:       ptrTime(time.Now().UTC()),
+		CreatedAt:         time.Now().UTC(),
+	}
+	if err := uc.checkoutRepo.AttachPayment(ctx, payment); err != nil {
+		return fmt.Errorf("CheckoutUseCase - PaymentNotify - checkoutRepo.AttachPayment: %w", err)
+	}
+
 	if err := uc.checkoutRepo.UpdateOrderStatus(ctx, orderID, entity.OrderStatusPaid); err != nil {
 		return fmt.Errorf("CheckoutUseCase - PaymentNotify - checkoutRepo.UpdateOrderStatus(paid): %w", err)
 	}
@@ -113,4 +153,8 @@ func (uc *UseCase) Cancel(ctx context.Context, actor entity.Actor, orderID strin
 		return fmt.Errorf("CheckoutUseCase - Cancel - checkoutRepo.ReleaseReservation: %w", err)
 	}
 	return nil
+}
+
+func ptrTime(v time.Time) *time.Time {
+	return &v
 }

@@ -59,8 +59,15 @@ definitions:
     type: object
   entity.User:
     properties:
+      consecutive_days:
+        type: integer
       created_at:
         example: "2026-01-01T00:00:00Z"
+        type: string
+      desktop_notifications_enabled:
+        type: boolean
+      display_name:
+        example: John Doe
         type: string
       email:
         example: john@example.com
@@ -68,11 +75,177 @@ definitions:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+      is_admin:
+        type: boolean
+      last_checkin_at:
+        type: string
+      last_login_at:
+        type: string
+      points:
+        type: integer
+      provider:
+        type: string
+      provider_id:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.RoleName'
+        example: Administrator
+      role_id:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.UserStatus'
+        example: active
+      trust_level:
+        type: integer
       updated_at:
         example: "2026-01-01T00:00:00Z"
         type: string
       username:
         example: johndoe
+        type: string
+    type: object
+  github_com_evrone_go-clean-template_internal_entity.Page:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_evrone_go-clean-template_internal_entity.Product:
+    properties:
+      attributes:
+        additionalProperties: {}
+        type: object
+      brand:
+        type: string
+      category_id:
+        type: string
+      compare_price:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      is_hot:
+        type: boolean
+      is_shared:
+        type: boolean
+      locked_count:
+        type: integer
+      max_purchaseable_quantity:
+        type: integer
+      media_ids:
+        items:
+          type: string
+        type: array
+      price:
+        type: integer
+      purchase_limit:
+        type: integer
+      purchase_warning:
+        type: string
+      rating:
+        type: number
+      review_count:
+        type: integer
+      sku:
+        type: string
+      sold_count:
+        type: integer
+      sort_order:
+        type: integer
+      status:
+        $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.ProductStatus'
+      stock_count:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+      visibility_level:
+        type: integer
+    type: object
+  github_com_evrone_go-clean-template_internal_entity.ProductStatus:
+    enum:
+    - active
+    - draft
+    - archived
+    - suspended
+    type: string
+    x-enum-varnames:
+    - ProductStatusActive
+    - ProductStatusDraft
+    - ProductStatusArchived
+    - ProductStatusSuspended
+  github_com_evrone_go-clean-template_internal_entity.RoleName:
+    enum:
+    - Administrator
+    - Editor
+    - Author
+    - Contributor
+    - Subscriber
+    type: string
+    x-enum-varnames:
+    - RoleAdministrator
+    - RoleEditor
+    - RoleAuthor
+    - RoleContributor
+    - RoleSubscriber
+  github_com_evrone_go-clean-template_internal_entity.UserStatus:
+    enum:
+    - active
+    - locked
+    type: string
+    x-enum-varnames:
+    - UserStatusActive
+    - UserStatusLocked
+  internal_controller_restapi_v1.envelope:
+    properties:
+      data: {}
+      error:
+        type: string
+    type: object
+  internal_controller_restapi_v1.gripBuyMeta:
+    properties:
+      canReview:
+        type: boolean
+      productId:
+        type: string
+      rating:
+        type: number
+      reviewCount:
+        type: integer
+    type: object
+  internal_controller_restapi_v1.gripCreateOrderRequest:
+    properties:
+      email:
+        type: string
+      productId:
+        type: string
+      quantity:
+        type: integer
+      usePoints:
+        type: boolean
+    type: object
+  internal_controller_restapi_v1.gripListResponse:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.Page'
+    type: object
+  internal_controller_restapi_v1.gripRefreshRequest:
+    properties:
+      refreshToken:
         type: string
     type: object
   v1.CreateTask:
@@ -186,11 +359,299 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: Multi-domain clean architecture template with translation, user, and
-    task management
-  title: Go Clean Template API
+  description: REST-only backend for catalog, checkout, orders, profile, admin, and
+    notifications
+  title: Grip Store Backend REST API
   version: "1.0"
 paths:
+  /admin/cards/import:
+    post:
+      consumes:
+      - application/json
+      description: Bulk imports card keys for a product
+      operationId: grip_admin_import_cards
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Import product cards
+      tags:
+      - admin
+  /admin/data/repair-aggregates:
+    post:
+      description: Recalculates product stock aggregates
+      operationId: grip_admin_repair_aggregates
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Repair aggregates
+      tags:
+      - admin
+  /admin/products:
+    get:
+      description: Lists products for admin management
+      operationId: grip_admin_list_products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: List admin products
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Creates or inserts a product from admin panel
+      operationId: grip_admin_create_product
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Create admin product
+      tags:
+      - admin
+  /admin/products/{id}:
+    delete:
+      description: Deletes a product by ID
+      operationId: grip_admin_delete_product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete admin product
+      tags:
+      - admin
+    patch:
+      consumes:
+      - application/json
+      description: Updates existing product fields
+      operationId: grip_admin_update_product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Update admin product
+      tags:
+      - admin
+  /admin/users:
+    get:
+      description: Lists users with pagination
+      operationId: grip_admin_list_users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: List users for admin
+      tags:
+      - admin
+  /admin/users/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user status or points from admin panel
+      operationId: grip_admin_update_user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Update admin user state
+      tags:
+      - admin
+  /auth/callback/github:
+    get:
+      description: Exchanges callback code and issues access/refresh tokens
+      operationId: grip_auth_callback_github
+      parameters:
+      - description: OAuth code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Complete GitHub OAuth callback
+      tags:
+      - auth
+  /auth/callback/linuxdo:
+    get:
+      description: Exchanges callback code and issues access/refresh tokens
+      operationId: grip_auth_callback_linuxdo
+      parameters:
+      - description: OAuth code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Complete LinuxDO OAuth callback
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -224,6 +685,138 @@ paths:
           schema:
             $ref: '#/definitions/v1.Error'
       summary: Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revokes the provided refresh token for the current user
+      operationId: grip_auth_logout
+      parameters:
+      - description: Refresh token payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_restapi_v1.gripRefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns current authenticated user profile and admin flag
+      operationId: grip_auth_me
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Current user profile
+      tags:
+      - auth
+  /auth/oauth/github:
+    get:
+      description: Generates GitHub OAuth authorization URL
+      operationId: grip_auth_oauth_github
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Begin GitHub OAuth
+      tags:
+      - auth
+  /auth/oauth/linuxdo:
+    get:
+      description: Generates LinuxDO OAuth authorization URL
+      operationId: grip_auth_oauth_linuxdo
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Begin LinuxDO OAuth
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Rotates refresh token and returns a new token pair
+      operationId: grip_auth_refresh
+      parameters:
+      - description: Refresh token payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_restapi_v1.gripRefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Refresh access token
       tags:
       - auth
   /auth/register:
@@ -261,6 +854,477 @@ paths:
       summary: Register
       tags:
       - auth
+  /catalog/announcement:
+    get:
+      description: Returns the current announcement setting if configured
+      operationId: grip_catalog_get_announcement
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Get active announcement
+      tags:
+      - catalog
+  /catalog/categories:
+    get:
+      description: Lists public categories for product navigation
+      operationId: grip_catalog_list_categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: List categories
+      tags:
+      - catalog
+  /catalog/products:
+    get:
+      description: Lists active products visible to anonymous or signed-in users
+      operationId: grip_catalog_list_products
+      parameters:
+      - description: Search keyword
+        in: query
+        name: q
+        type: string
+      - description: Brand filter
+        in: query
+        name: brand
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: integer
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      - description: Page offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: List visible products
+      tags:
+      - catalog
+  /catalog/products/{id}:
+    get:
+      description: Returns visible product detail and purchase metadata
+      operationId: grip_catalog_get_product
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.Product'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Get visible product detail
+      tags:
+      - catalog
+  /catalog/products/{id}/buy-meta:
+    get:
+      description: Returns lightweight review metadata for purchase views
+      operationId: grip_catalog_get_buy_meta
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripBuyMeta'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Get buy metadata
+      tags:
+      - catalog
+  /catalog/search:
+    get:
+      description: Searches active products visible to the actor
+      operationId: grip_catalog_search_products
+      parameters:
+      - description: Search keyword
+        in: query
+        name: q
+        type: string
+      - description: Brand filter
+        in: query
+        name: brand
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: integer
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      - description: Page offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Search visible products
+      tags:
+      - catalog
+  /catalog/settings:
+    get:
+      description: Lists public store settings used by the storefront
+      operationId: grip_catalog_list_settings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: List public settings
+      tags:
+      - catalog
+  /checkout/callback/{id}:
+    get:
+      description: Handles payment provider redirect callback for storefront
+      operationId: grip_checkout_callback
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Payment callback redirect
+      tags:
+      - checkout
+  /checkout/notify:
+    post:
+      consumes:
+      - application/json
+      description: Processes payment provider notifications
+      operationId: grip_checkout_notify
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Payment notify callback
+      tags:
+      - checkout
+  /checkout/orders:
+    post:
+      consumes:
+      - application/json
+      description: Creates an order and reserves stock for checkout
+      operationId: grip_checkout_create_order
+      parameters:
+      - description: Order payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_restapi_v1.gripCreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Create order
+      tags:
+      - checkout
+  /checkout/orders/{id}/cancel:
+    post:
+      description: Cancels a pending order and releases reserved stock
+      operationId: grip_checkout_cancel_order
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Cancel pending order
+      tags:
+      - checkout
+  /checkout/orders/{id}/payment-params:
+    get:
+      description: Recreates payment gateway params for an order
+      operationId: grip_checkout_payment_params
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Get payment params
+      tags:
+      - checkout
+  /checkout/orders/{id}/status:
+    get:
+      description: Polls payment and order lifecycle state
+      operationId: grip_checkout_order_status
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Get order payment status
+      tags:
+      - checkout
+  /checkout/payment-orders:
+    post:
+      consumes:
+      - application/json
+      description: Creates a checkout order for direct payment flow
+      operationId: grip_checkout_create_payment_order
+      parameters:
+      - description: Order payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller_restapi_v1.gripCreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      summary: Create payment order
+      tags:
+      - checkout
+  /checkout/preview:
+    get:
+      description: Calculates subtotal, points usage, and final payable amount
+      operationId: grip_checkout_preview
+      parameters:
+      - description: Product ID
+        in: query
+        name: product_id
+        required: true
+        type: string
+      - description: Quantity
+        in: query
+        name: quantity
+        required: true
+        type: integer
+      - description: Apply user points
+        in: query
+        name: use_points
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Preview checkout
+      tags:
+      - checkout
+  /reviews:
+    post:
+      consumes:
+      - application/json
+      description: Creates a review for a delivered order
+      operationId: grip_reviews_create
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Create review
+      tags:
+      - review
   /tasks:
     get:
       description: List tasks for the current user with optional filtering
@@ -596,6 +1660,45 @@ paths:
       summary: Get profile
       tags:
       - user
+  /wishlist:
+    get:
+      description: Lists wishlist items
+      operationId: grip_wishlist_list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.gripListResponse'
+      summary: List wishlist
+      tags:
+      - wishlist
+    post:
+      consumes:
+      - application/json
+      description: Creates a wishlist item for authenticated user
+      operationId: grip_wishlist_create
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Create wishlist item
+      tags:
+      - wishlist
 securityDefinitions:
   BearerAuth:
     in: header

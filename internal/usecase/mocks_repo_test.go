@@ -12,6 +12,7 @@ package usecase_test
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	entity "github.com/evrone/go-clean-template/internal/entity"
 	repo "github.com/evrone/go-clean-template/internal/repo"
@@ -1970,4 +1971,70 @@ func (m *MockAdminRepository) UpdateUserStatus(ctx context.Context, userID strin
 func (mr *MockAdminRepositoryMockRecorder) UpdateUserStatus(ctx, userID, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserStatus", reflect.TypeOf((*MockAdminRepository)(nil).UpdateUserStatus), ctx, userID, status)
+}
+
+// MockMaintenanceRepository is a mock of MaintenanceRepository interface.
+type MockMaintenanceRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockMaintenanceRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockMaintenanceRepositoryMockRecorder is the mock recorder for MockMaintenanceRepository.
+type MockMaintenanceRepositoryMockRecorder struct {
+	mock *MockMaintenanceRepository
+}
+
+// NewMockMaintenanceRepository creates a new mock instance.
+func NewMockMaintenanceRepository(ctrl *gomock.Controller) *MockMaintenanceRepository {
+	mock := &MockMaintenanceRepository{ctrl: ctrl}
+	mock.recorder = &MockMaintenanceRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMaintenanceRepository) EXPECT() *MockMaintenanceRepositoryMockRecorder {
+	return m.recorder
+}
+
+// CancelExpiredPendingOrders mocks base method.
+func (m *MockMaintenanceRepository) CancelExpiredPendingOrders(ctx context.Context, olderThan time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelExpiredPendingOrders", ctx, olderThan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelExpiredPendingOrders indicates an expected call of CancelExpiredPendingOrders.
+func (mr *MockMaintenanceRepositoryMockRecorder) CancelExpiredPendingOrders(ctx, olderThan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelExpiredPendingOrders", reflect.TypeOf((*MockMaintenanceRepository)(nil).CancelExpiredPendingOrders), ctx, olderThan)
+}
+
+// CleanupExpiredCards mocks base method.
+func (m *MockMaintenanceRepository) CleanupExpiredCards(ctx context.Context, now time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CleanupExpiredCards", ctx, now)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CleanupExpiredCards indicates an expected call of CleanupExpiredCards.
+func (mr *MockMaintenanceRepositoryMockRecorder) CleanupExpiredCards(ctx, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupExpiredCards", reflect.TypeOf((*MockMaintenanceRepository)(nil).CleanupExpiredCards), ctx, now)
+}
+
+// SyncProductAggregates mocks base method.
+func (m *MockMaintenanceRepository) SyncProductAggregates(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncProductAggregates", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncProductAggregates indicates an expected call of SyncProductAggregates.
+func (mr *MockMaintenanceRepositoryMockRecorder) SyncProductAggregates(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncProductAggregates", reflect.TypeOf((*MockMaintenanceRepository)(nil).SyncProductAggregates), ctx)
 }

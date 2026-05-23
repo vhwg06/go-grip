@@ -2,6 +2,7 @@ package persistent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
+	"gorm.io/gorm"
 )
 
 type GripOrderRepo struct {
@@ -56,6 +58,9 @@ func (r *GripOrderRepo) ListOrdersByOwner(ctx context.Context, userID, email str
 func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
 	var row models.Order
 	if err := r.Gorm.WithContext(ctx).Where("order_id = ?", orderID).First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Order{}, entity.ErrOrderNotFound
+		}
 		return entity.Order{}, fmt.Errorf("GripOrderRepo.GetOrderByID: %w", err)
 	}
 	order := models.OrderToEntity(row)
@@ -66,6 +71,14 @@ func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (entit
 }
 
 func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error {
+	current, err := r.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	if actor.UserID != "" && current.UserID != "" && current.UserID != actor.UserID && !actor.IsAdmin {
+		return entity.ErrForbidden
+	}
+
 	result := r.Gorm.WithContext(ctx).
 		Model(&models.Order{}).
 		Where("order_id = ? AND status = ?", orderID, string(entity.OrderStatusPending)).
@@ -83,20 +96,30 @@ func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor entity.Act
 }
 
 func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error {
-	model := models.RefundRequest{
-		OrderID:       refund.OrderID,
-		UserID:        refund.UserID,
-		Username:      refund.Username,
-		Reason:        refund.Reason,
-		Status:        string(refund.Status),
-		AdminUsername: refund.AdminUsername,
-		AdminNote:     refund.AdminNote,
-		ProcessedAt:   time.Time{},
-		CreatedAt:     time.Now().UTC(),
-		UpdatedAt:     time.Now().UTC(),
-	}
-	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
-		return fmt.Errorf("GripOrderRepo.SubmitRefundRequest: %w", err)
-	}
-	return nil
+	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
+		model := models.RefundRequest{
+			OrderID:       refund.OrderID,
+			UserID:        refund.UserID,
+			Username:      refund.Username,
+			Reason:        refund.Reason,
+			Status:        string(refund.Status),
+			AdminUsername: refund.AdminUsername,
+			AdminNote:     refund.AdminNote,
+			ProcessedAt:   time.Time{},
+			CreatedAt:     time.Now().UTC(),
+			UpdatedAt:     time.Now().UTC(),
+		}
+		if err := tx.Create(&model).Error; err != nil {
+			return fmt.Errorf("GripOrderRepo.SubmitRefundRequest(create): %w", err)
+		}
+		if err := tx.Model(&models.Order{}).
+			Where("order_id = ?", refund.OrderID).
+			Updates(map[string]any{
+				"status":     string(entity.OrderStatusRefundPending),
+				"updated_at": time.Now().UTC(),
+			}).Error; err != nil {
+			return fmt.Errorf("GripOrderRepo.SubmitRefundRequest(update order): %w", err)
+		}
+		return nil
+	})
 }

@@ -48,6 +48,15 @@ func (uc *UseCase) RequestRefund(ctx context.Context, actor entity.Actor, orderI
 	if err != nil {
 		return entity.RefundRequest{}, fmt.Errorf("OrdersUseCase - RequestRefund - repo.GetOrderByID: %w", err)
 	}
+	if actor.UserID == "" {
+		return entity.RefundRequest{}, entity.ErrUnauthorized
+	}
+	if order.UserID != "" && order.UserID != actor.UserID && !actor.IsAdmin {
+		return entity.RefundRequest{}, entity.ErrForbidden
+	}
+	if reason == "" {
+		return entity.RefundRequest{}, entity.ErrInvalidInput
+	}
 	if !order.CanRequestRefund() {
 		return entity.RefundRequest{}, entity.ErrRefundNotAllowed
 	}
