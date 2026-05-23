@@ -23,6 +23,21 @@ Clean Architecture template for Golang services
 [![Testing](https://img.shields.io/badge/Testify-Testing%20Framework-blue)](https://github.com/stretchr/testify)
 [![Mocking](https://img.shields.io/badge/Mock-Mocking%20Library-blue)](https://go.uber.org/mock)
 
+## Grip Store Runtime (Current)
+
+This repository is currently operated as a **REST-only Grip Store backend**.
+
+- Active transport: REST API (`/v1`) on Fiber
+- Active state store: PostgreSQL via GORM
+- Removed from runtime scope: AMQP RPC, NATS RPC, and gRPC servers
+- No RabbitMQ or NATS services are required for local run or integration tests
+
+For implementation and smoke-test flow, use:
+- [specs/002-grip-backend-api/quickstart.md](specs/002-grip-backend-api/quickstart.md)
+- `docker-compose.yml` and `docker-compose-integration-test.yml`
+
+> Note: The sections below are legacy template documentation and may describe transport options that are not part of the current Grip Store runtime.
+
 ## Overview
 
 The purpose of the template is to show:

@@ -53,7 +53,8 @@ curl http://localhost:${HTTP_PORT}/healthz
 1. Generate mocks after repository/usecase interface changes:
 
 ```bash
-go generate ./internal/repo ./internal/usecase
+go run go.uber.org/mock/mockgen -source=internal/repo/contracts.go -destination=internal/usecase/mocks_repo_test.go -package=usecase_test
+go run go.uber.org/mock/mockgen -source=internal/usecase/contracts.go -destination=internal/usecase/mocks_usecase_test.go -package=usecase_test
 ```
 
 2. Run unit tests:
@@ -73,6 +74,13 @@ docker compose -f docker-compose-integration-test.yml up --abort-on-container-ex
 ```bash
 go test ./...
 ```
+
+## Validation Notes
+
+- Verified on 2026-05-23:
+  - `go test ./...` passes.
+  - `docker compose -f docker-compose-integration-test.yml up --abort-on-container-exit --build` passes.
+  - No `GRPC_PORT`, `RMQ_*`, or `NATS_*` configuration is required for startup.
 
 ## Implementation Order
 
