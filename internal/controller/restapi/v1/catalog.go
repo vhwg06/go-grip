@@ -24,7 +24,7 @@ type gripListResponse struct {
 type gripBuyMeta struct {
 	ProductID   string  `json:"productId"`
 	Rating      float64 `json:"rating"`
-	ReviewCount int    `json:"reviewCount"`
+	ReviewCount int     `json:"reviewCount"`
 	CanReview   bool    `json:"canReview"`
 }
 
@@ -148,10 +148,10 @@ func (r *V1) gripGetBuyMeta(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(apiSuccessEnvelope(gripBuyMeta{
-		ProductID:  product.ID,
-		Rating:     product.Rating,
+		ProductID:   product.ID,
+		Rating:      product.Rating,
 		ReviewCount: product.ReviewCount,
-		CanReview:  false,
+		CanReview:   false,
 	}))
 }
 

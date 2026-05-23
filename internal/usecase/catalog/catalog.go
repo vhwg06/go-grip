@@ -19,6 +19,10 @@ func New(r repo.CatalogRepo) *UseCase { return &UseCase{repo: r} }
 
 func NewGrip(r repo.CatalogRepository) *UseCase { return &UseCase{gripRepo: r} }
 
+func NewWithGrip(r repo.CatalogRepo, grip repo.CatalogRepository) *UseCase {
+	return &UseCase{repo: r, gripRepo: grip}
+}
+
 func (uc *UseCase) CreateProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
 	now := time.Now().UTC()
 	product.ID = uuid.New().String()

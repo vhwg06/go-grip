@@ -13,11 +13,13 @@ import (
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/usecase/cart"
 	"github.com/evrone/go-clean-template/internal/usecase/catalog"
+	"github.com/evrone/go-clean-template/internal/usecase/checkout"
 	"github.com/evrone/go-clean-template/internal/usecase/content"
 	"github.com/evrone/go-clean-template/internal/usecase/importer"
 	"github.com/evrone/go-clean-template/internal/usecase/lead"
 	"github.com/evrone/go-clean-template/internal/usecase/media"
 	"github.com/evrone/go-clean-template/internal/usecase/notification"
+	"github.com/evrone/go-clean-template/internal/usecase/orders"
 	"github.com/evrone/go-clean-template/internal/usecase/task"
 	"github.com/evrone/go-clean-template/internal/usecase/translation"
 	"github.com/evrone/go-clean-template/internal/usecase/user"
@@ -32,6 +34,8 @@ type useCases struct {
 	user        *user.UseCase
 	task        *task.UseCase
 	catalog     *catalog.UseCase
+	checkout    *checkout.UseCase
+	orders      *orders.UseCase
 	media       *media.UseCase
 	homepage    *content.HomepageUseCase
 	cart        *cart.UseCase
@@ -49,6 +53,9 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	taskRepo := persistent.NewTaskRepo(pg)
 	translationRepo := persistent.NewTranslationRepo(pg)
 	catalogRepo := persistent.NewCatalogRepo(pg)
+	gripCatalogRepo := persistent.NewGripCatalogRepo(pg)
+	gripCheckoutRepo := persistent.NewCheckoutRepo(pg)
+	gripOrderRepo := persistent.NewGripOrderRepo(pg)
 	mediaRepo := persistent.NewMediaRepo(pg)
 	homepageRepo := persistent.NewHomepageRepo(pg)
 	supportRepo := persistent.NewSupportChannelRepo(pg)
@@ -63,7 +70,9 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		user:        user.New(userRepo, jwtManager),
 		task:        task.New(taskRepo),
 		translation: translation.New(translationRepo, webapi.New()),
-		catalog:     catalog.New(catalogRepo),
+		catalog:     catalog.NewWithGrip(catalogRepo, gripCatalogRepo),
+		checkout:    checkout.New(gripCheckoutRepo, gripOrderRepo),
+		orders:      orders.New(gripOrderRepo),
 		media:       media.New(mediaRepo, cfg.Ecommerce.MediaMaxBytes),
 		homepage:    content.NewHomepage(homepageRepo, supportRepo),
 		cart:        cart.New(cartRepo, orderRepo, notificationUseCase),
@@ -75,7 +84,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 
 func initServers(cfg *config.Config, uc useCases, jwtManager *jwt.Manager, l logger.Interface) servers {
 	httpServer := httpserver.New(l, httpserver.Port(cfg.HTTP.Port), httpserver.Prefork(cfg.HTTP.UsePreforkMode))
-	restapi.NewRouter(httpServer.App, cfg, uc.translation, uc.user, uc.task, uc.catalog, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
+	restapi.NewRouter(httpServer.App, cfg, uc.translation, uc.user, uc.task, uc.catalog, uc.checkout, uc.orders, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
 
 	return servers{http: httpServer}
 }

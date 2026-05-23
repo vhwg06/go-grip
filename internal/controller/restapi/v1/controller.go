@@ -9,19 +9,19 @@ import (
 
 // V1 -.
 type V1 struct {
-	t            usecase.Translation
-	u            usecase.User
-	tk           usecase.Task
-	catalog      usecase.Catalog
-	checkout     usecase.Checkout
-	orders       usecase.Orders
-	media        usecase.Media
-	homepage     usecase.Homepage
-	cart         usecase.Cart
-	lead         usecase.Lead
-	content      usecase.Content
-	importer     usecase.Importer
-	jwtManager   *jwt.Manager
-	l            logger.Interface
-	v            *validator.Validate
+	t          usecase.Translation
+	u          usecase.User
+	tk         usecase.Task
+	catalog    usecase.Catalog
+	checkout   usecase.Checkout
+	orders     usecase.Orders
+	media      usecase.Media
+	homepage   usecase.Homepage
+	cart       usecase.Cart
+	lead       usecase.Lead
+	content    usecase.Content
+	importer   usecase.Importer
+	jwtManager *jwt.Manager
+	l          logger.Interface
+	v          *validator.Validate
 }

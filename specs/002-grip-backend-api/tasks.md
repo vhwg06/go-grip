@@ -90,13 +90,13 @@
 - [x] T040 [US1] Implement catalog usecase for visibility threshold, display stock, shared product stock, buy metadata, and product search in internal/usecase/catalog/catalog.go
 - [x] T041 [US1] Implement checkout usecase for price preview, stock reservation, order creation, zero-price delivery, payment instruction generation, callback handling, and idempotent payment notification in internal/usecase/checkout/checkout.go
 - [x] T042 [US1] Implement order read usecase for order detail, order list, status text, status color, and card-key masking in internal/usecase/orders/orders.go
-- [ ] T043 [US1] Implement catalog REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/catalog.go
-- [ ] T044 [US1] Implement checkout and payment REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/checkout.go
-- [ ] T045 [US1] Implement order detail and order list REST handlers used by purchase flows in internal/controller/restapi/v1/orders.go
-- [ ] T046 [US1] Wire catalog, checkout, and order usecases into application construction in internal/app/app.go
-- [ ] T047 [US1] Add database migrations for products, categories, cards, orders, payments, settings, and critical checkout indexes in migrations/20260523000100_grip_store_catalog_checkout.up.sql
-- [ ] T048 [US1] Add rollback migration for catalog and checkout tables in migrations/20260523000100_grip_store_catalog_checkout.down.sql
-- [ ] T049 [US1] Add Swagger annotations for catalog, checkout, and order purchase routes in internal/controller/restapi/v1/catalog.go
+- [x] T043 [US1] Implement catalog REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/catalog.go
+- [x] T044 [US1] Implement checkout and payment REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/checkout.go
+- [x] T045 [US1] Implement order detail and order list REST handlers used by purchase flows in internal/controller/restapi/v1/orders.go
+- [x] T046 [US1] Wire catalog, checkout, and order usecases into application construction in internal/app/app.go
+- [x] T047 [US1] Add database migrations for products, categories, cards, orders, payments, settings, and critical checkout indexes in migrations/20260523000100_grip_store_catalog_checkout.up.sql
+- [x] T048 [US1] Add rollback migration for catalog and checkout tables in migrations/20260523000100_grip_store_catalog_checkout.down.sql
+- [x] T049 [US1] Add Swagger annotations for catalog, checkout, and order purchase routes in internal/controller/restapi/v1/catalog.go
 
 **Checkpoint**: User Story 1 is independently functional as the MVP.
 
