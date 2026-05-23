@@ -18,16 +18,16 @@
 
 **Purpose**: Prepare the project for REST-only, GORM-backed implementation.
 
-- [x] T001 Remove AMQP RPC, gRPC, and NATS RPC server initialization from internal/app/app.go
-- [x] T002 Remove RPC configuration requirements and add OAuth, admin, payment, and scheduler settings in config/config.go
-- [x] T003 Replace pgx-only database setup with GORM PostgreSQL setup while preserving the public constructor in pkg/postgres/postgres.go
+- [ ] T001 Remove AMQP RPC, gRPC, and NATS RPC server initialization from internal/app/app.go
+- [ ] T002 Remove RPC configuration requirements and add OAuth, admin, payment, and scheduler settings in config/config.go
+- [ ] T003 Replace pgx-only database setup with GORM PostgreSQL setup while preserving the public constructor in pkg/postgres/postgres.go
 - [ ] T004 Add GORM PostgreSQL dependencies and remove unused RPC transport dependencies in go.mod
-- [x] T005 Update local and integration compose environment to remove broker/RPC variables and include new Grip Store settings in docker-compose.yml
-- [x] T006 Update integration compose environment for REST-only PostgreSQL testing in docker-compose-integration-test.yml
-- [x] T007 [P] Update example environment values for REST-only Grip Store configuration in .env.example
-- [x] T008 [P] Update Swagger title, base metadata, and REST-only description in internal/controller/restapi/router.go
-- [x] T009 [P] Add Grip Store migration placeholders and ordering notes in migrations/20260523000000_grip_store_core.up.sql
-- [x] T010 [P] Add rollback placeholders for Grip Store schema in migrations/20260523000000_grip_store_core.down.sql
+- [ ] T005 Update local and integration compose environment to remove broker/RPC variables and include new Grip Store settings in docker-compose.yml
+- [ ] T006 Update integration compose environment for REST-only PostgreSQL testing in docker-compose-integration-test.yml
+- [ ] T007 [P] Update example environment values for REST-only Grip Store configuration in .env.example
+- [ ] T008 [P] Update Swagger title, base metadata, and REST-only description in internal/controller/restapi/router.go
+- [ ] T009 [P] Add Grip Store migration placeholders and ordering notes in migrations/20260523000000_grip_store_core.up.sql
+- [ ] T010 [P] Add rollback placeholders for Grip Store schema in migrations/20260523000000_grip_store_core.down.sql
 
 ---
 
@@ -39,32 +39,32 @@
 
 ### Tests for Foundation
 
-- [x] T011 [P] Add failing repository transaction fixture tests for PostgreSQL setup in internal/repo/persistent/postgres_gorm_test.go
-- [x] T012 [P] Add failing REST middleware tests for auth, admin, blocked-user, and rate-limit behavior in internal/controller/restapi/middleware/auth_test.go
-- [x] T013 [P] Add failing application startup test proving no RPC servers are started in internal/app/app_test.go
+- [ ] T011 [P] Add failing repository transaction fixture tests for PostgreSQL setup in internal/repo/persistent/postgres_gorm_test.go
+- [ ] T012 [P] Add failing REST middleware tests for auth, admin, blocked-user, and rate-limit behavior in internal/controller/restapi/middleware/auth_test.go
+- [ ] T013 [P] Add failing application startup test proving no RPC servers are started in internal/app/app_test.go
 
 ### Implementation for Foundation
 
-- [x] T014 Define shared actor, money, pagination, and status value objects in internal/entity/common.go
-- [x] T015 Define Product, Category, Card, and Setting domain entities in internal/entity/product.go
-- [x] T016 [P] Define Order, Payment, and RefundRequest domain entities with state transition helpers in internal/entity/order.go
-- [x] T017 [P] Define User, RefreshSession, DailyCheckin, and provider identity fields in internal/entity/user.go
-- [x] T018 [P] Define Review, WishlistItem, and WishlistVote domain entities in internal/entity/wishlist.go
-- [x] T019 [P] Define Notification, BroadcastMessage, BroadcastRead, and AdminMessage domain entities in internal/entity/notification.go
-- [x] T020 Add Grip Store business errors and authorization error mapping in internal/entity/errors.go
-- [x] T021 Define AuthRepository, CatalogRepository, CheckoutRepository, OrderRepository, ProfileRepository, WishlistRepository, NotificationRepository, and AdminRepository interfaces in internal/repo/contracts.go
-- [x] T022 Define Auth, Catalog, Checkout, Orders, Profile, Wishlist, Notification, Admin, and Maintenance usecase interfaces in internal/usecase/contracts.go
-- [x] T023 Add GORM persistence models for users, sessions, products, cards, orders, payments, refunds, check-ins, reviews, wishlist, notifications, and settings in internal/repo/persistent/models/grip_store.go
-- [x] T024 Implement entity-to-GORM mapping helpers in internal/repo/persistent/models/mappers.go
-- [x] T025 Implement shared GORM transaction helper and row-lock helper in internal/repo/persistent/transaction.go
-- [x] T026 Implement REST response envelope and error mapper for Grip Store routes in internal/controller/restapi/v1/response.go
-- [x] T027 Implement auth actor extraction middleware using bearer tokens in internal/controller/restapi/middleware/auth.go
-- [x] T028 Implement admin username authorization middleware in internal/controller/restapi/middleware/admin.go
-- [x] T029 Implement blocked-user and mutating-route guard middleware in internal/controller/restapi/middleware/user_status.go
-- [x] T030 Implement route group rate limiting for auth and checkout in internal/controller/restapi/middleware/rate_limit.go
-- [x] T031 Wire REST-only v1 route groups for auth, catalog, checkout, orders, profile, wishlist, notifications, and admin in internal/controller/restapi/v1/router.go
-- [x] T032 Update usecase mock generation targets for new interfaces in internal/repo/contracts.go
-- [x] T033 Regenerate repository and usecase mocks after interface changes in internal/usecase/mocks_repo_test.go
+- [ ] T014 Define shared actor, money, pagination, and status value objects in internal/entity/common.go
+- [ ] T015 Define Product, Category, Card, and Setting domain entities in internal/entity/product.go
+- [ ] T016 [P] Define Order, Payment, and RefundRequest domain entities with state transition helpers in internal/entity/order.go
+- [ ] T017 [P] Define User, RefreshSession, DailyCheckin, and provider identity fields in internal/entity/user.go
+- [ ] T018 [P] Define Review, WishlistItem, and WishlistVote domain entities in internal/entity/wishlist.go
+- [ ] T019 [P] Define Notification, BroadcastMessage, BroadcastRead, and AdminMessage domain entities in internal/entity/notification.go
+- [ ] T020 Add Grip Store business errors and authorization error mapping in internal/entity/errors.go
+- [ ] T021 Define AuthRepository, CatalogRepository, CheckoutRepository, OrderRepository, ProfileRepository, WishlistRepository, NotificationRepository, and AdminRepository interfaces in internal/repo/contracts.go
+- [ ] T022 Define Auth, Catalog, Checkout, Orders, Profile, Wishlist, Notification, Admin, and Maintenance usecase interfaces in internal/usecase/contracts.go
+- [ ] T023 Add GORM persistence models for users, sessions, products, cards, orders, payments, refunds, check-ins, reviews, wishlist, notifications, and settings in internal/repo/persistent/models/grip_store.go
+- [ ] T024 Implement entity-to-GORM mapping helpers in internal/repo/persistent/models/mappers.go
+- [ ] T025 Implement shared GORM transaction helper and row-lock helper in internal/repo/persistent/transaction.go
+- [ ] T026 Implement REST response envelope and error mapper for Grip Store routes in internal/controller/restapi/v1/response.go
+- [ ] T027 Implement auth actor extraction middleware using bearer tokens in internal/controller/restapi/middleware/auth.go
+- [ ] T028 Implement admin username authorization middleware in internal/controller/restapi/middleware/admin.go
+- [ ] T029 Implement blocked-user and mutating-route guard middleware in internal/controller/restapi/middleware/user_status.go
+- [ ] T030 Implement route group rate limiting for auth and checkout in internal/controller/restapi/middleware/rate_limit.go
+- [ ] T031 Wire REST-only v1 route groups for auth, catalog, checkout, orders, profile, wishlist, notifications, and admin in internal/controller/restapi/v1/router.go
+- [ ] T032 Update usecase mock generation targets for new interfaces in internal/repo/contracts.go
+- [ ] T033 Regenerate repository and usecase mocks after interface changes in internal/usecase/mocks_repo_test.go
 
 **Checkpoint**: Foundation ready. REST app starts without RPC dependencies, shared entities/contracts exist, and user story work can proceed.
 
@@ -78,25 +78,25 @@
 
 ### Tests for User Story 1
 
-- [x] T034 [P] [US1] Add contract tests for catalog product, search, settings, checkout preview, order creation, payment notify, and order detail responses in integration-test/grip_store_us1_contract_test.go
-- [x] T035 [P] [US1] Add usecase tests for catalog visibility, display stock, purchase limits, checkout preview, zero-price delivery, and card-key masking in internal/usecase/checkout/checkout_test.go
-- [x] T036 [P] [US1] Add repository integration tests for product listing, card reservation, order creation, payment idempotency, and delivered card reads in internal/repo/persistent/checkout_postgres_test.go
+- [ ] T034 [P] [US1] Add contract tests for catalog product, search, settings, checkout preview, order creation, payment notify, and order detail responses in integration-test/grip_store_us1_contract_test.go
+- [ ] T035 [P] [US1] Add usecase tests for catalog visibility, display stock, purchase limits, checkout preview, zero-price delivery, and card-key masking in internal/usecase/checkout/checkout_test.go
+- [ ] T036 [P] [US1] Add repository integration tests for product listing, card reservation, order creation, payment idempotency, and delivered card reads in internal/repo/persistent/checkout_postgres_test.go
 
 ### Implementation for User Story 1
 
-- [x] T037 [P] [US1] Implement GORM catalog repository for visible product list, product detail, search, categories, settings, and announcements in internal/repo/persistent/catalog_postgres.go
-- [x] T038 [P] [US1] Implement GORM checkout repository for preview inputs, transactional order creation, card reservation, point deduction, payment records, and zero-price delivery in internal/repo/persistent/checkout_postgres.go
-- [x] T039 [P] [US1] Implement GORM order read repository for owner lookup, order status, delivered card masking, and purchase limit history in internal/repo/persistent/order_postgres.go
-- [x] T040 [US1] Implement catalog usecase for visibility threshold, display stock, shared product stock, buy metadata, and product search in internal/usecase/catalog/catalog.go
-- [x] T041 [US1] Implement checkout usecase for price preview, stock reservation, order creation, zero-price delivery, payment instruction generation, callback handling, and idempotent payment notification in internal/usecase/checkout/checkout.go
-- [x] T042 [US1] Implement order read usecase for order detail, order list, status text, status color, and card-key masking in internal/usecase/orders/orders.go
-- [x] T043 [US1] Implement catalog REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/catalog.go
-- [x] T044 [US1] Implement checkout and payment REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/checkout.go
-- [x] T045 [US1] Implement order detail and order list REST handlers used by purchase flows in internal/controller/restapi/v1/orders.go
-- [x] T046 [US1] Wire catalog, checkout, and order usecases into application construction in internal/app/app.go
-- [x] T047 [US1] Add database migrations for products, categories, cards, orders, payments, settings, and critical checkout indexes in migrations/20260523000100_grip_store_catalog_checkout.up.sql
-- [x] T048 [US1] Add rollback migration for catalog and checkout tables in migrations/20260523000100_grip_store_catalog_checkout.down.sql
-- [x] T049 [US1] Add Swagger annotations for catalog, checkout, and order purchase routes in internal/controller/restapi/v1/catalog.go
+- [ ] T037 [P] [US1] Implement GORM catalog repository for visible product list, product detail, search, categories, settings, and announcements in internal/repo/persistent/catalog_postgres.go
+- [ ] T038 [P] [US1] Implement GORM checkout repository for preview inputs, transactional order creation, card reservation, point deduction, payment records, and zero-price delivery in internal/repo/persistent/checkout_postgres.go
+- [ ] T039 [P] [US1] Implement GORM order read repository for owner lookup, order status, delivered card masking, and purchase limit history in internal/repo/persistent/order_postgres.go
+- [ ] T040 [US1] Implement catalog usecase for visibility threshold, display stock, shared product stock, buy metadata, and product search in internal/usecase/catalog/catalog.go
+- [ ] T041 [US1] Implement checkout usecase for price preview, stock reservation, order creation, zero-price delivery, payment instruction generation, callback handling, and idempotent payment notification in internal/usecase/checkout/checkout.go
+- [ ] T042 [US1] Implement order read usecase for order detail, order list, status text, status color, and card-key masking in internal/usecase/orders/orders.go
+- [ ] T043 [US1] Implement catalog REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/catalog.go
+- [ ] T044 [US1] Implement checkout and payment REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/checkout.go
+- [ ] T045 [US1] Implement order detail and order list REST handlers used by purchase flows in internal/controller/restapi/v1/orders.go
+- [ ] T046 [US1] Wire catalog, checkout, and order usecases into application construction in internal/app/app.go
+- [ ] T047 [US1] Add database migrations for products, categories, cards, orders, payments, settings, and critical checkout indexes in migrations/20260523000100_grip_store_catalog_checkout.up.sql
+- [ ] T048 [US1] Add rollback migration for catalog and checkout tables in migrations/20260523000100_grip_store_catalog_checkout.down.sql
+- [ ] T049 [US1] Add Swagger annotations for catalog, checkout, and order purchase routes in internal/controller/restapi/v1/catalog.go
 
 **Checkpoint**: User Story 1 is independently functional as the MVP.
 
@@ -110,23 +110,23 @@
 
 ### Tests for User Story 2
 
-- [x] T050 [P] [US2] Add contract tests for OAuth start, OAuth callback, refresh, logout, auth/me, profile, profile update, and check-in routes in integration-test/grip_store_us2_auth_profile_test.go
-- [x] T051 [P] [US2] Add usecase tests for account merge, refresh rotation, admin flag resolution, profile dashboard, daily check-in uniqueness, and points updates in internal/usecase/auth/auth_test.go
-- [x] T052 [P] [US2] Add repository integration tests for provider identity merge, refresh sessions, check-ins, and profile point updates in internal/repo/persistent/auth_profile_postgres_test.go
+- [ ] T050 [P] [US2] Add contract tests for OAuth start, OAuth callback, refresh, logout, auth/me, profile, profile update, and check-in routes in integration-test/grip_store_us2_auth_profile_test.go
+- [ ] T051 [P] [US2] Add usecase tests for account merge, refresh rotation, admin flag resolution, profile dashboard, daily check-in uniqueness, and points updates in internal/usecase/auth/auth_test.go
+- [ ] T052 [P] [US2] Add repository integration tests for provider identity merge, refresh sessions, check-ins, and profile point updates in internal/repo/persistent/auth_profile_postgres_test.go
 
 ### Implementation for User Story 2
 
-- [x] T053 [P] [US2] Implement OAuth client interfaces and LinuxDO/GitHub adapters in internal/repo/webapi/oauth.go
-- [x] T054 [P] [US2] Implement GORM auth repository for users, provider identities, refresh sessions, account merge, and admin username lookup in internal/repo/persistent/auth_postgres.go
-- [x] T055 [P] [US2] Implement GORM profile repository for dashboard data, profile update, daily check-in, and points balance in internal/repo/persistent/profile_postgres.go
-- [x] T056 [US2] Implement auth usecase for OAuth redirect, callback, account merge, token pair issue, refresh rotation, logout, and current user profile in internal/usecase/auth/auth.go
-- [x] T057 [US2] Implement profile usecase for dashboard, email update, notification preference update, daily check-in reward, and check-in feature gate in internal/usecase/profile/profile.go
-- [x] T058 [US2] Implement auth REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/auth.go
-- [x] T059 [US2] Implement profile REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/profile.go
-- [x] T060 [US2] Wire auth and profile usecases plus OAuth clients into application construction in internal/app/app.go
-- [x] T061 [US2] Add database migrations for provider identities, refresh sessions, daily check-ins, and user profile fields in migrations/20260523000200_grip_store_auth_profile.up.sql
-- [x] T062 [US2] Add rollback migration for auth and profile tables in migrations/20260523000200_grip_store_auth_profile.down.sql
-- [x] T063 [US2] Add Swagger annotations for auth and profile routes in internal/controller/restapi/v1/auth.go
+- [ ] T053 [P] [US2] Implement OAuth client interfaces and LinuxDO/GitHub adapters in internal/repo/webapi/oauth.go
+- [ ] T054 [P] [US2] Implement GORM auth repository for users, provider identities, refresh sessions, account merge, and admin username lookup in internal/repo/persistent/auth_postgres.go
+- [ ] T055 [P] [US2] Implement GORM profile repository for dashboard data, profile update, daily check-in, and points balance in internal/repo/persistent/profile_postgres.go
+- [ ] T056 [US2] Implement auth usecase for OAuth redirect, callback, account merge, token pair issue, refresh rotation, logout, and current user profile in internal/usecase/auth/auth.go
+- [ ] T057 [US2] Implement profile usecase for dashboard, email update, notification preference update, daily check-in reward, and check-in feature gate in internal/usecase/profile/profile.go
+- [ ] T058 [US2] Implement auth REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/auth.go
+- [ ] T059 [US2] Implement profile REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/profile.go
+- [ ] T060 [US2] Wire auth and profile usecases plus OAuth clients into application construction in internal/app/app.go
+- [ ] T061 [US2] Add database migrations for provider identities, refresh sessions, daily check-ins, and user profile fields in migrations/20260523000200_grip_store_auth_profile.up.sql
+- [ ] T062 [US2] Add rollback migration for auth and profile tables in migrations/20260523000200_grip_store_auth_profile.down.sql
+- [ ] T063 [US2] Add Swagger annotations for auth and profile routes in internal/controller/restapi/v1/auth.go
 
 **Checkpoint**: User Story 2 works independently and can support authenticated purchase flows.
 
@@ -140,23 +140,23 @@
 
 ### Tests for User Story 3
 
-- [x] T064 [P] [US3] Add concurrent checkout and oversell prevention integration tests in integration-test/grip_store_us3_concurrency_test.go
-- [x] T065 [P] [US3] Add usecase tests for order state transitions, cancellation, payment replay, delivery idempotency, and refund point handling in internal/usecase/orders/orders_test.go
-- [x] T066 [P] [US3] Add repository integration tests for row-level card locking, expired reservation stealing, cleanup jobs, and aggregate repair in internal/repo/persistent/order_lifecycle_postgres_test.go
+- [ ] T064 [P] [US3] Add concurrent checkout and oversell prevention integration tests in integration-test/grip_store_us3_concurrency_test.go
+- [ ] T065 [P] [US3] Add usecase tests for order state transitions, cancellation, payment replay, delivery idempotency, and refund point handling in internal/usecase/orders/orders_test.go
+- [ ] T066 [P] [US3] Add repository integration tests for row-level card locking, expired reservation stealing, cleanup jobs, and aggregate repair in internal/repo/persistent/order_lifecycle_postgres_test.go
 
 ### Implementation for User Story 3
 
-- [x] T067 [P] [US3] Implement payment verifier and Epay signature adapter behind a usecase interface in internal/repo/webapi/epay.go
-- [x] T068 [P] [US3] Extend checkout repository transaction logic for row-level card locks, expired reservation handling, and payment replay protection in internal/repo/persistent/checkout_postgres.go
-- [x] T069 [P] [US3] Extend order repository for cancellation, delivery, refund pending state, failed payment state, and status polling in internal/repo/persistent/order_postgres.go
-- [x] T070 [P] [US3] Implement maintenance repository methods for expired order cancellation, expired card cleanup, and aggregate sync in internal/repo/persistent/maintenance_postgres.go
-- [x] T071 [US3] Extend checkout usecase for Epay verification, duplicate callback handling, and atomic delivery in internal/usecase/checkout/checkout.go
-- [x] T072 [US3] Extend orders usecase for cancellation, refund request submission, status polling, and lifecycle validation in internal/usecase/orders/orders.go
-- [x] T073 [US3] Implement maintenance usecase for expired pending orders, expired cards, and aggregate repair in internal/usecase/admin/maintenance.go
-- [x] T074 [US3] Extend checkout and order REST handlers for cancel, notify, callback, status polling, and refund request routes in internal/controller/restapi/v1/checkout.go
-- [x] T075 [US3] Add in-process scheduler startup and graceful shutdown for maintenance jobs in internal/app/app.go
-- [x] T076 [US3] Add database migrations for payment idempotency keys, order lifecycle indexes, card reservation indexes, and aggregate fields in migrations/20260523000300_grip_store_lifecycle.up.sql
-- [x] T077 [US3] Add rollback migration for lifecycle indexes and payment idempotency additions in migrations/20260523000300_grip_store_lifecycle.down.sql
+- [ ] T067 [P] [US3] Implement payment verifier and Epay signature adapter behind a usecase interface in internal/repo/webapi/epay.go
+- [ ] T068 [P] [US3] Extend checkout repository transaction logic for row-level card locks, expired reservation handling, and payment replay protection in internal/repo/persistent/checkout_postgres.go
+- [ ] T069 [P] [US3] Extend order repository for cancellation, delivery, refund pending state, failed payment state, and status polling in internal/repo/persistent/order_postgres.go
+- [ ] T070 [P] [US3] Implement maintenance repository methods for expired order cancellation, expired card cleanup, and aggregate sync in internal/repo/persistent/maintenance_postgres.go
+- [ ] T071 [US3] Extend checkout usecase for Epay verification, duplicate callback handling, and atomic delivery in internal/usecase/checkout/checkout.go
+- [ ] T072 [US3] Extend orders usecase for cancellation, refund request submission, status polling, and lifecycle validation in internal/usecase/orders/orders.go
+- [ ] T073 [US3] Implement maintenance usecase for expired pending orders, expired cards, and aggregate repair in internal/usecase/admin/maintenance.go
+- [ ] T074 [US3] Extend checkout and order REST handlers for cancel, notify, callback, status polling, and refund request routes in internal/controller/restapi/v1/checkout.go
+- [ ] T075 [US3] Add in-process scheduler startup and graceful shutdown for maintenance jobs in internal/app/app.go
+- [ ] T076 [US3] Add database migrations for payment idempotency keys, order lifecycle indexes, card reservation indexes, and aggregate fields in migrations/20260523000300_grip_store_lifecycle.up.sql
+- [ ] T077 [US3] Add rollback migration for lifecycle indexes and payment idempotency additions in migrations/20260523000300_grip_store_lifecycle.down.sql
 
 **Checkpoint**: User Story 3 protects money, stock, and lifecycle correctness under concurrency.
 
@@ -170,21 +170,21 @@
 
 ### Tests for User Story 4
 
-- [x] T078 [P] [US4] Add contract tests for admin products, categories, cards, orders, refunds, users, settings, messages, and data repair routes in integration-test/grip_store_us4_admin_contract_test.go
-- [x] T079 [P] [US4] Add usecase tests for admin authorization, product management, card import, refund approval/rejection, user block, points adjustment, and settings updates in internal/usecase/admin/admin_test.go
-- [x] T080 [P] [US4] Add repository integration tests for admin product CRUD, bulk card import, refund approval transaction, user updates, settings CRUD, and aggregate repair in internal/repo/persistent/admin_postgres_test.go
+- [ ] T078 [P] [US4] Add contract tests for admin products, categories, cards, orders, refunds, users, settings, messages, and data repair routes in integration-test/grip_store_us4_admin_contract_test.go
+- [ ] T079 [P] [US4] Add usecase tests for admin authorization, product management, card import, refund approval/rejection, user block, points adjustment, and settings updates in internal/usecase/admin/admin_test.go
+- [ ] T080 [P] [US4] Add repository integration tests for admin product CRUD, bulk card import, refund approval transaction, user updates, settings CRUD, and aggregate repair in internal/repo/persistent/admin_postgres_test.go
 
 ### Implementation for User Story 4
 
-- [x] T081 [P] [US4] Implement GORM admin repository for product, category, card, order, refund, user, setting, message, and aggregate repair operations in internal/repo/persistent/admin_postgres.go
-- [x] T082 [P] [US4] Implement admin notification sender interfaces for Telegram, Bark, Email, and no-op test mode in internal/repo/webapi/admin_notifications.go
-- [x] T083 [US4] Implement admin usecase for product/category CRUD, card import, card delete, order status changes, refund decisions, user block, point adjustment, settings CRUD, messages, integration tests, and data repair in internal/usecase/admin/admin.go
-- [x] T084 [US4] Implement admin REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/admin.go
-- [x] T085 [US4] Wire admin middleware across all `/v1/admin` route groups in internal/controller/restapi/v1/router.go
-- [x] T086 [US4] Wire admin usecase and admin notification clients into application construction in internal/app/app.go
-- [x] T087 [US4] Add database migrations for refund request admin fields, admin messages, settings constraints, and card import indexes in migrations/20260523000400_grip_store_admin.up.sql
-- [x] T088 [US4] Add rollback migration for admin tables and indexes in migrations/20260523000400_grip_store_admin.down.sql
-- [x] T089 [US4] Add Swagger annotations for admin routes in internal/controller/restapi/v1/admin.go
+- [ ] T081 [P] [US4] Implement GORM admin repository for product, category, card, order, refund, user, setting, message, and aggregate repair operations in internal/repo/persistent/admin_postgres.go
+- [ ] T082 [P] [US4] Implement admin notification sender interfaces for Telegram, Bark, Email, and no-op test mode in internal/repo/webapi/admin_notifications.go
+- [ ] T083 [US4] Implement admin usecase for product/category CRUD, card import, card delete, order status changes, refund decisions, user block, point adjustment, settings CRUD, messages, integration tests, and data repair in internal/usecase/admin/admin.go
+- [ ] T084 [US4] Implement admin REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/admin.go
+- [ ] T085 [US4] Wire admin middleware across all `/v1/admin` route groups in internal/controller/restapi/v1/router.go
+- [ ] T086 [US4] Wire admin usecase and admin notification clients into application construction in internal/app/app.go
+- [ ] T087 [US4] Add database migrations for refund request admin fields, admin messages, settings constraints, and card import indexes in migrations/20260523000400_grip_store_admin.up.sql
+- [ ] T088 [US4] Add rollback migration for admin tables and indexes in migrations/20260523000400_grip_store_admin.down.sql
+- [ ] T089 [US4] Add Swagger annotations for admin routes in internal/controller/restapi/v1/admin.go
 
 **Checkpoint**: User Story 4 gives admins operational control without exposing admin behavior to regular users.
 
@@ -198,23 +198,23 @@
 
 ### Tests for User Story 5
 
-- [x] T090 [P] [US5] Add contract tests for wishlist, votes, reviews, notifications, unread count, mark read, mark all read, and clear inbox routes in integration-test/grip_store_us5_engagement_contract_test.go
-- [x] T091 [P] [US5] Add usecase tests for wishlist feature gate, owner/admin deletion, vote uniqueness, review eligibility, review aggregate recalculation, unified inbox count, and clear behavior in internal/usecase/wishlist/wishlist_test.go
-- [x] T092 [P] [US5] Add repository integration tests for wishlist votes, reviews, product aggregate update, notifications, broadcasts, reads, and clear timestamp behavior in internal/repo/persistent/engagement_postgres_test.go
+- [ ] T090 [P] [US5] Add contract tests for wishlist, votes, reviews, notifications, unread count, mark read, mark all read, and clear inbox routes in integration-test/grip_store_us5_engagement_contract_test.go
+- [ ] T091 [P] [US5] Add usecase tests for wishlist feature gate, owner/admin deletion, vote uniqueness, review eligibility, review aggregate recalculation, unified inbox count, and clear behavior in internal/usecase/wishlist/wishlist_test.go
+- [ ] T092 [P] [US5] Add repository integration tests for wishlist votes, reviews, product aggregate update, notifications, broadcasts, reads, and clear timestamp behavior in internal/repo/persistent/engagement_postgres_test.go
 
 ### Implementation for User Story 5
 
-- [x] T093 [P] [US5] Implement GORM wishlist repository for wishlist items, votes, reviews, and review aggregate recalculation in internal/repo/persistent/wishlist_postgres.go
-- [x] T094 [P] [US5] Implement GORM notification repository for personal notifications, broadcast messages, broadcast reads, unread counts, and clear state in internal/repo/persistent/notification_postgres.go
-- [x] T095 [US5] Implement wishlist usecase for item CRUD, owner/admin authorization, vote toggle, feature gate checks, review creation, and product aggregate updates in internal/usecase/wishlist/wishlist.go
-- [x] T096 [US5] Implement notification usecase for unified inbox, unread count, mark read, mark all read, clear inbox, and translation-key payloads in internal/usecase/notification/notification.go
-- [x] T097 [US5] Implement wishlist and review REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/wishlist.go
-- [x] T098 [US5] Implement notification REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/notifications.go
-- [x] T099 [US5] Wire wishlist and notification route groups into v1 routing in internal/controller/restapi/v1/router.go
-- [x] T100 [US5] Wire wishlist and notification usecases into application construction in internal/app/app.go
-- [x] T101 [US5] Add database migrations for wishlist items, wishlist votes, reviews, personal notifications, broadcasts, broadcast reads, and clear timestamps in migrations/20260523000500_grip_store_engagement.up.sql
-- [x] T102 [US5] Add rollback migration for engagement tables and indexes in migrations/20260523000500_grip_store_engagement.down.sql
-- [x] T103 [US5] Add Swagger annotations for wishlist, review, and notification routes in internal/controller/restapi/v1/wishlist.go
+- [ ] T093 [P] [US5] Implement GORM wishlist repository for wishlist items, votes, reviews, and review aggregate recalculation in internal/repo/persistent/wishlist_postgres.go
+- [ ] T094 [P] [US5] Implement GORM notification repository for personal notifications, broadcast messages, broadcast reads, unread counts, and clear state in internal/repo/persistent/notification_postgres.go
+- [ ] T095 [US5] Implement wishlist usecase for item CRUD, owner/admin authorization, vote toggle, feature gate checks, review creation, and product aggregate updates in internal/usecase/wishlist/wishlist.go
+- [ ] T096 [US5] Implement notification usecase for unified inbox, unread count, mark read, mark all read, clear inbox, and translation-key payloads in internal/usecase/notification/center.go
+- [ ] T097 [US5] Implement wishlist and review REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/wishlist.go
+- [ ] T098 [US5] Implement notification REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/notifications.go
+- [ ] T099 [US5] Wire wishlist and notification route groups into v1 routing in internal/controller/restapi/v1/router.go
+- [ ] T100 [US5] Wire wishlist and notification usecases into application construction in internal/app/app.go
+- [ ] T101 [US5] Add database migrations for wishlist items, wishlist votes, reviews, personal notifications, broadcasts, broadcast reads, and clear timestamps in migrations/20260523000500_grip_store_engagement.up.sql
+- [ ] T102 [US5] Add rollback migration for engagement tables and indexes in migrations/20260523000500_grip_store_engagement.down.sql
+- [ ] T103 [US5] Add Swagger annotations for wishlist, review, and notification routes in internal/controller/restapi/v1/wishlist.go
 
 **Checkpoint**: User Story 5 adds engagement features without changing purchase or admin correctness.
 

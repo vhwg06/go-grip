@@ -70,7 +70,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_provider_identities_provider_id
 CREATE UNIQUE INDEX IF NOT EXISTS uq_refresh_sessions_token_id
     ON refresh_sessions (token_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_checkins_user_day
-    ON daily_checkins_v2 (user_id, (DATE(checkin_date)));
+    ON daily_checkins_v2 (user_id, checkin_date);
 
 CREATE INDEX IF NOT EXISTS idx_login_users_email_lower
     ON login_users (LOWER(email));

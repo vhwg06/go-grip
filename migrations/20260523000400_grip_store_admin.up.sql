@@ -10,6 +10,20 @@ CREATE TABLE IF NOT EXISTS admin_messages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS refund_requests (
+    id BIGSERIAL PRIMARY KEY,
+    order_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    username TEXT,
+    reason TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_username TEXT,
+    admin_note TEXT,
+    processed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 ALTER TABLE refund_requests
     ADD COLUMN IF NOT EXISTS admin_username TEXT,
     ADD COLUMN IF NOT EXISTS admin_note TEXT,
