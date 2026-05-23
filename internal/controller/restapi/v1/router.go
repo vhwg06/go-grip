@@ -12,8 +12,24 @@ import (
 )
 
 // NewRoutes -.
-func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
-	r := &V1{t: t, u: u, tk: tk, catalog: catalog, media: media, homepage: homepage, cart: cart, lead: lead, content: content, importer: importer, l: l, v: validator.New(validator.WithRequiredStructEnabled())}
+func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, checkout usecase.Checkout, orders usecase.Orders, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
+	r := &V1{
+		t:          t,
+		u:          u,
+		tk:         tk,
+		catalog:    catalog,
+		checkout:   checkout,
+		orders:     orders,
+		media:      media,
+		homepage:   homepage,
+		cart:       cart,
+		lead:       lead,
+		content:    content,
+		importer:   importer,
+		jwtManager: jwtManager,
+		l:          l,
+		v:          validator.New(validator.WithRequiredStructEnabled()),
+	}
 
 	// Public routes
 	authGroup := apiV1Group.Group("/auth", middleware.RateLimitByIP(5, time.Second))
@@ -56,6 +72,6 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		translationGroup.Post("/do-translate", r.doTranslate)
 	}
 
-	r.registerEcommerceRoutes(apiV1Group, protected)
 	r.registerGripStoreRoutes(apiV1Group, protected)
+	r.registerEcommerceRoutes(apiV1Group, protected)
 }

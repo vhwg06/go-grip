@@ -44,6 +44,11 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 }
 
 func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment) error {
+	processedAt := time.Time{}
+	if payment.ProcessedAt != nil {
+		processedAt = *payment.ProcessedAt
+	}
+
 	model := models.Payment{
 		ID:                     payment.ID,
 		OrderID:                payment.OrderID,
@@ -54,7 +59,7 @@ func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment
 		RequestPayloadSummary:  payment.RequestPayloadSummary,
 		CallbackPayloadSummary: payment.CallbackPayloadSummary,
 		IsSignatureValid:       payment.IsSignatureValid,
-		ProcessedAt:            denullTime(payment.ProcessedAt),
+		ProcessedAt:            processedAt,
 		CreatedAt:              time.Now().UTC(),
 	}
 	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {

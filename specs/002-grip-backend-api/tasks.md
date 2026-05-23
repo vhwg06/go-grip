@@ -84,12 +84,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T037 [P] [US1] Implement GORM catalog repository for visible product list, product detail, search, categories, settings, and announcements in internal/repo/persistent/catalog_postgres.go
-- [ ] T038 [P] [US1] Implement GORM checkout repository for preview inputs, transactional order creation, card reservation, point deduction, payment records, and zero-price delivery in internal/repo/persistent/checkout_postgres.go
-- [ ] T039 [P] [US1] Implement GORM order read repository for owner lookup, order status, delivered card masking, and purchase limit history in internal/repo/persistent/order_postgres.go
-- [ ] T040 [US1] Implement catalog usecase for visibility threshold, display stock, shared product stock, buy metadata, and product search in internal/usecase/catalog/catalog.go
-- [ ] T041 [US1] Implement checkout usecase for price preview, stock reservation, order creation, zero-price delivery, payment instruction generation, callback handling, and idempotent payment notification in internal/usecase/checkout/checkout.go
-- [ ] T042 [US1] Implement order read usecase for order detail, order list, status text, status color, and card-key masking in internal/usecase/orders/orders.go
+- [x] T037 [P] [US1] Implement GORM catalog repository for visible product list, product detail, search, categories, settings, and announcements in internal/repo/persistent/catalog_postgres.go
+- [x] T038 [P] [US1] Implement GORM checkout repository for preview inputs, transactional order creation, card reservation, point deduction, payment records, and zero-price delivery in internal/repo/persistent/checkout_postgres.go
+- [x] T039 [P] [US1] Implement GORM order read repository for owner lookup, order status, delivered card masking, and purchase limit history in internal/repo/persistent/order_postgres.go
+- [x] T040 [US1] Implement catalog usecase for visibility threshold, display stock, shared product stock, buy metadata, and product search in internal/usecase/catalog/catalog.go
+- [x] T041 [US1] Implement checkout usecase for price preview, stock reservation, order creation, zero-price delivery, payment instruction generation, callback handling, and idempotent payment notification in internal/usecase/checkout/checkout.go
+- [x] T042 [US1] Implement order read usecase for order detail, order list, status text, status color, and card-key masking in internal/usecase/orders/orders.go
 - [ ] T043 [US1] Implement catalog REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/catalog.go
 - [ ] T044 [US1] Implement checkout and payment REST handlers matching contracts/rest-api.md in internal/controller/restapi/v1/checkout.go
 - [ ] T045 [US1] Implement order detail and order list REST handlers used by purchase flows in internal/controller/restapi/v1/orders.go

@@ -2,7 +2,9 @@ package v1
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,25 +19,28 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Ro
 	authGroup.Get("/me", r.notImplemented)
 
 	catalogGroup := apiV1Group.Group("/catalog")
-	catalogGroup.Get("/products/:id/buy-meta", r.notImplemented)
-	catalogGroup.Get("/search", r.notImplemented)
-	catalogGroup.Get("/settings", r.notImplemented)
-	catalogGroup.Get("/announcement", r.notImplemented)
+	catalogGroup.Get("/products", r.gripListProducts)
+	catalogGroup.Get("/products/:id", r.gripGetProduct)
+	catalogGroup.Get("/products/:id/buy-meta", r.gripGetBuyMeta)
+	catalogGroup.Get("/search", r.gripSearchProducts)
+	catalogGroup.Get("/categories", r.gripListCategories)
+	catalogGroup.Get("/settings", r.gripListSettings)
+	catalogGroup.Get("/announcement", r.gripGetAnnouncement)
 
-	checkoutGroup := apiV1Group.Group("/checkout")
-	checkoutGroup.Get("/preview", r.notImplemented)
-	checkoutGroup.Post("/orders", r.notImplemented)
-	checkoutGroup.Post("/payment-orders", r.notImplemented)
-	checkoutGroup.Get("/orders/:id/payment-params", r.notImplemented)
-	checkoutGroup.Get("/orders/:id/status", r.notImplemented)
-	checkoutGroup.Post("/orders/:id/cancel", r.notImplemented)
-	checkoutGroup.Post("/notify", r.notImplemented)
-	checkoutGroup.Get("/callback/:id", r.notImplemented)
+	checkoutGroup := apiV1Group.Group("/checkout", middleware.RateLimitByIP(30, time.Minute))
+	checkoutGroup.Get("/preview", r.gripCheckoutPreview)
+	checkoutGroup.Post("/orders", r.gripCreateOrder)
+	checkoutGroup.Post("/payment-orders", r.gripCreatePaymentOrder)
+	checkoutGroup.Get("/orders/:id/payment-params", r.gripPaymentParams)
+	checkoutGroup.Get("/orders/:id/status", r.gripOrderStatus)
+	checkoutGroup.Post("/orders/:id/cancel", middleware.Auth(r.jwtManager), r.gripCancelOrder)
+	checkoutGroup.Post("/notify", r.gripPaymentNotify)
+	checkoutGroup.Get("/callback/:id", r.gripPaymentCallback)
 
-	ordersGroup := protected.Group("/orders")
-	ordersGroup.Get("/", r.notImplemented)
-	ordersGroup.Get("/:id", r.notImplemented)
-	ordersGroup.Post("/:id/refund-request", r.notImplemented)
+	ordersGroup := apiV1Group.Group("/orders", middleware.Auth(r.jwtManager))
+	ordersGroup.Get("/", r.gripListOrders)
+	ordersGroup.Get("/:id", r.gripGetOrder)
+	ordersGroup.Post("/:id/refund-request", r.gripRequestRefund)
 
 	profileGroup := protected.Group("/profile")
 	profileGroup.Get("/", r.notImplemented)

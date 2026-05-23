@@ -125,11 +125,11 @@ func EntityToCategory(e entity.Category) Category {
 	}
 
 	return Category{
-		ID:       e.ID,
-		Name:     e.Name,
-		ParentID: parentID,
+		ID:        e.ID,
+		Name:      e.Name,
+		ParentID:  parentID,
 		SortOrder: e.Position,
-		IsActive: e.IsActive,
+		IsActive:  e.IsActive,
 	}
 }
 

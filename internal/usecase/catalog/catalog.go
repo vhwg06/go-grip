@@ -11,10 +11,13 @@ import (
 )
 
 type UseCase struct {
-	repo repo.CatalogRepo
+	repo     repo.CatalogRepo
+	gripRepo repo.CatalogRepository
 }
 
 func New(r repo.CatalogRepo) *UseCase { return &UseCase{repo: r} }
+
+func NewGrip(r repo.CatalogRepository) *UseCase { return &UseCase{gripRepo: r} }
 
 func (uc *UseCase) CreateProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
 	now := time.Now().UTC()
@@ -84,9 +87,93 @@ func (uc *UseCase) ListTags(ctx context.Context) ([]entity.Tag, error) {
 	return uc.repo.ListTags(ctx)
 }
 
+func (uc *UseCase) ListVisibleProducts(ctx context.Context, actor entity.Actor, filter entity.ProductFilter) ([]entity.Product, int, error) {
+	if uc.gripRepo == nil {
+		return nil, 0, entity.ErrNotFound
+	}
+
+	page := filter.Pagination.Normalize()
+	items, total, err := uc.gripRepo.ListVisibleProducts(ctx, actor, repo.ProductFilter{
+		Keyword:  filter.Keyword,
+		Brand:    filter.Brand,
+		MinPrice: filter.MinPrice,
+		MaxPrice: filter.MaxPrice,
+		Sort:     filter.Sort,
+		Limit:    uint64(page.Limit),
+		Offset:   uint64(page.Offset),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("CatalogUseCase - ListVisibleProducts - gripRepo.ListVisibleProducts: %w", err)
+	}
+
+	for i := range items {
+		items[i].MaxPurchaseableQuantity = resolveMaxPurchasable(items[i])
+	}
+
+	return items, total, nil
+}
+
+func (uc *UseCase) GetVisibleProduct(ctx context.Context, actor entity.Actor, productID string) (entity.Product, error) {
+	if uc.gripRepo == nil {
+		return entity.Product{}, entity.ErrNotFound
+	}
+
+	product, err := uc.gripRepo.GetVisibleProduct(ctx, actor, productID)
+	if err != nil {
+		return entity.Product{}, fmt.Errorf("CatalogUseCase - GetVisibleProduct - gripRepo.GetVisibleProduct: %w", err)
+	}
+
+	product.MaxPurchaseableQuantity = resolveMaxPurchasable(product)
+
+	return product, nil
+}
+
+func (uc *UseCase) ListPublicSettings(ctx context.Context) ([]entity.Setting, error) {
+	if uc.gripRepo == nil {
+		return nil, entity.ErrNotFound
+	}
+	settings, err := uc.gripRepo.ListSettings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("CatalogUseCase - ListPublicSettings - gripRepo.ListSettings: %w", err)
+	}
+	return settings, nil
+}
+
+func (uc *UseCase) GetPublicSetting(ctx context.Context, key string) (entity.Setting, error) {
+	if uc.gripRepo == nil {
+		return entity.Setting{}, entity.ErrNotFound
+	}
+	setting, err := uc.gripRepo.GetSetting(ctx, key)
+	if err != nil {
+		return entity.Setting{}, fmt.Errorf("CatalogUseCase - GetPublicSetting - gripRepo.GetSetting: %w", err)
+	}
+	return setting, nil
+}
+
 func defaultProductStatus(status entity.ProductStatus) entity.ProductStatus {
 	if status == "" {
 		return entity.ProductStatusDraft
 	}
 	return status
+}
+
+func resolveMaxPurchasable(product entity.Product) int {
+	displayStock := product.StockCount - product.LockedCount
+	if product.IsShared {
+		if product.StockCount > 0 {
+			displayStock = 999999
+		} else {
+			displayStock = 0
+		}
+	}
+
+	if product.PurchaseLimit > 0 && product.PurchaseLimit < displayStock {
+		return product.PurchaseLimit
+	}
+
+	if displayStock < 0 {
+		return 0
+	}
+
+	return displayStock
 }
