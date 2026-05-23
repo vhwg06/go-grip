@@ -18,8 +18,8 @@ import (
 // NewRouter -.
 // Swagger spec:
 //
-//	@title       Go Clean Template API
-//	@description Multi-domain clean architecture template with translation, user, and task management
+//	@title       Grip Store Backend REST API
+//	@description REST-only backend for catalog, checkout, orders, profile, admin, and notifications
 //	@version     1.0
 //	@host        localhost:8080
 //	@BasePath    /v1
@@ -30,6 +30,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 	// Options
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))
+	app.Use(middleware.RejectBlockedMutations())
 
 	// Prometheus metrics
 	if cfg.Metrics.Enabled {

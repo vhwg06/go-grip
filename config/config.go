@@ -14,14 +14,14 @@ type (
 		HTTP         http
 		Log          log
 		PG           pg
-		GRPC         grpc
-		RMQ          rmq
-		NATS         nats
 		JWT          jwt
 		Metrics      metrics
 		Swagger      swagger
 		Ecommerce    ecommerce
 		Notification notification
+		Auth         auth
+		Admin        admin
+		Payment      payment
 	}
 
 	// App -.
@@ -45,24 +45,6 @@ type (
 	pg struct {
 		PoolMax int    `env:"PG_POOL_MAX,required"`
 		URL     string `env:"PG_URL,required"`
-	}
-
-	// GRPC -.
-	grpc struct {
-		Port string `env:"GRPC_PORT,required"`
-	}
-
-	// RMQ -.
-	rmq struct {
-		ServerExchange string `env:"RMQ_RPC_SERVER,required"`
-		ClientExchange string `env:"RMQ_RPC_CLIENT,required"`
-		URL            string `env:"RMQ_URL,required"`
-	}
-
-	// NATS -.
-	nats struct {
-		ServerExchange string `env:"NATS_RPC_SERVER,required"`
-		URL            string `env:"NATS_URL,required"`
 	}
 
 	// JWT -.
@@ -93,6 +75,31 @@ type (
 	notification struct {
 		Enabled bool   `env:"NOTIFICATION_ENABLED" envDefault:"false"`
 		From    string `env:"NOTIFICATION_FROM" envDefault:"noreply@example.com"`
+	}
+
+	// Auth contains OAuth provider settings.
+	auth struct {
+		LinuxDOClientID     string `env:"AUTH_LINUXDO_CLIENT_ID"`
+		LinuxDOClientSecret string `env:"AUTH_LINUXDO_CLIENT_SECRET"`
+		GitHubClientID      string `env:"AUTH_GITHUB_CLIENT_ID"`
+		GitHubClientSecret  string `env:"AUTH_GITHUB_CLIENT_SECRET"`
+		CallbackBaseURL     string `env:"AUTH_CALLBACK_BASE_URL" envDefault:"http://localhost:8080"`
+	}
+
+	// Admin contains admin access configuration.
+	admin struct {
+		Users string `env:"ADMIN_USERS" envDefault:""`
+	}
+
+	// Payment contains gateway configuration.
+	payment struct {
+		Provider           string `env:"PAYMENT_PROVIDER" envDefault:"epay"`
+		MerchantID         string `env:"PAYMENT_MERCHANT_ID" envDefault:""`
+		SecretKey          string `env:"PAYMENT_SECRET_KEY" envDefault:""`
+		BaseURL            string `env:"PAYMENT_BASE_URL" envDefault:""`
+		NotifyURL          string `env:"PAYMENT_NOTIFY_URL" envDefault:""`
+		ReturnURL          string `env:"PAYMENT_RETURN_URL" envDefault:""`
+		OrderTimeoutMinute int    `env:"PAYMENT_ORDER_TIMEOUT_MINUTES" envDefault:"5"`
 	}
 )
 

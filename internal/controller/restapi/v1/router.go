@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"time"
+
 	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
 	"github.com/evrone/go-clean-template/internal/usecase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
@@ -14,7 +16,7 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 	r := &V1{t: t, u: u, tk: tk, catalog: catalog, media: media, homepage: homepage, cart: cart, lead: lead, content: content, importer: importer, l: l, v: validator.New(validator.WithRequiredStructEnabled())}
 
 	// Public routes
-	authGroup := apiV1Group.Group("/auth")
+	authGroup := apiV1Group.Group("/auth", middleware.RateLimitByIP(5, time.Second))
 	{
 		authGroup.Post("/register", r.register)
 		authGroup.Post("/login", r.login)
@@ -55,4 +57,5 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 	}
 
 	r.registerEcommerceRoutes(apiV1Group, protected)
+	r.registerGripStoreRoutes(apiV1Group, protected)
 }

@@ -10,6 +10,8 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgxpool"
+	gormpg "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 const (
@@ -26,6 +28,7 @@ type Postgres struct {
 
 	Builder squirrel.StatementBuilderType
 	Pool    *pgxpool.Pool
+	Gorm    *gorm.DB
 }
 
 // New -.
@@ -67,11 +70,23 @@ func New(url string, opts ...Option) (*Postgres, error) {
 		return nil, fmt.Errorf("postgres - NewPostgres - connAttempts == 0: %w", err)
 	}
 
+	pg.Gorm, err = gorm.Open(gormpg.Open(url), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("postgres - NewPostgres - gorm.Open: %w", err)
+	}
+
 	return pg, nil
 }
 
 // Close -.
 func (p *Postgres) Close() {
+	if p.Gorm != nil {
+		sqlDB, err := p.Gorm.DB()
+		if err == nil {
+			sqlDB.Close()
+		}
+	}
+
 	if p.Pool != nil {
 		p.Pool.Close()
 	}

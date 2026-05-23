@@ -1,0 +1,8 @@
+-- Grip Store core migration placeholder.
+-- This file reserves ordering for the REST-only Grip Store rollout.
+-- Detailed schema changes are implemented in subsequent migrations:
+--   20260523000100_grip_store_catalog_checkout.up.sql
+--   20260523000200_grip_store_auth_profile.up.sql
+--   20260523000300_grip_store_lifecycle.up.sql
+--   20260523000400_grip_store_admin.up.sql
+--   20260523000500_grip_store_engagement.up.sql

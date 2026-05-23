@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,7 +33,14 @@ func Auth(jwtManager *jwt.Manager) func(*fiber.Ctx) error {
 			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "invalid or expired token"})
 		}
 
+		actor := entity.Actor{
+			UserID:    userID,
+			IsAdmin:   false,
+			IsBlocked: false,
+		}
+
 		ctx.Locals("userID", userID)
+		ctx.Locals("actor", actor)
 
 		return ctx.Next()
 	}

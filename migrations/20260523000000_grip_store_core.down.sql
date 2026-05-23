@@ -1,0 +1,2 @@
+-- Grip Store core rollback placeholder.
+-- No-op because concrete rollback logic is defined in later migrations.

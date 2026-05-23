@@ -136,4 +136,69 @@ type (
 		StoreImportedProduct(ctx context.Context, product *entity.Product) error
 		StoreImportedPost(ctx context.Context, article *entity.ContentArticle) error
 	}
+
+	AuthRepository interface {
+		GetUserByID(ctx context.Context, userID string) (entity.User, error)
+		GetUserByEmail(ctx context.Context, email string) (entity.User, error)
+		GetUserByUsername(ctx context.Context, username string) (entity.User, error)
+		UpsertUser(ctx context.Context, user entity.User) (entity.User, error)
+		StoreRefreshSession(ctx context.Context, session entity.RefreshSession) error
+		RevokeRefreshSession(ctx context.Context, tokenID string) error
+		GetRefreshSession(ctx context.Context, tokenID string) (entity.RefreshSession, error)
+	}
+
+	CatalogRepository interface {
+		ListVisibleProducts(ctx context.Context, actor entity.Actor, filter ProductFilter) ([]entity.Product, int, error)
+		GetVisibleProduct(ctx context.Context, actor entity.Actor, productID string) (entity.Product, error)
+		ListCategories(ctx context.Context) ([]entity.Category, error)
+		ListSettings(ctx context.Context) ([]entity.Setting, error)
+		GetSetting(ctx context.Context, key string) (entity.Setting, error)
+	}
+
+	CheckoutRepository interface {
+		CreateOrderWithReservation(ctx context.Context, actor entity.Actor, order entity.Order) (entity.Order, error)
+		AttachPayment(ctx context.Context, payment entity.Payment) error
+		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
+		ReserveCards(ctx context.Context, orderID, productID string, quantity int, isShared bool) ([]entity.Card, error)
+		DeductPoints(ctx context.Context, userID string, points int) error
+		ReleaseReservation(ctx context.Context, orderID string) error
+	}
+
+	OrderRepository interface {
+		ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error)
+		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
+		CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error
+		SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error
+	}
+
+	ProfileRepository interface {
+		GetProfile(ctx context.Context, userID string) (entity.User, error)
+		UpdateProfile(ctx context.Context, user entity.User) (entity.User, error)
+		RecordDailyCheckin(ctx context.Context, checkin entity.DailyCheckin) error
+	}
+
+	WishlistRepository interface {
+		ListWishlistItems(ctx context.Context, page entity.Pagination) ([]entity.WishlistItem, int, error)
+		StoreWishlistItem(ctx context.Context, item entity.WishlistItem) (entity.WishlistItem, error)
+		UpdateWishlistItem(ctx context.Context, item entity.WishlistItem) (entity.WishlistItem, error)
+		DeleteWishlistItem(ctx context.Context, itemID int64) error
+		ToggleWishlistVote(ctx context.Context, itemID int64, userID string) (bool, error)
+		StoreReview(ctx context.Context, review entity.Review) (entity.Review, error)
+	}
+
+	NotificationRepository interface {
+		ListUserNotifications(ctx context.Context, userID string, page entity.Pagination) ([]entity.UserNotification, int, error)
+		ListBroadcastMessages(ctx context.Context, page entity.Pagination) ([]entity.BroadcastMessage, int, error)
+		MarkNotificationRead(ctx context.Context, userID string, notificationID int64) error
+		MarkAllRead(ctx context.Context, userID string) error
+		ClearAll(ctx context.Context, userID string) error
+	}
+
+	AdminRepository interface {
+		ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error)
+		UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error
+		UpdateUserPoints(ctx context.Context, userID string, points int) error
+		StoreSetting(ctx context.Context, setting entity.Setting) error
+		RebuildProductAggregates(ctx context.Context) error
+	}
 )

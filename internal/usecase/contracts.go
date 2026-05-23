@@ -97,4 +97,76 @@ type (
 	Importer interface {
 		Import(ctx context.Context, items []entity.ImportItem) (entity.ImportResult, error)
 	}
+
+	Auth interface {
+		BeginLinuxDO(ctx context.Context) (string, error)
+		BeginGitHub(ctx context.Context) (string, error)
+		CompleteLinuxDO(ctx context.Context, code string) (entity.User, string, string, error)
+		CompleteGitHub(ctx context.Context, code string) (entity.User, string, string, error)
+		Refresh(ctx context.Context, refreshToken string) (string, string, error)
+		Logout(ctx context.Context, actor entity.Actor, refreshToken string) error
+		Me(ctx context.Context, actor entity.Actor) (entity.User, error)
+	}
+
+	Checkout interface {
+		Preview(ctx context.Context, actor entity.Actor, productID string, quantity int, usePoints bool) (AmountBreakdown, error)
+		CreateOrder(ctx context.Context, actor entity.Actor, productID string, quantity int, email string, usePoints bool) (entity.Order, error)
+		PaymentParams(ctx context.Context, actor entity.Actor, orderID string) (PaymentParams, error)
+		PaymentNotify(ctx context.Context, payload map[string]string) error
+		PaymentStatus(ctx context.Context, orderID string) (entity.Order, error)
+		Cancel(ctx context.Context, actor entity.Actor, orderID string) error
+	}
+
+	Orders interface {
+		List(ctx context.Context, actor entity.Actor, email string, page entity.Pagination) ([]entity.Order, int, error)
+		Get(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error)
+		RequestRefund(ctx context.Context, actor entity.Actor, orderID, reason string) (entity.RefundRequest, error)
+	}
+
+	Profile interface {
+		Get(ctx context.Context, actor entity.Actor) (entity.User, error)
+		Update(ctx context.Context, actor entity.Actor, email string, desktopNotificationsEnabled bool) (entity.User, error)
+		Checkin(ctx context.Context, actor entity.Actor) (entity.DailyCheckin, error)
+	}
+
+	Wishlist interface {
+		List(ctx context.Context, page entity.Pagination) ([]entity.WishlistItem, int, error)
+		Create(ctx context.Context, actor entity.Actor, title, description string) (entity.WishlistItem, error)
+		Update(ctx context.Context, actor entity.Actor, item entity.WishlistItem) (entity.WishlistItem, error)
+		Delete(ctx context.Context, actor entity.Actor, itemID int64) error
+		ToggleVote(ctx context.Context, actor entity.Actor, itemID int64) error
+		CreateReview(ctx context.Context, actor entity.Actor, review entity.Review) (entity.Review, error)
+	}
+
+	NotificationCenter interface {
+		Inbox(ctx context.Context, actor entity.Actor, page entity.Pagination) ([]entity.UserNotification, int, error)
+		UnreadCount(ctx context.Context, actor entity.Actor) (int, error)
+		MarkRead(ctx context.Context, actor entity.Actor, notificationID int64) error
+		MarkAllRead(ctx context.Context, actor entity.Actor) error
+		Clear(ctx context.Context, actor entity.Actor) error
+	}
+
+	Admin interface {
+		ListUsers(ctx context.Context, actor entity.Actor, page entity.Pagination) ([]entity.User, int, error)
+		UpdateUserStatus(ctx context.Context, actor entity.Actor, userID string, status entity.UserStatus) error
+		UpdateUserPoints(ctx context.Context, actor entity.Actor, userID string, points int) error
+		RepairAggregates(ctx context.Context, actor entity.Actor) error
+	}
+
+	Maintenance interface {
+		CancelExpiredPendingOrders(ctx context.Context) error
+		CleanupExpiredCards(ctx context.Context) error
+		SyncProductAggregates(ctx context.Context) error
+	}
 )
+
+type AmountBreakdown struct {
+	Subtotal    entity.Amount `json:"subtotal"`
+	PointsToUse int           `json:"points_to_use"`
+	FinalPrice  entity.Amount `json:"final_price"`
+}
+
+type PaymentParams struct {
+	URL    string            `json:"url"`
+	Fields map[string]string `json:"fields"`
+}
