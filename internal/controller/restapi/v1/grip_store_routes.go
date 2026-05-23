@@ -10,13 +10,13 @@ import (
 
 func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Router) {
 	authGroup := apiV1Group.Group("/auth")
-	authGroup.Get("/oauth/linuxdo", r.notImplemented)
-	authGroup.Get("/oauth/github", r.notImplemented)
-	authGroup.Get("/callback/linuxdo", r.notImplemented)
-	authGroup.Get("/callback/github", r.notImplemented)
-	authGroup.Post("/refresh", r.notImplemented)
-	authGroup.Post("/logout", r.notImplemented)
-	authGroup.Get("/me", r.notImplemented)
+	authGroup.Get("/oauth/linuxdo", r.gripBeginLinuxDO)
+	authGroup.Get("/oauth/github", r.gripBeginGitHub)
+	authGroup.Get("/callback/linuxdo", r.gripCompleteLinuxDO)
+	authGroup.Get("/callback/github", r.gripCompleteGitHub)
+	authGroup.Post("/refresh", r.gripRefresh)
+	authGroup.Post("/logout", middleware.Auth(r.jwtManager), r.gripLogout)
+	authGroup.Get("/me", middleware.Auth(r.jwtManager), r.gripMe)
 
 	catalogGroup := apiV1Group.Group("/catalog")
 	catalogGroup.Get("/products", r.gripListProducts)
@@ -43,9 +43,9 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Ro
 	ordersGroup.Post("/:id/refund-request", r.gripRequestRefund)
 
 	profileGroup := protected.Group("/profile")
-	profileGroup.Get("/", r.notImplemented)
-	profileGroup.Patch("/", r.notImplemented)
-	profileGroup.Post("/check-in", r.notImplemented)
+	profileGroup.Get("/", r.gripProfileGet)
+	profileGroup.Patch("/", r.gripProfileUpdate)
+	profileGroup.Post("/check-in", r.gripProfileCheckin)
 
 	wishlistGroup := apiV1Group.Group("/wishlist")
 	wishlistGroup.Get("/", r.notImplemented)

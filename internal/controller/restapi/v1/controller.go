@@ -13,8 +13,10 @@ type V1 struct {
 	u          usecase.User
 	tk         usecase.Task
 	catalog    usecase.Catalog
+	authUC     usecase.Auth
 	checkout   usecase.Checkout
 	orders     usecase.Orders
+	profileUC  usecase.Profile
 	media      usecase.Media
 	homepage   usecase.Homepage
 	cart       usecase.Cart

@@ -12,14 +12,16 @@ import (
 )
 
 // NewRoutes -.
-func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, checkout usecase.Checkout, orders usecase.Orders, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
+func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
 	r := &V1{
 		t:          t,
 		u:          u,
 		tk:         tk,
 		catalog:    catalog,
+		authUC:     auth,
 		checkout:   checkout,
 		orders:     orders,
+		profileUC:  profile,
 		media:      media,
 		homepage:   homepage,
 		cart:       cart,
