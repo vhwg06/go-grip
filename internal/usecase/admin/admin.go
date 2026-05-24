@@ -63,6 +63,20 @@ func (uc *UseCase) UpdateUserPoints(ctx context.Context, actor entity.Actor, use
 	return uc.repo.UpdateUserPoints(ctx, userID, points)
 }
 
+func (uc *UseCase) ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, 0, err
+	}
+	return uc.repo.ListOrders(ctx, page, query, status)
+}
+
+func (uc *UseCase) GetOrder(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.Order{}, err
+	}
+	return uc.repo.GetOrderByID(ctx, orderID)
+}
+
 func (uc *UseCase) RepairAggregates(ctx context.Context, actor entity.Actor) error {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err

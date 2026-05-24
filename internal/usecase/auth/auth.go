@@ -111,9 +111,15 @@ func (uc *UseCase) Me(ctx context.Context, actor entity.Actor) (entity.User, err
 }
 
 func (uc *UseCase) issueTokenPair(ctx context.Context, userID string) (string, string, error) {
-	accessToken, err := uc.jwtManager.GenerateToken(userID)
+	user, err := uc.repo.GetUserByID(ctx, userID)
 	if err != nil {
-		return "", "", fmt.Errorf("AuthUseCase.issueTokenPair - jwtManager.GenerateToken: %w", err)
+		return "", "", fmt.Errorf("AuthUseCase.issueTokenPair - repo.GetUserByID: %w", err)
+	}
+	isAdmin := user.IsAdmin || uc.isAdminUsername(user.Username)
+
+	accessToken, err := uc.jwtManager.GenerateTokenWithProfile(userID, user.Username, isAdmin)
+	if err != nil {
+		return "", "", fmt.Errorf("AuthUseCase.issueTokenPair - jwtManager.GenerateTokenWithProfile: %w", err)
 	}
 
 	now := time.Now().UTC()

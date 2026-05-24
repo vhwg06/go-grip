@@ -200,6 +200,8 @@ type (
 		ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error)
 		UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error
 		UpdateUserPoints(ctx context.Context, userID string, points int) error
+		ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
+		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
 		StoreSetting(ctx context.Context, setting entity.Setting) error
 		RebuildProductAggregates(ctx context.Context) error
 	}

@@ -52,6 +52,8 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	wishlistGroup.Post("/:id/vote", middleware.Auth(r.jwtManager), r.gripWishlistVote)
 
 	apiV1Group.Get("/reviews", r.gripReviewList)
+	apiV1Group.Get("/products/:id/reviews", r.gripReviewList)
+	apiV1Group.Post("/products/:id/reviews", middleware.Auth(r.jwtManager), r.gripReviewCreate)
 
 	reviewsGroup := apiV1Group.Group("/reviews", middleware.Auth(r.jwtManager))
 	reviewsGroup.Post("/", r.gripReviewCreate)
@@ -77,7 +79,8 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Delete("/cards/:id", r.gripAdminNoop)
 	adminGroup.Post("/cards/import", r.gripAdminCardsImport)
 	adminGroup.Post("/cards/replenish", r.gripAdminNoop)
-	adminGroup.Get("/orders", r.gripAdminNoop)
+	adminGroup.Get("/orders", r.gripAdminListOrders)
+	adminGroup.Get("/orders/:id", r.gripAdminGetOrder)
 	adminGroup.Patch("/orders/:id", r.gripAdminNoop)
 	adminGroup.Delete("/orders/:id", r.gripAdminNoop)
 	adminGroup.Get("/refunds", r.gripAdminNoop)

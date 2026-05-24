@@ -28,14 +28,15 @@ func Auth(jwtManager *jwt.Manager) func(*fiber.Ctx) error {
 			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "invalid authorization header format"})
 		}
 
-		userID, err := jwtManager.ParseToken(parts[1])
+		userID, isAdmin, username, err := jwtManager.ParseTokenActor(parts[1])
 		if err != nil {
 			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "invalid or expired token"})
 		}
 
 		actor := entity.Actor{
 			UserID:    userID,
-			IsAdmin:   false,
+			Username:  username,
+			IsAdmin:   isAdmin,
 			IsBlocked: false,
 		}
 

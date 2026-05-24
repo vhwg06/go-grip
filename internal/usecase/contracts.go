@@ -148,6 +148,8 @@ type (
 		ListUsers(ctx context.Context, actor entity.Actor, page entity.Pagination) ([]entity.User, int, error)
 		UpdateUserStatus(ctx context.Context, actor entity.Actor, userID string, status entity.UserStatus) error
 		UpdateUserPoints(ctx context.Context, actor entity.Actor, userID string, points int) error
+		ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error)
+		GetOrder(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error)
 		RepairAggregates(ctx context.Context, actor entity.Actor) error
 	}
 

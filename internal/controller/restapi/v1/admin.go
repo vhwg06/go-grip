@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +16,8 @@ type adminExtendedUseCase interface {
 	ListCategories(ctx context.Context, actor entity.Actor) ([]entity.Category, error)
 	UpsertCategory(ctx context.Context, actor entity.Actor, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, actor entity.Actor, categoryID string) error
+	ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error)
+	GetOrder(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error)
 	ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error)
 	SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
@@ -215,6 +218,105 @@ func (r *V1) gripAdminDeleteCategory(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (r *V1) gripAdminListOrders(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_orders_not_available"})
+	}
+
+	pageNum := ctx.QueryInt("page", 1)
+	if pageNum < 1 {
+		pageNum = 1
+	}
+	pageSize := ctx.QueryInt("pageSize", 50)
+	if pageSize < 1 {
+		pageSize = 50
+	}
+	if pageSize > 200 {
+		pageSize = 200
+	}
+	query := strings.TrimSpace(ctx.Query("q"))
+	status := strings.TrimSpace(ctx.Query("status", "all"))
+
+	page := entity.Pagination{
+		Limit:  pageSize,
+		Offset: (pageNum - 1) * pageSize,
+	}
+
+	items, total, err := ext.ListOrders(ctx.UserContext(), r.gripActor(ctx), page, query, status)
+	if err != nil {
+		httpStatus, payload := mapDomainError(err)
+		return ctx.Status(httpStatus).JSON(payload)
+	}
+
+	orders := make([]fiber.Map, 0, len(items))
+	for _, order := range items {
+		orders = append(orders, fiber.Map{
+			"orderId":     order.ID,
+			"userId":      order.UserID,
+			"username":    order.Username,
+			"email":       order.Email,
+			"productName": order.ProductName,
+			"amount":      order.Amount,
+			"status":      string(order.Status),
+			"cardKey":     order.CardKey,
+			"tradeNo":     order.TradeNo,
+			"createdAt":   order.CreatedAt,
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"orders":   orders,
+		"total":    total,
+		"page":     pageNum,
+		"pageSize": pageSize,
+		"query":    query,
+		"status":   status,
+	})
+}
+
+func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_orders_not_available"})
+	}
+
+	order, err := ext.GetOrder(ctx.UserContext(), r.gripActor(ctx), ctx.Params("id"))
+	if err != nil {
+		httpStatus, payload := mapDomainError(err)
+		return ctx.Status(httpStatus).JSON(payload)
+	}
+
+	status := strings.ToUpper(string(order.Status))
+	return ctx.JSON(fiber.Map{
+		"id":          order.ID,
+		"orderNumber": order.ID,
+		"status":      status,
+		"createdAt":   order.CreatedAt,
+		"items": []fiber.Map{
+			{
+				"productName": order.ProductName,
+				"sku":         "",
+				"price":       order.Amount,
+				"quantity":    max(order.Quantity, 1),
+			},
+		},
+		"totalAmount":     order.Amount,
+		"customerName":    order.Username,
+		"customerPhone":   "",
+		"customerEmail":   order.Email,
+		"shippingAddress": "",
+		"paymentMethod":   "",
+		"timeline": []fiber.Map{
+			{
+				"status":    status,
+				"timestamp": order.UpdatedAt,
+				"note":      "",
+			},
+		},
+	})
 }
 
 // @Summary     Import product cards

@@ -2,13 +2,16 @@ package persistent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -58,6 +61,49 @@ func (r *AdminRepo) UpdateUserPoints(ctx context.Context, userID string, points 
 		return fmt.Errorf("AdminRepo.UpdateUserPoints: %w", err)
 	}
 	return nil
+}
+
+func (r *AdminRepo) ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
+	db := r.Gorm.WithContext(ctx).Model(&models.Order{})
+
+	if trimmed := strings.TrimSpace(query); trimmed != "" {
+		like := "%" + strings.ToLower(trimmed) + "%"
+		db = db.Where(
+			"LOWER(order_id) LIKE ? OR LOWER(email) LIKE ? OR LOWER(username) LIKE ? OR LOWER(product_name) LIKE ?",
+			like, like, like, like,
+		)
+	}
+	if trimmedStatus := strings.TrimSpace(strings.ToLower(status)); trimmedStatus != "" && trimmedStatus != "all" {
+		db = db.Where("LOWER(status) = ?", trimmedStatus)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("AdminRepo.ListOrders(count): %w", err)
+	}
+
+	normalized := page.Normalize()
+	var rows []models.Order
+	if err := db.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
+		return nil, 0, fmt.Errorf("AdminRepo.ListOrders(find): %w", err)
+	}
+
+	orders := make([]entity.Order, 0, len(rows))
+	for _, row := range rows {
+		orders = append(orders, models.OrderToEntity(row))
+	}
+	return orders, int(total), nil
+}
+
+func (r *AdminRepo) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
+	var row models.Order
+	if err := r.Gorm.WithContext(ctx).Where("order_id = ?", orderID).First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Order{}, entity.ErrOrderNotFound
+		}
+		return entity.Order{}, fmt.Errorf("AdminRepo.GetOrderByID: %w", err)
+	}
+	return models.OrderToEntity(row), nil
 }
 
 func (r *AdminRepo) StoreSetting(ctx context.Context, setting entity.Setting) error {

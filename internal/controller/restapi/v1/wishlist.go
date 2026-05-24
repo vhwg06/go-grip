@@ -145,6 +145,9 @@ func (r *V1) gripReviewCreate(ctx *fiber.Ctx) error {
 	if productId == "" {
 		productId = body.ProductID2
 	}
+	if productId == "" {
+		productId = ctx.Params("id")
+	}
 	orderId := body.OrderID
 	if orderId == "" {
 		orderId = body.OrderID2
