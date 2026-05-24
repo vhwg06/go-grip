@@ -97,7 +97,7 @@ migrate-create:  ### create new migration
 .PHONY: migrate-create
 
 migrate-up: ### migration up
-	go tool migrate -path migrations -database '$(PG_URL)?sslmode=disable' up
+	go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database '$(PG_URL)?sslmode=disable' up
 .PHONY: migrate-up
 
 bin-deps: ### install tools
