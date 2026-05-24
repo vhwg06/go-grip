@@ -31,10 +31,10 @@
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/v1/catalog/products` | Optional | List visible active products |
-| GET | `/v1/catalog/products/{id}` | Optional | Product detail with stock and purchase limit |
-| GET | `/v1/catalog/products/{id}/buy-meta` | Optional | Reviews and buyer review eligibility |
-| GET | `/v1/catalog/search` | Optional | Search/filter/sort visible products |
+| GET | `/v1/catalog/products` | Public | List visible active products |
+| GET | `/v1/catalog/products/{id}` | Public | Product detail with stock and purchase limit |
+| GET | `/v1/catalog/products/{id}/buy-meta` | Public | Reviews and buyer review eligibility |
+| GET | `/v1/catalog/search` | Public | Search/filter/sort visible products |
 | GET | `/v1/catalog/categories` | Public | List categories |
 | GET | `/v1/catalog/settings` | Public | Read public store settings |
 | GET | `/v1/catalog/announcement` | Public | Read active announcement |
@@ -58,10 +58,10 @@ Product detail responses include:
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | `/v1/checkout/preview` | Bearer | Calculate price, points, and final payable amount |
-| POST | `/v1/checkout/orders` | Optional | Create order and reserve stock |
-| POST | `/v1/checkout/payment-orders` | Optional | Create direct payment order |
+| POST | `/v1/checkout/orders` | Bearer | Create order and reserve stock |
+| POST | `/v1/checkout/payment-orders` | Bearer | Create direct payment order |
 | GET | `/v1/checkout/orders/{id}/payment-params` | Bearer | Recreate payment instructions |
-| GET | `/v1/checkout/orders/{id}/status` | Optional | Poll order status |
+| GET | `/v1/checkout/orders/{id}/status` | Bearer | Poll order status |
 | POST | `/v1/checkout/orders/{id}/cancel` | Bearer | Cancel pending order |
 | POST | `/v1/checkout/notify` | Provider signature | Process payment confirmation |
 | GET | `/v1/checkout/callback/{id}` | Public | Payment return redirect handler |
@@ -80,11 +80,24 @@ Checkout preview response:
 
 Order status responses include `statusText` and `statusColor` for client rendering.
 
+## Cart
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| POST | `/v1/cart` | Bearer | Create current user cart |
+| GET | `/v1/cart/{session_id}` | Bearer | Read current user cart |
+| POST | `/v1/cart/{session_id}/items` | Bearer | Add item to current user cart |
+| PATCH | `/v1/cart/{session_id}/items/{item_id}` | Bearer | Update current user cart item quantity |
+| DELETE | `/v1/cart/{session_id}/items/{item_id}` | Bearer | Remove item from current user cart |
+| POST | `/v1/order-requests` | Bearer | Submit order request from current user cart |
+
+The `session_id` path field is retained for compatibility; cart ownership is resolved from the authenticated actor.
+
 ## Orders
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/v1/orders` | Bearer or email ownership flow | List owner orders |
+| GET | `/v1/orders` | Bearer | List owner orders |
 | GET | `/v1/orders/{id}` | Owner/admin | Read order detail |
 | POST | `/v1/orders/{id}/refund-request` | Bearer owner | Request refund for delivered order |
 
@@ -102,7 +115,7 @@ Card key fields are omitted or masked unless the order is delivered and the requ
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | `/v1/wishlist` | Optional | List wishlist items |
+| GET | `/v1/wishlist` | Public | List wishlist items |
 | POST | `/v1/wishlist` | Bearer | Create wishlist item |
 | PATCH | `/v1/wishlist/{id}` | Owner/admin | Update wishlist item |
 | DELETE | `/v1/wishlist/{id}` | Owner/admin | Delete wishlist item |

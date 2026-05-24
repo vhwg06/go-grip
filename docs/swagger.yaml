@@ -1028,10 +1028,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
       summary: Create order
       tags:
       - checkout
@@ -1116,6 +1122,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
         "404":
           description: Not Found
           schema:
@@ -1124,6 +1134,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
       summary: Get order payment status
       tags:
       - checkout
@@ -1151,10 +1163,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
       summary: Create payment order
       tags:
       - checkout

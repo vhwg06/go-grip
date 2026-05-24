@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Router) {
+func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	authGroup := apiV1Group.Group("/auth")
 	authGroup.Post("/refresh", r.gripRefresh)
 	authGroup.Post("/logout", middleware.Auth(r.jwtManager), r.gripLogout)
@@ -25,10 +25,10 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Ro
 
 	checkoutGroup := apiV1Group.Group("/checkout", middleware.RateLimitByIP(30, time.Minute))
 	checkoutGroup.Get("/preview", r.gripCheckoutPreview)
-	checkoutGroup.Post("/orders", r.gripCreateOrder)
-	checkoutGroup.Post("/payment-orders", r.gripCreatePaymentOrder)
+	checkoutGroup.Post("/orders", middleware.Auth(r.jwtManager), r.gripCreateOrder)
+	checkoutGroup.Post("/payment-orders", middleware.Auth(r.jwtManager), r.gripCreatePaymentOrder)
 	checkoutGroup.Get("/orders/:id/payment-params", r.gripPaymentParams)
-	checkoutGroup.Get("/orders/:id/status", r.gripOrderStatus)
+	checkoutGroup.Get("/orders/:id/status", middleware.Auth(r.jwtManager), r.gripOrderStatus)
 	checkoutGroup.Post("/orders/:id/cancel", middleware.Auth(r.jwtManager), r.gripCancelOrder)
 	checkoutGroup.Post("/notify", r.gripPaymentNotify)
 	checkoutGroup.Get("/callback/:id", r.gripPaymentCallback)
@@ -38,7 +38,7 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Ro
 	ordersGroup.Get("/:id", r.gripGetOrder)
 	ordersGroup.Post("/:id/refund-request", r.gripRequestRefund)
 
-	profileGroup := protected.Group("/profile")
+	profileGroup := apiV1Group.Group("/profile", middleware.Auth(r.jwtManager))
 	profileGroup.Get("/", r.gripProfileGet)
 	profileGroup.Patch("/", r.gripProfileUpdate)
 	profileGroup.Post("/check-in", r.gripProfileCheckin)
@@ -50,17 +50,17 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router, protected fiber.Ro
 	wishlistGroup.Delete("/:id", middleware.Auth(r.jwtManager), r.gripWishlistDelete)
 	wishlistGroup.Post("/:id/vote", middleware.Auth(r.jwtManager), r.gripWishlistVote)
 
-	reviewsGroup := protected.Group("/reviews")
+	reviewsGroup := apiV1Group.Group("/reviews", middleware.Auth(r.jwtManager))
 	reviewsGroup.Post("/", r.gripReviewCreate)
 
-	notificationGroup := protected.Group("/notifications")
+	notificationGroup := apiV1Group.Group("/notifications", middleware.Auth(r.jwtManager))
 	notificationGroup.Get("/", r.gripNotificationsList)
 	notificationGroup.Get("/unread-count", r.gripNotificationsUnread)
 	notificationGroup.Post("/:id/read", r.gripNotificationsMarkRead)
 	notificationGroup.Post("/read-all", r.gripNotificationsReadAll)
 	notificationGroup.Delete("/", r.gripNotificationsClear)
 
-	adminGroup := protected.Group("/admin", middleware.RequireAdminUsernames(r.adminUsers))
+	adminGroup := apiV1Group.Group("/admin", middleware.Auth(r.jwtManager), middleware.RequireAdminUsernames(r.adminUsers))
 	adminGroup.Get("/products", r.gripAdminListProducts)
 	adminGroup.Post("/products", r.gripAdminCreateProduct)
 	adminGroup.Patch("/products/:id", r.gripAdminUpdateProduct)

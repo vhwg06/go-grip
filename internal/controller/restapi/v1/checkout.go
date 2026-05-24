@@ -89,7 +89,9 @@ func (r *V1) gripCheckoutPreview(ctx *fiber.Ctx) error {
 // @Param       request body gripCreateOrderRequest true "Order payload"
 // @Success     201 {object} envelope
 // @Failure     400 {object} envelope
+// @Failure     401 {object} envelope
 // @Failure     500 {object} envelope
+// @Security    BearerAuth
 // @Router      /checkout/orders [post]
 func (r *V1) gripCreateOrder(ctx *fiber.Ctx) error {
 	uc, ok := r.gripCheckoutUC()
@@ -108,8 +110,8 @@ func (r *V1) gripCreateOrder(ctx *fiber.Ctx) error {
 	}
 
 	actor := r.gripActor(ctx)
-	if actor.UserID == "" && body.Email == "" {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
+	if actor.UserID == "" {
+		status, payload := mapDomainError(entity.ErrUnauthorized)
 		return ctx.Status(status).JSON(payload)
 	}
 
@@ -132,7 +134,9 @@ func (r *V1) gripCreateOrder(ctx *fiber.Ctx) error {
 // @Param       request body gripCreateOrderRequest true "Order payload"
 // @Success     201 {object} envelope
 // @Failure     400 {object} envelope
+// @Failure     401 {object} envelope
 // @Failure     500 {object} envelope
+// @Security    BearerAuth
 // @Router      /checkout/payment-orders [post]
 func (r *V1) gripCreatePaymentOrder(ctx *fiber.Ctx) error {
 	return r.gripCreateOrder(ctx)
@@ -176,13 +180,21 @@ func (r *V1) gripPaymentParams(ctx *fiber.Ctx) error {
 // @Produce     json
 // @Param       id path string true "Order ID"
 // @Success     200 {object} envelope
+// @Failure     401 {object} envelope
 // @Failure     404 {object} envelope
 // @Failure     500 {object} envelope
+// @Security    BearerAuth
 // @Router      /checkout/orders/{id}/status [get]
 func (r *V1) gripOrderStatus(ctx *fiber.Ctx) error {
 	uc, ok := r.gripCheckoutUC()
 	if !ok {
 		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "checkout_usecase_not_configured"})
+	}
+
+	actor := r.gripActor(ctx)
+	if actor.UserID == "" {
+		status, body := mapDomainError(entity.ErrUnauthorized)
+		return ctx.Status(status).JSON(body)
 	}
 
 	order, err := uc.PaymentStatus(ctx.UserContext(), ctx.Params("id"))

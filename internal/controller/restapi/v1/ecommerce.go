@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 
+	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,38 +13,34 @@ type listResponse struct {
 	Meta any `json:"meta,omitempty"`
 }
 
-func (r *V1) registerEcommerceRoutes(apiV1Group fiber.Router, protected fiber.Router) {
-	adminCatalog := protected.Group("/catalog")
-	adminCatalog.Get("/products", r.listProducts)
+func (r *V1) registerEcommerceRoutes(apiV1Group fiber.Router) {
+	adminCatalog := apiV1Group.Group("/catalog", middleware.Auth(r.jwtManager), middleware.RequireAdminUsernames(r.adminUsers))
 	adminCatalog.Post("/products", r.createProduct)
-	adminCatalog.Get("/products/:id", r.getProduct)
 	adminCatalog.Patch("/products/:id", r.updateProduct)
 	adminCatalog.Delete("/products/:id", r.deleteProduct)
-	adminCatalog.Get("/categories", r.listCategories)
 	adminCatalog.Post("/categories", r.createCategory)
-	adminCatalog.Get("/tags", r.listTags)
 	adminCatalog.Post("/tags", r.createTag)
 
-	protected.Post("/media", r.createMedia)
-	protected.Get("/media", r.listMedia)
-	protected.Delete("/media/:id", r.deleteMedia)
+	apiV1Group.Post("/media", middleware.Auth(r.jwtManager), r.createMedia)
+	apiV1Group.Get("/media", middleware.Auth(r.jwtManager), r.listMedia)
+	apiV1Group.Delete("/media/:id", middleware.Auth(r.jwtManager), r.deleteMedia)
 
-	protected.Get("/homepage/blocks", r.listHomepageBlocks)
-	protected.Post("/homepage/blocks", r.createHomepageBlock)
-	protected.Patch("/homepage/blocks/:id", r.updateHomepageBlock)
-	protected.Delete("/homepage/blocks/:id", r.deleteHomepageBlock)
-	protected.Get("/support/channels", r.listSupportChannels)
-	protected.Patch("/support/channels/:id", r.updateSupportChannel)
+	apiV1Group.Get("/homepage/blocks", middleware.Auth(r.jwtManager), r.listHomepageBlocks)
+	apiV1Group.Post("/homepage/blocks", middleware.Auth(r.jwtManager), r.createHomepageBlock)
+	apiV1Group.Patch("/homepage/blocks/:id", middleware.Auth(r.jwtManager), r.updateHomepageBlock)
+	apiV1Group.Delete("/homepage/blocks/:id", middleware.Auth(r.jwtManager), r.deleteHomepageBlock)
+	apiV1Group.Get("/support/channels", middleware.Auth(r.jwtManager), r.listSupportChannels)
+	apiV1Group.Patch("/support/channels/:id", middleware.Auth(r.jwtManager), r.updateSupportChannel)
 
-	protected.Get("/content/articles", r.listAdminArticles)
-	protected.Post("/content/articles", r.createArticle)
-	protected.Patch("/content/articles/:id", r.updateArticle)
-	protected.Post("/content/articles/:id/schedule", r.updateArticle)
-	protected.Post("/content/articles/:id/publish", r.updateArticle)
-	protected.Get("/content/pages", r.getPage)
-	protected.Post("/content/pages", r.createPage)
-	protected.Patch("/content/pages/:slug", r.updatePage)
-	protected.Post("/import/initial-content", r.importInitialContent)
+	apiV1Group.Get("/content/articles", middleware.Auth(r.jwtManager), r.listAdminArticles)
+	apiV1Group.Post("/content/articles", middleware.Auth(r.jwtManager), r.createArticle)
+	apiV1Group.Patch("/content/articles/:id", middleware.Auth(r.jwtManager), r.updateArticle)
+	apiV1Group.Post("/content/articles/:id/schedule", middleware.Auth(r.jwtManager), r.updateArticle)
+	apiV1Group.Post("/content/articles/:id/publish", middleware.Auth(r.jwtManager), r.updateArticle)
+	apiV1Group.Get("/content/pages", middleware.Auth(r.jwtManager), r.getPage)
+	apiV1Group.Post("/content/pages", middleware.Auth(r.jwtManager), r.createPage)
+	apiV1Group.Patch("/content/pages/:slug", middleware.Auth(r.jwtManager), r.updatePage)
+	apiV1Group.Post("/import/initial-content", middleware.Auth(r.jwtManager), r.importInitialContent)
 
 	public := apiV1Group.Group("/public")
 	public.Get("/search", r.listProducts)
@@ -57,14 +54,15 @@ func (r *V1) registerEcommerceRoutes(apiV1Group fiber.Router, protected fiber.Ro
 	public.Get("/footer", r.listPublicHomepage)
 	public.Get("/support", r.listPublicSupport)
 
-	apiV1Group.Post("/cart", r.createCart)
-	apiV1Group.Get("/cart/:session_id", r.getCart)
-	apiV1Group.Post("/cart/:session_id/items", r.addCartItem)
-	apiV1Group.Patch("/cart/:session_id/items/:item_id", r.updateCartItem)
-	apiV1Group.Delete("/cart/:session_id/items/:item_id", r.removeCartItem)
-	apiV1Group.Post("/order-requests", r.submitOrder)
+	cartGroup := apiV1Group.Group("/cart", middleware.Auth(r.jwtManager))
+	cartGroup.Post("/", r.createCart)
+	cartGroup.Get("/:session_id", r.getCart)
+	cartGroup.Post("/:session_id/items", r.addCartItem)
+	cartGroup.Patch("/:session_id/items/:item_id", r.updateCartItem)
+	cartGroup.Delete("/:session_id/items/:item_id", r.removeCartItem)
+	apiV1Group.Post("/order-requests", middleware.Auth(r.jwtManager), r.submitOrder)
 	apiV1Group.Post("/leads", r.submitLead)
-	protected.Get("/leads/:id", r.getLead)
+	apiV1Group.Get("/leads/:id", middleware.Auth(r.jwtManager), r.getLead)
 }
 
 func (r *V1) listProducts(ctx *fiber.Ctx) error {

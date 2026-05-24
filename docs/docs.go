@@ -1044,13 +1044,24 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ]
             }
         },
         "/checkout/orders/{id}/cancel": {
@@ -1180,6 +1191,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1192,7 +1209,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ]
             }
         },
         "/checkout/payment-orders": {
@@ -1233,13 +1255,24 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ]
             }
         },
         "/checkout/preview": {

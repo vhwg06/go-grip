@@ -44,6 +44,9 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		authGroup.Post("/login", r.login)
 	}
 
+	r.registerGripStoreRoutes(apiV1Group)
+	r.registerEcommerceRoutes(apiV1Group)
+
 	// Protected routes
 	protected := apiV1Group.Group("", middleware.Auth(jwtManager))
 
@@ -78,6 +81,4 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		translationGroup.Post("/do-translate", r.doTranslate)
 	}
 
-	r.registerGripStoreRoutes(apiV1Group, protected)
-	r.registerEcommerceRoutes(apiV1Group, protected)
 }
