@@ -133,6 +133,7 @@ type (
 		Delete(ctx context.Context, actor entity.Actor, itemID int64) error
 		ToggleVote(ctx context.Context, actor entity.Actor, itemID int64) error
 		CreateReview(ctx context.Context, actor entity.Actor, review entity.Review) (entity.Review, error)
+		ListReviews(ctx context.Context, productID string) ([]entity.Review, error)
 	}
 
 	NotificationCenter interface {

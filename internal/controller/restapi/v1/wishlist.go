@@ -14,10 +14,13 @@ type gripWishlistRequest struct {
 }
 
 type gripReviewRequest struct {
-	ProductID string `json:"productId"`
-	OrderID   string `json:"orderId"`
-	Rating    int    `json:"rating"`
-	Comment   string `json:"comment"`
+	ProductID  string `json:"productId"`
+	ProductID2 string `json:"product_id"`
+	OrderID    string `json:"orderId"`
+	OrderID2   string `json:"order_id"`
+	Rating     int    `json:"rating"`
+	Comment    string `json:"comment"`
+	Content    string `json:"content"`
 }
 
 // @Summary     List wishlist
@@ -138,15 +141,58 @@ func (r *V1) gripReviewCreate(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
+	productId := body.ProductID
+	if productId == "" {
+		productId = body.ProductID2
+	}
+	orderId := body.OrderID
+	if orderId == "" {
+		orderId = body.OrderID2
+	}
+	comment := body.Comment
+	if comment == "" {
+		comment = body.Content
+	}
+
 	review, err := r.wishlistUC.CreateReview(ctx.UserContext(), r.gripActor(ctx), entity.Review{
-		ProductID: body.ProductID,
-		OrderID:   body.OrderID,
+		ProductID: productId,
+		OrderID:   orderId,
 		Rating:    body.Rating,
-		Comment:   body.Comment,
+		Comment:   comment,
 	})
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
 	return ctx.Status(http.StatusCreated).JSON(apiSuccessEnvelope(review))
+}
+
+func (r *V1) gripReviewList(ctx *fiber.Ctx) error {
+	productID := ctx.Query("product_id")
+	if productID == "" {
+		productID = ctx.Params("id")
+	}
+	if productID == "" {
+		return ctx.Status(http.StatusBadRequest).JSON(envelope{Error: "product_id_required"})
+	}
+
+	items, err := r.wishlistUC.ListReviews(ctx.UserContext(), productID)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	res := make([]fiber.Map, 0, len(items))
+	for _, item := range items {
+		res = append(res, fiber.Map{
+			"id":         strconv.FormatInt(item.ID, 10),
+			"product_id": item.ProductID,
+			"rating":     item.Rating,
+			"content":    item.Comment,
+			"username":   item.Username,
+			"created_at": item.CreatedAt.UnixMilli(),
+		})
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(res))
 }

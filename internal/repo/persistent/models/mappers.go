@@ -53,6 +53,13 @@ func EntityToUser(e entity.User) User {
 }
 
 func ProductToEntity(m Product) entity.Product {
+	var images []string
+	if m.Image != "" {
+		images = []string{m.Image}
+	} else {
+		images = []string{}
+	}
+
 	return entity.Product{
 		ID:              m.ID,
 		Title:           m.Name,
@@ -60,6 +67,7 @@ func ProductToEntity(m Product) entity.Product {
 		Price:           m.Price,
 		CategoryID:      m.Category,
 		ImageURL:        m.Image,
+		Images:          images,
 		IsHot:           m.IsHot,
 		IsActive:        m.IsActive,
 		IsShared:        m.IsShared,

@@ -134,6 +134,10 @@ definitions:
         type: string
       image_url:
         type: string
+      images:
+        items:
+          type: string
+        type: array
       is_active:
         type: boolean
       is_hot:
@@ -187,6 +191,27 @@ definitions:
     - ProductStatusDraft
     - ProductStatusArchived
     - ProductStatusSuspended
+  github_com_evrone_go-clean-template_internal_entity.Review:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      order_id:
+        type: string
+      product_id:
+        type: string
+      rating:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
   github_com_evrone_go-clean-template_internal_entity.RoleName:
     enum:
     - Administrator
@@ -217,13 +242,33 @@ definitions:
     type: object
   internal_controller_restapi_v1.gripBuyMeta:
     properties:
+      available:
+        type: boolean
+      averageRating:
+        type: number
+      can_review:
+        type: boolean
       canReview:
         type: boolean
+      emailConfigured:
+        type: boolean
+      product_id:
+        type: string
       productId:
         type: string
       rating:
         type: number
+      review_count:
+        type: integer
       reviewCount:
+        type: integer
+      reviewOrderId:
+        type: string
+      reviews:
+        items:
+          $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.Review'
+        type: array
+      stock:
         type: integer
     type: object
   internal_controller_restapi_v1.gripCreateOrderRequest:
@@ -245,6 +290,8 @@ definitions:
     type: object
   internal_controller_restapi_v1.gripRefreshRequest:
     properties:
+      refresh_token:
+        type: string
       refreshToken:
         type: string
     type: object

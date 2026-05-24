@@ -2160,6 +2160,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -2237,6 +2243,38 @@ const docTemplate = `{
                 "ProductStatusSuspended"
             ]
         },
+        "github_com_evrone_go-clean-template_internal_entity.Review": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_evrone_go-clean-template_internal_entity.RoleName": {
             "type": "string",
             "enum": [
@@ -2277,16 +2315,46 @@ const docTemplate = `{
         "internal_controller_restapi_v1.gripBuyMeta": {
             "type": "object",
             "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "averageRating": {
+                    "type": "number"
+                },
                 "canReview": {
                     "type": "boolean"
                 },
+                "can_review": {
+                    "type": "boolean"
+                },
+                "emailConfigured": {
+                    "type": "boolean"
+                },
                 "productId": {
+                    "type": "string"
+                },
+                "product_id": {
                     "type": "string"
                 },
                 "rating": {
                     "type": "number"
                 },
                 "reviewCount": {
+                    "type": "integer"
+                },
+                "reviewOrderId": {
+                    "type": "string"
+                },
+                "review_count": {
+                    "type": "integer"
+                },
+                "reviews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.Review"
+                    }
+                },
+                "stock": {
                     "type": "integer"
                 }
             }
@@ -2321,6 +2389,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "refreshToken": {
+                    "type": "string"
+                },
+                "refresh_token": {
                     "type": "string"
                 }
             }

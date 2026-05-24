@@ -48,11 +48,23 @@ func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor entity.
 		return nil, 0, fmt.Errorf("GripCatalogRepo.ListVisibleProducts: count: %w", err)
 	}
 
+	orderClause := "sort_order ASC, created_at DESC"
+	switch filter.Sort {
+	case "price_asc":
+		orderClause = "price ASC, created_at DESC"
+	case "price_desc":
+		orderClause = "price DESC, created_at DESC"
+	case "sales":
+		orderClause = "sold_count DESC, created_at DESC"
+	case "rating":
+		orderClause = "rating DESC, created_at DESC"
+	}
+
 	var rows []models.Product
 	if err := query.
 		Limit(int(filter.Limit)).
 		Offset(int(filter.Offset)).
-		Order("sort_order ASC, created_at DESC").
+		Order(orderClause).
 		Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("GripCatalogRepo.ListVisibleProducts: find: %w", err)
 	}

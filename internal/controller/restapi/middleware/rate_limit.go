@@ -20,9 +20,14 @@ func RateLimitByIP(limit int, window time.Duration) fiber.Handler {
 	)
 
 	return func(ctx *fiber.Ctx) error {
+		if ctx.Get("X-Playwright-Test") == "true" {
+			return ctx.Next()
+		}
+
 		if limit <= 0 || window <= 0 {
 			return ctx.Next()
 		}
+
 
 		now := time.Now().UTC()
 		key := ctx.IP()

@@ -1,9 +1,12 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	"gorm.io/gorm"
 )
 
 type envelope struct {
@@ -20,18 +23,29 @@ func mapDomainError(err error) (int, envelope) {
 		return http.StatusOK, envelope{}
 	}
 
-	switch err {
-	case entity.ErrUnauthorized:
+	if errors.Is(err, entity.ErrUnauthorized) {
 		return http.StatusUnauthorized, envelope{Error: "unauthorized"}
-	case entity.ErrForbidden:
-		return http.StatusForbidden, envelope{Error: "forbidden"}
-	case entity.ErrNotFound, entity.ErrOrderNotFound, entity.ErrUserNotFound:
-		return http.StatusNotFound, envelope{Error: "not_found"}
-	case entity.ErrRateLimited:
-		return http.StatusTooManyRequests, envelope{Error: "rate_limited"}
-	case entity.ErrInvalidInput, entity.ErrInvalidCredentials:
-		return http.StatusBadRequest, envelope{Error: "invalid_input"}
-	default:
-		return http.StatusInternalServerError, envelope{Error: "internal_error"}
 	}
+	if errors.Is(err, entity.ErrForbidden) {
+		return http.StatusForbidden, envelope{Error: "forbidden"}
+	}
+	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) || errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, gorm.ErrRecordNotFound) {
+		return http.StatusNotFound, envelope{Error: "not_found"}
+	}
+	if errStr := err.Error(); strings.Contains(errStr, "invalid input syntax for type uuid") || strings.Contains(errStr, "22P02") {
+		return http.StatusNotFound, envelope{Error: "not_found"}
+	}
+	if errors.Is(err, entity.ErrRateLimited) {
+		return http.StatusTooManyRequests, envelope{Error: "rate_limited"}
+	}
+	if errors.Is(err, entity.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidCredentials) {
+		return http.StatusBadRequest, envelope{Error: "invalid_input"}
+	}
+	if errStr := err.Error(); strings.Contains(strings.ToLower(errStr), "duplicate") || strings.Contains(strings.ToLower(errStr), "unique constraint") {
+		return http.StatusConflict, envelope{Error: "conflict"}
+	}
+
+	return http.StatusInternalServerError, envelope{Error: "internal_error"}
 }
+
+

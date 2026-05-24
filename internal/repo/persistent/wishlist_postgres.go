@@ -174,3 +174,29 @@ func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (e
 	review.UpdatedAt = model.UpdatedAt
 	return review, nil
 }
+
+func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]entity.Review, error) {
+	var rows []models.Review
+	if err := r.Gorm.WithContext(ctx).
+		Where("product_id = ?", productID).
+		Order("created_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("WishlistRepo.ListReviews: %w", err)
+	}
+
+	reviews := make([]entity.Review, 0, len(rows))
+	for _, row := range rows {
+		reviews = append(reviews, entity.Review{
+			ID:        row.ID,
+			ProductID: row.ProductID,
+			OrderID:   row.OrderID,
+			UserID:    row.UserID,
+			Username:  row.Username,
+			Rating:    row.Rating,
+			Comment:   row.Comment,
+			CreatedAt: row.CreatedAt,
+			UpdatedAt: row.UpdatedAt,
+		})
+	}
+	return reviews, nil
+}

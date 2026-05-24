@@ -18,6 +18,7 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	catalogGroup.Get("/products", r.gripListProducts)
 	catalogGroup.Get("/products/:id", r.gripGetProduct)
 	catalogGroup.Get("/products/:id/buy-meta", r.gripGetBuyMeta)
+	catalogGroup.Get("/products/:id/reviews", r.gripReviewList)
 	catalogGroup.Get("/search", r.gripSearchProducts)
 	catalogGroup.Get("/categories", r.gripListCategories)
 	catalogGroup.Get("/settings", r.gripListSettings)
@@ -44,11 +45,13 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	profileGroup.Post("/check-in", r.gripProfileCheckin)
 
 	wishlistGroup := apiV1Group.Group("/wishlist")
-	wishlistGroup.Get("/", r.gripWishlistList)
+	wishlistGroup.Get("/", middleware.Auth(r.jwtManager), r.gripWishlistList)
 	wishlistGroup.Post("/", middleware.Auth(r.jwtManager), r.gripWishlistCreate)
 	wishlistGroup.Patch("/:id", middleware.Auth(r.jwtManager), r.gripWishlistUpdate)
 	wishlistGroup.Delete("/:id", middleware.Auth(r.jwtManager), r.gripWishlistDelete)
 	wishlistGroup.Post("/:id/vote", middleware.Auth(r.jwtManager), r.gripWishlistVote)
+
+	apiV1Group.Get("/reviews", r.gripReviewList)
 
 	reviewsGroup := apiV1Group.Group("/reviews", middleware.Auth(r.jwtManager))
 	reviewsGroup.Post("/", r.gripReviewCreate)

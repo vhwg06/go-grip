@@ -14,7 +14,8 @@ type gripTokenPairResponse struct {
 }
 
 type gripRefreshRequest struct {
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken  string `json:"refreshToken"`
+	RefreshToken2 string `json:"refresh_token"`
 }
 
 // @Summary     Refresh access token
@@ -29,6 +30,7 @@ type gripRefreshRequest struct {
 // @Failure     401 {object} envelope
 // @Failure     500 {object} envelope
 // @Router      /auth/refresh [post]
+// @Router      /auth/refresh [post]
 func (r *V1) gripRefresh(ctx *fiber.Ctx) error {
 	if r.authUC == nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "auth_usecase_not_configured"})
@@ -40,7 +42,12 @@ func (r *V1) gripRefresh(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	accessToken, refreshToken, err := r.authUC.Refresh(ctx.UserContext(), body.RefreshToken)
+	token := body.RefreshToken
+	if token == "" {
+		token = body.RefreshToken2
+	}
+
+	accessToken, refreshToken, err := r.authUC.Refresh(ctx.UserContext(), token)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
@@ -76,7 +83,12 @@ func (r *V1) gripLogout(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	if err := r.authUC.Logout(ctx.UserContext(), r.gripActor(ctx), body.RefreshToken); err != nil {
+	token := body.RefreshToken
+	if token == "" {
+		token = body.RefreshToken2
+	}
+
+	if err := r.authUC.Logout(ctx.UserContext(), r.gripActor(ctx), token); err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}

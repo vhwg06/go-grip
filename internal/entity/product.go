@@ -22,6 +22,7 @@ type Product struct {
 	Brand                   string         `json:"brand,omitempty"`
 	CategoryID              string         `json:"category_id,omitempty"`
 	ImageURL                string         `json:"image_url,omitempty"`
+	Images                  []string       `json:"images"`
 	IsHot                   bool           `json:"is_hot"`
 	IsActive                bool           `json:"is_active"`
 	IsShared                bool           `json:"is_shared"`

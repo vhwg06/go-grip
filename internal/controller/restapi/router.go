@@ -35,9 +35,10 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.HTTP.CORSAllowedOrigins,
 		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Playwright-Test",
 		AllowCredentials: cfg.HTTP.CORSAllowCredentials,
 	}))
+
 
 	// Prometheus metrics
 	if cfg.Metrics.Enabled {

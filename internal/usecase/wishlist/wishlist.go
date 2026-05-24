@@ -88,10 +88,12 @@ func (uc *UseCase) CreateReview(ctx context.Context, actor entity.Actor, review 
 	if actor.UserID == "" {
 		return entity.Review{}, entity.ErrUnauthorized
 	}
-	if review.ProductID == "" || review.OrderID == "" || review.Rating < 1 || review.Rating > 5 {
+	if review.ProductID == "" || review.Rating < 1 || review.Rating > 5 {
 		return entity.Review{}, entity.ErrInvalidInput
 	}
-	if uc.orderRepo != nil {
+	if review.OrderID == "" {
+		review.OrderID = fmt.Sprintf("no_order_%d_%s", time.Now().UnixNano(), actor.UserID)
+	} else if uc.orderRepo != nil {
 		order, err := uc.orderRepo.GetOrderByID(ctx, review.OrderID)
 		if err != nil {
 			return entity.Review{}, fmt.Errorf("WishlistUseCase.CreateReview - orderRepo.GetOrderByID: %w", err)
@@ -111,4 +113,11 @@ func (uc *UseCase) CreateReview(ctx context.Context, actor entity.Actor, review 
 		return entity.Review{}, fmt.Errorf("WishlistUseCase.CreateReview - repo.StoreReview: %w", err)
 	}
 	return stored, nil
+}
+
+func (uc *UseCase) ListReviews(ctx context.Context, productID string) ([]entity.Review, error) {
+	if productID == "" {
+		return nil, entity.ErrInvalidInput
+	}
+	return uc.repo.ListReviews(ctx, productID)
 }

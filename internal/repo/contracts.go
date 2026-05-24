@@ -185,6 +185,7 @@ type (
 		DeleteWishlistItem(ctx context.Context, itemID int64) error
 		ToggleWishlistVote(ctx context.Context, itemID int64, userID string) (bool, error)
 		StoreReview(ctx context.Context, review entity.Review) (entity.Review, error)
+		ListReviews(ctx context.Context, productID string) ([]entity.Review, error)
 	}
 
 	NotificationRepository interface {
