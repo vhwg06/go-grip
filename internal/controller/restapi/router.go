@@ -12,6 +12,7 @@ import (
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 )
 
@@ -31,6 +32,12 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))
 	app.Use(middleware.RejectBlockedMutations())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     cfg.HTTP.CORSAllowedOrigins,
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: cfg.HTTP.CORSAllowCredentials,
+	}))
 
 	// Prometheus metrics
 	if cfg.Metrics.Enabled {

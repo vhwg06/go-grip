@@ -31,8 +31,10 @@ type (
 
 	// HTTP -.
 	http struct {
-		Port           string `env:"HTTP_PORT,required"`
-		UsePreforkMode bool   `env:"HTTP_USE_PREFORK_MODE" envDefault:"false"`
+		Port                 string `env:"HTTP_PORT,required"`
+		UsePreforkMode       bool   `env:"HTTP_USE_PREFORK_MODE" envDefault:"false"`
+		CORSAllowedOrigins   string `env:"HTTP_CORS_ALLOWED_ORIGINS" envDefault:"http://localhost:3000,http://127.0.0.1:3000"`
+		CORSAllowCredentials bool   `env:"HTTP_CORS_ALLOW_CREDENTIALS" envDefault:"false"`
 	}
 
 	// Log -.
