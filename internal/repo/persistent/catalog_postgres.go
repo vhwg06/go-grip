@@ -92,7 +92,20 @@ func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor entity.Ac
 		return entity.Product{}, fmt.Errorf("GripCatalogRepo.GetVisibleProduct: %w", err)
 	}
 
-	return models.ProductToEntity(row), nil
+	entityProduct := models.ProductToEntity(row)
+
+	var detailRows []models.ProductDetail
+	if err := r.Gorm.WithContext(ctx).
+		Where("product_id = ?", productID).
+		Order("sort_order ASC, id ASC").
+		Find(&detailRows).Error; err == nil {
+		entityProduct.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+		for _, detail := range detailRows {
+			entityProduct.Specs = append(entityProduct.Specs, models.DetailToEntity(detail))
+		}
+	}
+
+	return entityProduct, nil
 }
 
 func (r *GripCatalogRepo) ListCategories(ctx context.Context) ([]entity.Category, error) {

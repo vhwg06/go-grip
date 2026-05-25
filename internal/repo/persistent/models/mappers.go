@@ -110,6 +110,23 @@ func EntityToProduct(e entity.Product) Product {
 	}
 }
 
+func DetailToEntity(m ProductDetail) entity.ProductSpecItem {
+	return entity.ProductSpecItem{
+		Key:   m.Key,
+		Value: m.Value,
+	}
+}
+
+func EntityToDetail(productID string, e entity.ProductSpecItem) ProductDetail {
+	return ProductDetail{
+		ProductID: productID,
+		Key:       e.Key,
+		Value:     e.Value,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+}
+
 func CategoryToEntity(m Category) entity.Category {
 	var parentID *string
 	if m.ParentID != "" {

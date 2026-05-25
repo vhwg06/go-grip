@@ -166,6 +166,14 @@ func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([
 }
 
 func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
+	var existing models.Product
+	err := r.Gorm.WithContext(ctx).Where("id = ?", product.ID).First(&existing).Error
+	if err != nil {
+		product.IsActive = true
+	} else {
+		product.IsActive = existing.IsActive
+	}
+
 	model := models.EntityToProduct(product)
 	now := time.Now().UTC()
 	if model.CreatedAt.IsZero() {
@@ -185,7 +193,28 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 		Create(&model).Error; err != nil {
 		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct: %w", err)
 	}
-	return models.ProductToEntity(model), nil
+
+	// Persist specs
+	if err := r.Gorm.WithContext(ctx).Where("product_id = ?", product.ID).Delete(&models.ProductDetail{}).Error; err != nil {
+		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(delete specs): %w", err)
+	}
+
+	if len(product.Specs) > 0 {
+		detailRows := make([]models.ProductDetail, 0, len(product.Specs))
+		for i, spec := range product.Specs {
+			detail := models.EntityToDetail(product.ID, spec)
+			detail.SortOrder = i
+			detailRows = append(detailRows, detail)
+		}
+		if err := r.Gorm.WithContext(ctx).Create(&detailRows).Error; err != nil {
+			return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(create specs): %w", err)
+		}
+	}
+
+	result := models.ProductToEntity(model)
+	result.Specs = product.Specs
+
+	return result, nil
 }
 
 func (r *AdminRepo) DeleteProduct(ctx context.Context, productID string) error {

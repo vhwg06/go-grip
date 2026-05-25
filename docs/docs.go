@@ -2211,6 +2211,12 @@ const docTemplate = `{
                 "sort_order": {
                     "type": "integer"
                 },
+                "specs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.ProductSpecItem"
+                    }
+                },
                 "status": {
                     "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.ProductStatus"
                 },
@@ -2225,6 +2231,17 @@ const docTemplate = `{
                 },
                 "visibility_level": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_evrone_go-clean-template_internal_entity.ProductSpecItem": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },

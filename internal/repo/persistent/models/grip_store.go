@@ -60,6 +60,18 @@ type Product struct {
 
 func (Product) TableName() string { return "products" }
 
+type ProductDetail struct {
+	ID        int64     `gorm:"primaryKey;autoIncrement"`
+	ProductID string    `gorm:"type:text;index;not null"`
+	Key       string    `gorm:"type:text;not null"`
+	Value     string    `gorm:"type:text;not null"`
+	SortOrder int       `gorm:"not null;default:0"`
+	CreatedAt time.Time `gorm:"not null"`
+	UpdatedAt time.Time `gorm:"not null"`
+}
+
+func (ProductDetail) TableName() string { return "product_details" }
+
 type Category struct {
 	ID        string    `gorm:"type:text;primaryKey"`
 	Name      string    `gorm:"type:text"`

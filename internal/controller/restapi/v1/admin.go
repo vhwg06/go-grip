@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -85,6 +86,13 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
+	if specsStr := ctx.FormValue("specs"); specsStr != "" {
+		var specs []entity.ProductSpecItem
+		if err := json.Unmarshal([]byte(specsStr), &specs); err == nil {
+			product.Specs = specs
+		}
+	}
+
 	created, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), product)
 	if err != nil {
 		status, payload := mapDomainError(err)
@@ -121,6 +129,13 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 	product.ID = ctx.Params("id")
+
+	if specsStr := ctx.FormValue("specs"); specsStr != "" {
+		var specs []entity.ProductSpecItem
+		if err := json.Unmarshal([]byte(specsStr), &specs); err == nil {
+			product.Specs = specs
+		}
+	}
 
 	updated, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), product)
 	if err != nil {

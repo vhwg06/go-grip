@@ -76,6 +76,9 @@ func (uc *UseCase) CreateCategory(ctx context.Context, category entity.Category)
 }
 
 func (uc *UseCase) ListCategories(ctx context.Context) ([]entity.Category, error) {
+	if uc.gripRepo != nil {
+		return uc.gripRepo.ListCategories(ctx)
+	}
 	return uc.repo.ListCategories(ctx)
 }
 
