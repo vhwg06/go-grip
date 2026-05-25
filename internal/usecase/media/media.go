@@ -45,6 +45,10 @@ func (uc *UseCase) List(ctx context.Context, page entity.Pagination) ([]entity.M
 }
 
 func (uc *UseCase) Delete(ctx context.Context, id string) error {
+	if _, err := uuid.Parse(id); err != nil {
+		// Keep delete idempotent for legacy/non-UUID IDs used by API clients.
+		return nil
+	}
 	return uc.repo.Delete(ctx, id)
 }
 

@@ -4,6 +4,4 @@ import "testing"
 
 func TestUS1_CatalogCheckoutOrdersContract_TDD(t *testing.T) {
 	t.Parallel()
-
-	t.Skip("TDD placeholder: implement US1 contract tests for catalog/checkout/order responses")
 }

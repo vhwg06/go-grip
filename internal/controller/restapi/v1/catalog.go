@@ -227,20 +227,13 @@ func (r *V1) gripSearchProducts(ctx *fiber.Ctx) error {
 	}
 
 	actor := r.gripActor(ctx)
-	items, total, err := uc.ListVisibleProducts(ctx.UserContext(), actor, filter)
+	items, _, err := uc.ListVisibleProducts(ctx.UserContext(), actor, filter)
 	if err != nil {
 		status, body := mapDomainError(err)
 		return ctx.Status(status).JSON(body)
 	}
 
-	page := filter.Pagination.Normalize()
-	pageNum := (page.Offset / page.Limit) + 1
-	return ctx.JSON(fiber.Map{
-		"items": items,
-		"page":  pageNum,
-		"limit": page.Limit,
-		"total": total,
-	})
+	return ctx.JSON(items)
 }
 
 // @Summary     List categories
@@ -257,7 +250,18 @@ func (r *V1) gripListCategories(ctx *fiber.Ctx) error {
 		status, body := mapDomainError(err)
 		return ctx.Status(status).JSON(body)
 	}
-	return ctx.JSON(gripListResponse{Data: items})
+	response := make([]fiber.Map, 0, len(items))
+	for _, item := range items {
+		response = append(response, fiber.Map{
+			"id":        item.ID,
+			"name":      item.Name,
+			"slug":      item.ID,
+			"parent_id": item.ParentID,
+			"position":  item.Position,
+			"is_active": item.IsActive,
+		})
+	}
+	return ctx.JSON(gripListResponse{Data: response})
 }
 
 // @Summary     List public settings

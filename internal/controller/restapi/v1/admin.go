@@ -162,7 +162,9 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 	}
 
 	var product entity.Product
-	if err := ctx.BodyParser(&product); err != nil {
+	contentType := strings.ToLower(ctx.Get("Content-Type"))
+	isMultipart := strings.HasPrefix(contentType, "multipart/form-data")
+	if err := ctx.BodyParser(&product); err != nil && !isMultipart {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
@@ -206,7 +208,9 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 	}
 
 	var product entity.Product
-	if err := ctx.BodyParser(&product); err != nil {
+	contentType := strings.ToLower(ctx.Get("Content-Type"))
+	isMultipart := strings.HasPrefix(contentType, "multipart/form-data")
+	if err := ctx.BodyParser(&product); err != nil && !isMultipart {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}

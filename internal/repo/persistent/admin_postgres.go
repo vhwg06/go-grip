@@ -11,6 +11,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -231,6 +232,14 @@ func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (entity.Pr
 }
 
 func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
+	if _, err := uuid.Parse(strings.TrimSpace(product.ID)); err != nil {
+		product.ID = uuid.NewString()
+	}
+
+	if strings.TrimSpace(product.SKU) == "" {
+		product.SKU = product.ID
+	}
+
 	var existing models.Product
 	err := r.Gorm.WithContext(ctx).Where("id = ?", product.ID).First(&existing).Error
 	if err != nil {

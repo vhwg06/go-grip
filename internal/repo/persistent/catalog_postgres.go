@@ -31,7 +31,11 @@ func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor entity.
 		Where("visibility_level <= ?", threshold)
 
 	if filter.Keyword != "" {
-		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+filter.Keyword+"%", "%"+filter.Keyword+"%")
+		keyword := "%" + filter.Keyword + "%"
+		query = query.Where(
+			"COALESCE(title, name) ILIKE ? OR name ILIKE ? OR description ILIKE ?",
+			keyword, keyword, keyword,
+		)
 	}
 	if filter.Category != "" {
 		query = query.Where("category = ?", filter.Category)
