@@ -475,3 +475,40 @@ func (r *V1) gripAdminTargeted(ctx *fiber.Ctx) error {
 func (r *V1) gripAdminNoop(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusNotImplemented).JSON(envelope{Error: "not_implemented"})
 }
+
+func (r *V1) gripAdminProductsNew(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	var categories []entity.Category
+	if ok {
+		if items, err := ext.ListCategories(ctx.UserContext(), r.gripActor(ctx)); err == nil {
+			categories = items
+		}
+	}
+	if categories == nil {
+		categories = []entity.Category{}
+	}
+
+	return ctx.JSON(fiber.Map{
+		"product":    nil,
+		"categories": categories,
+	})
+}
+
+func (r *V1) gripAdminProductForm(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	var categories []entity.Category
+	if ok {
+		if items, err := ext.ListCategories(ctx.UserContext(), r.gripActor(ctx)); err == nil {
+			categories = items
+		}
+	}
+	if categories == nil {
+		categories = []entity.Category{}
+	}
+
+	return ctx.JSON(fiber.Map{
+		"product":    nil,
+		"categories": categories,
+	})
+}
+

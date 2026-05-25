@@ -224,3 +224,46 @@ func denullTime(v *time.Time) time.Time {
 
 	return *v
 }
+
+func MediaAssetToEntity(m MediaAsset) entity.MediaAsset {
+	return entity.MediaAsset{
+		ID:        m.ID,
+		FileName:  m.FileName,
+		MimeType:  m.MimeType,
+		SizeBytes: m.SizeBytes,
+		URL:       m.URL,
+		AltText:   stringPointerValue(m.AltText),
+		OwnerType: stringPointerValue(m.OwnerType),
+		OwnerID:   stringPointerValue(m.OwnerID),
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+func EntityToMediaAsset(e entity.MediaAsset) MediaAsset {
+	return MediaAsset{
+		ID:        e.ID,
+		FileName:  e.FileName,
+		MimeType:  e.MimeType,
+		SizeBytes: e.SizeBytes,
+		URL:       e.URL,
+		AltText:   valueStringPointer(e.AltText),
+		OwnerType: valueStringPointer(e.OwnerType),
+		OwnerID:   valueStringPointer(e.OwnerID),
+		CreatedAt: e.CreatedAt,
+	}
+}
+
+func stringPointerValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
+
+func valueStringPointer(v string) *string {
+	if v == "" {
+		return nil
+	}
+	copied := v
+	return &copied
+}

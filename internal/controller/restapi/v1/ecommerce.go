@@ -24,6 +24,7 @@ func (r *V1) registerEcommerceRoutes(apiV1Group fiber.Router) {
 	apiV1Group.Post("/media", middleware.Auth(r.jwtManager), r.createMedia)
 	apiV1Group.Get("/media", middleware.Auth(r.jwtManager), r.listMedia)
 	apiV1Group.Delete("/media/:id", middleware.Auth(r.jwtManager), r.deleteMedia)
+	apiV1Group.Put("/media/simulate-upload/:filename", r.simulateUpload)
 
 	apiV1Group.Get("/homepage/blocks", middleware.Auth(r.jwtManager), r.listHomepageBlocks)
 	apiV1Group.Post("/homepage/blocks", middleware.Auth(r.jwtManager), r.createHomepageBlock)

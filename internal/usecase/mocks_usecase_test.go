@@ -557,6 +557,23 @@ func (mr *MockMediaMockRecorder) Store(ctx, media any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockMedia)(nil).Store), ctx, media)
 }
 
+// GeneratePresignedURL mocks base method.
+func (m *MockMedia) GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (string, string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GeneratePresignedURL", ctx, fileName, contentType)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(string)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GeneratePresignedURL indicates an expected call of GeneratePresignedURL.
+func (mr *MockMediaMockRecorder) GeneratePresignedURL(ctx, fileName, contentType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeneratePresignedURL", reflect.TypeOf((*MockMedia)(nil).GeneratePresignedURL), ctx, fileName, contentType)
+}
+
 // MockHomepage is a mock of Homepage interface.
 type MockHomepage struct {
 	ctrl     *gomock.Controller

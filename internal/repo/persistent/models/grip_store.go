@@ -232,3 +232,17 @@ type Setting struct {
 }
 
 func (Setting) TableName() string { return "settings" }
+
+type MediaAsset struct {
+	ID        string    `gorm:"type:uuid;primaryKey"`
+	FileName  string    `gorm:"column:file_name;not null"`
+	MimeType  string    `gorm:"column:mime_type;not null"`
+	SizeBytes int64     `gorm:"column:size_bytes;not null"`
+	URL       string    `gorm:"column:url;not null"`
+	AltText   *string   `gorm:"column:alt_text"`
+	OwnerType *string   `gorm:"column:owner_type"`
+	OwnerID   *string   `gorm:"column:owner_id;type:uuid"`
+	CreatedAt time.Time `gorm:"column:created_at;not null"`
+}
+
+func (MediaAsset) TableName() string { return "media_assets" }

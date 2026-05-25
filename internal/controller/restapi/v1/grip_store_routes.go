@@ -96,6 +96,9 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Post("/notifications/test", r.gripAdminNoop)
 	adminGroup.Post("/data/import", r.gripAdminNoop)
 	adminGroup.Post("/data/repair-aggregates", r.gripAdminRepairAggregates)
+	adminGroup.Get("/media/presigned", r.getPresignedURL)
+	adminGroup.Get("/products/new", r.gripAdminProductsNew)
+	adminGroup.Get("/products/:id/form", r.gripAdminProductForm)
 }
 
 func (r *V1) notImplemented(ctx *fiber.Ctx) error {
