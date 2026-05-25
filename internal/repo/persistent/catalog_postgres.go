@@ -33,6 +33,9 @@ func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor entity.
 	if filter.Keyword != "" {
 		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+filter.Keyword+"%", "%"+filter.Keyword+"%")
 	}
+	if filter.Category != "" {
+		query = query.Where("category = ?", filter.Category)
+	}
 	if filter.Brand != "" {
 		query = query.Where("brand = ?", filter.Brand)
 	}
@@ -101,7 +104,14 @@ func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor entity.Ac
 		Find(&detailRows).Error; err == nil {
 		entityProduct.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
 		for _, detail := range detailRows {
-			entityProduct.Specs = append(entityProduct.Specs, models.DetailToEntity(detail))
+			switch detail.Key {
+			case "sku":
+				entityProduct.SKU = detail.Value
+			case "brand":
+				entityProduct.Brand = detail.Value
+			default:
+				entityProduct.Specs = append(entityProduct.Specs, models.DetailToEntity(detail))
+			}
 		}
 	}
 

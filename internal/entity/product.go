@@ -68,6 +68,7 @@ type Setting struct {
 
 type ProductFilter struct {
 	Keyword    string
+	CategoryID string
 	Brand      string
 	MinPrice   *int64
 	MaxPrice   *int64

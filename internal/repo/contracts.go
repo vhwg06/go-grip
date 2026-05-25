@@ -73,6 +73,7 @@ type (
 
 	ProductFilter struct {
 		Keyword  string
+		Category string
 		Brand    string
 		MinPrice *int64
 		MaxPrice *int64

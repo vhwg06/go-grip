@@ -41,7 +41,7 @@ func (uc *UseCase) CreateProduct(ctx context.Context, product entity.Product) (e
 func (uc *UseCase) ListProducts(ctx context.Context, filter entity.ProductFilter) ([]entity.Product, int, error) {
 	page := filter.Pagination.Normalize()
 	items, total, err := uc.repo.ListProducts(ctx, repo.ProductFilter{
-		Keyword: filter.Keyword, Brand: filter.Brand, MinPrice: filter.MinPrice, MaxPrice: filter.MaxPrice,
+		Keyword: filter.Keyword, Category: filter.CategoryID, Brand: filter.Brand, MinPrice: filter.MinPrice, MaxPrice: filter.MaxPrice,
 		Sort: filter.Sort, Limit: uint64(page.Limit), Offset: uint64(page.Offset),
 	})
 	if err != nil {
@@ -102,6 +102,7 @@ func (uc *UseCase) ListVisibleProducts(ctx context.Context, actor entity.Actor, 
 	page := filter.Pagination.Normalize()
 	items, total, err := uc.gripRepo.ListVisibleProducts(ctx, actor, repo.ProductFilter{
 		Keyword:  filter.Keyword,
+		Category: filter.CategoryID,
 		Brand:    filter.Brand,
 		MinPrice: filter.MinPrice,
 		MaxPrice: filter.MaxPrice,

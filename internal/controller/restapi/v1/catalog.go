@@ -43,21 +43,32 @@ func (r *V1) gripCatalogUC() (gripCatalogUseCase, bool) {
 }
 
 func (r *V1) gripParseProductFilter(ctx *fiber.Ctx) (entity.ProductFilter, error) {
+	minPriceRaw := ctx.Query("minPrice")
+	if minPriceRaw == "" {
+		minPriceRaw = ctx.Query("min_price")
+	}
+
+	maxPriceRaw := ctx.Query("maxPrice")
+	if maxPriceRaw == "" {
+		maxPriceRaw = ctx.Query("max_price")
+	}
+
 	filter := entity.ProductFilter{
 		Keyword:    ctx.Query("q"),
+		CategoryID: ctx.Query("category"),
 		Brand:      ctx.Query("brand"),
 		Sort:       ctx.Query("sort"),
 		Pagination: gripPage(ctx),
 	}
 
-	if minPriceRaw := ctx.Query("min_price"); minPriceRaw != "" {
+	if minPriceRaw != "" {
 		minPrice, err := strconv.ParseInt(minPriceRaw, 10, 64)
 		if err != nil {
 			return entity.ProductFilter{}, entity.ErrInvalidInput
 		}
 		filter.MinPrice = &minPrice
 	}
-	if maxPriceRaw := ctx.Query("max_price"); maxPriceRaw != "" {
+	if maxPriceRaw != "" {
 		maxPrice, err := strconv.ParseInt(maxPriceRaw, 10, 64)
 		if err != nil {
 			return entity.ProductFilter{}, entity.ErrInvalidInput
@@ -216,13 +227,20 @@ func (r *V1) gripSearchProducts(ctx *fiber.Ctx) error {
 	}
 
 	actor := r.gripActor(ctx)
-	items, _, err := uc.ListVisibleProducts(ctx.UserContext(), actor, filter)
+	items, total, err := uc.ListVisibleProducts(ctx.UserContext(), actor, filter)
 	if err != nil {
 		status, body := mapDomainError(err)
 		return ctx.Status(status).JSON(body)
 	}
 
-	return ctx.JSON(apiSuccessEnvelope(items))
+	page := filter.Pagination.Normalize()
+	pageNum := (page.Offset / page.Limit) + 1
+	return ctx.JSON(fiber.Map{
+		"items": items,
+		"page":  pageNum,
+		"limit": page.Limit,
+		"total": total,
+	})
 }
 
 // @Summary     List categories
@@ -273,10 +291,10 @@ func (r *V1) gripListSettings(ctx *fiber.Ctx) error {
 		"checkinEnabled":    true,
 		"checkinReward":     1,
 		"lowStockThreshold": 3,
-		
-		"site_name":         "Grip Store",
-		"site_description":  "High-quality virtual goods, instant delivery",
-		"currency":          "VND",
+
+		"site_name":        "Grip Store",
+		"site_description": "High-quality virtual goods, instant delivery",
+		"currency":         "VND",
 	}
 
 	for _, s := range settings {

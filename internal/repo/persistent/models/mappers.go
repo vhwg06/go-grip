@@ -54,17 +54,24 @@ func EntityToUser(e entity.User) User {
 
 func ProductToEntity(m Product) entity.Product {
 	var images []string
+	var comparePrice *int64
 	if m.Image != "" {
 		images = []string{m.Image}
 	} else {
 		images = []string{}
 	}
+	if m.CompareAtPrice > 0 {
+		value := m.CompareAtPrice
+		comparePrice = &value
+	}
 
 	return entity.Product{
 		ID:              m.ID,
 		Title:           m.Name,
+		SKU:             m.SKU,
 		Description:     m.Description,
 		Price:           m.Price,
+		ComparePrice:    comparePrice,
 		CategoryID:      m.Category,
 		ImageURL:        m.Image,
 		Images:          images,
@@ -86,11 +93,18 @@ func ProductToEntity(m Product) entity.Product {
 }
 
 func EntityToProduct(e entity.Product) Product {
+	var compareAtPrice int64
+	if e.ComparePrice != nil {
+		compareAtPrice = *e.ComparePrice
+	}
+
 	return Product{
 		ID:              e.ID,
 		Name:            e.Title,
+		SKU:             e.SKU,
 		Description:     e.Description,
 		Price:           e.Price,
+		CompareAtPrice:  compareAtPrice,
 		Category:        e.CategoryID,
 		Image:           e.ImageURL,
 		IsHot:           e.IsHot,

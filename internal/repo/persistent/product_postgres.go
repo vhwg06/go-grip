@@ -51,6 +51,9 @@ func (r *CatalogRepo) ListProducts(ctx context.Context, filter repo.ProductFilte
 	defer r.mu.RUnlock()
 	items := make([]entity.Product, 0, len(r.products))
 	for _, product := range r.products {
+		if filter.Category != "" && product.CategoryID != filter.Category {
+			continue
+		}
 		if filter.Brand != "" && product.Brand != filter.Brand {
 			continue
 		}

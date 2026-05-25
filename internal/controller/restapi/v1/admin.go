@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
@@ -12,6 +13,7 @@ import (
 
 type adminExtendedUseCase interface {
 	ListProducts(ctx context.Context, actor entity.Actor, page entity.Pagination) ([]entity.Product, int, error)
+	GetProduct(ctx context.Context, actor entity.Actor, productID string) (entity.Product, error)
 	UpsertProduct(ctx context.Context, actor entity.Actor, product entity.Product) (entity.Product, error)
 	DeleteProduct(ctx context.Context, actor entity.Actor, productID string) error
 	ListCategories(ctx context.Context, actor entity.Actor) ([]entity.Category, error)
@@ -27,6 +29,85 @@ type adminExtendedUseCase interface {
 type gripImportCardsRequest struct {
 	ProductID string   `json:"productId"`
 	Keys      []string `json:"keys"`
+}
+
+func parseBoolForm(value string) bool {
+	normalized := strings.TrimSpace(strings.ToLower(value))
+	return normalized == "1" || normalized == "true" || normalized == "on" || normalized == "yes"
+}
+
+func patchProductFromForm(product *entity.Product, ctx *fiber.Ctx) {
+	if value := strings.TrimSpace(ctx.FormValue("id")); value != "" {
+		product.ID = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("slug")); value != "" && product.ID == "" {
+		product.ID = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("name")); value != "" {
+		product.Title = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("description")); value != "" {
+		product.Description = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("category")); value != "" {
+		product.CategoryID = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("image")); value != "" {
+		product.ImageURL = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("images")); value != "" {
+		lines := strings.Split(value, "\n")
+		images := make([]string, 0, len(lines))
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				images = append(images, line)
+			}
+		}
+		product.Images = images
+	}
+	if value := strings.TrimSpace(ctx.FormValue("sku")); value != "" {
+		product.SKU = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("brand")); value != "" {
+		product.Brand = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("brandId")); value != "" && product.Brand == "" {
+		product.Brand = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("price")); value != "" {
+		if parsed, err := strconv.ParseFloat(value, 64); err == nil {
+			product.Price = int64(parsed)
+		}
+	}
+	if value := strings.TrimSpace(ctx.FormValue("compareAtPrice")); value != "" {
+		if parsed, err := strconv.ParseFloat(value, 64); err == nil {
+			price := int64(parsed)
+			product.ComparePrice = &price
+		}
+	}
+	if value := strings.TrimSpace(ctx.FormValue("purchaseLimit")); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			product.PurchaseLimit = parsed
+		}
+	}
+	if value := strings.TrimSpace(ctx.FormValue("purchaseWarning")); value != "" {
+		product.PurchaseWarning = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("visibilityLevel")); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			product.VisibilityLevel = parsed
+		}
+	}
+	if value := strings.TrimSpace(ctx.FormValue("isHot")); value != "" {
+		product.IsHot = parseBoolForm(value)
+	}
+	if value := strings.TrimSpace(ctx.FormValue("isShared")); value != "" {
+		product.IsShared = parseBoolForm(value)
+	}
+	if value := strings.TrimSpace(ctx.FormValue("isActive")); value != "" {
+		product.IsActive = parseBoolForm(value)
+	}
 }
 
 // @Summary     List admin products
@@ -85,6 +166,7 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
+	patchProductFromForm(&product, ctx)
 
 	if specsStr := ctx.FormValue("specs"); specsStr != "" {
 		var specs []entity.ProductSpecItem
@@ -128,6 +210,7 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
+	patchProductFromForm(&product, ctx)
 	product.ID = ctx.Params("id")
 
 	if specsStr := ctx.FormValue("specs"); specsStr != "" {
@@ -511,19 +594,26 @@ func (r *V1) gripAdminProductsNew(ctx *fiber.Ctx) error {
 
 func (r *V1) gripAdminProductForm(ctx *fiber.Ctx) error {
 	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_products_not_available"})
+	}
+
+	product, err := ext.GetProduct(ctx.UserContext(), r.gripActor(ctx), ctx.Params("id"))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
 	var categories []entity.Category
-	if ok {
-		if items, err := ext.ListCategories(ctx.UserContext(), r.gripActor(ctx)); err == nil {
-			categories = items
-		}
+	if items, err := ext.ListCategories(ctx.UserContext(), r.gripActor(ctx)); err == nil {
+		categories = items
 	}
 	if categories == nil {
 		categories = []entity.Category{}
 	}
 
 	return ctx.JSON(fiber.Map{
-		"product":    nil,
+		"product":    product,
 		"categories": categories,
 	})
 }
-

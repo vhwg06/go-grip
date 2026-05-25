@@ -14,6 +14,7 @@ import (
 type adminStore interface {
 	repo.AdminRepository
 	ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error)
+	GetProduct(ctx context.Context, productID string) (entity.Product, error)
 	UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error)
 	DeleteProduct(ctx context.Context, productID string) error
 	ListCategories(ctx context.Context) ([]entity.Category, error)
@@ -96,6 +97,13 @@ func (uc *UseCase) UpsertProduct(ctx context.Context, actor entity.Actor, produc
 		return entity.Product{}, err
 	}
 	return uc.repo.UpsertProduct(ctx, product)
+}
+
+func (uc *UseCase) GetProduct(ctx context.Context, actor entity.Actor, productID string) (entity.Product, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.Product{}, err
+	}
+	return uc.repo.GetProduct(ctx, productID)
 }
 
 func (uc *UseCase) DeleteProduct(ctx context.Context, actor entity.Actor, productID string) error {

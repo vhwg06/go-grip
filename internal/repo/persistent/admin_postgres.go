@@ -15,6 +15,36 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func buildDetailRows(product entity.Product) []models.ProductDetail {
+	details := make([]entity.ProductSpecItem, 0, len(product.Specs)+2)
+	if product.SKU != "" {
+		details = append(details, entity.ProductSpecItem{Key: "sku", Value: product.SKU})
+	}
+	if product.Brand != "" {
+		details = append(details, entity.ProductSpecItem{Key: "brand", Value: product.Brand})
+	}
+	for _, spec := range product.Specs {
+		key := strings.TrimSpace(spec.Key)
+		value := strings.TrimSpace(spec.Value)
+		if key == "" {
+			continue
+		}
+		if key == "sku" || key == "brand" {
+			continue
+		}
+		details = append(details, entity.ProductSpecItem{Key: key, Value: value})
+	}
+
+	rows := make([]models.ProductDetail, 0, len(details))
+	for i, detail := range details {
+		row := models.EntityToDetail(product.ID, detail)
+		row.SortOrder = i
+		rows = append(rows, row)
+	}
+
+	return rows
+}
+
 type AdminRepo struct {
 	*postgres.Postgres
 }
@@ -165,6 +195,41 @@ func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([
 	return items, int(total), nil
 }
 
+func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (entity.Product, error) {
+	var row models.Product
+	if err := r.Gorm.WithContext(ctx).
+		Where("id = ?", productID).
+		First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Product{}, entity.ErrNotFound
+		}
+		return entity.Product{}, fmt.Errorf("AdminRepo.GetProduct: %w", err)
+	}
+
+	result := models.ProductToEntity(row)
+
+	var detailRows []models.ProductDetail
+	if err := r.Gorm.WithContext(ctx).
+		Where("product_id = ?", productID).
+		Order("sort_order ASC, id ASC").
+		Find(&detailRows).Error; err != nil {
+		return entity.Product{}, fmt.Errorf("AdminRepo.GetProduct(specs): %w", err)
+	}
+	result.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+	for _, detail := range detailRows {
+		switch detail.Key {
+		case "sku":
+			result.SKU = detail.Value
+		case "brand":
+			result.Brand = detail.Value
+		default:
+			result.Specs = append(result.Specs, models.DetailToEntity(detail))
+		}
+	}
+
+	return result, nil
+}
+
 func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
 	var existing models.Product
 	err := r.Gorm.WithContext(ctx).Where("id = ?", product.ID).First(&existing).Error
@@ -185,7 +250,7 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 		Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "id"}},
 			DoUpdates: clause.AssignmentColumns([]string{
-				"name", "description", "price", "category", "image", "is_hot", "is_active",
+				"title", "sku", "description", "price", "compare_price", "category", "image", "is_hot", "is_active",
 				"is_shared", "sort_order", "purchase_limit", "purchase_warning", "visibility_level",
 				"stock_count", "locked_count", "sold_count", "rating", "review_count", "updated_at",
 			}),
@@ -199,20 +264,23 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(delete specs): %w", err)
 	}
 
-	if len(product.Specs) > 0 {
-		detailRows := make([]models.ProductDetail, 0, len(product.Specs))
-		for i, spec := range product.Specs {
-			detail := models.EntityToDetail(product.ID, spec)
-			detail.SortOrder = i
-			detailRows = append(detailRows, detail)
-		}
+	detailRows := buildDetailRows(product)
+	if len(detailRows) > 0 {
 		if err := r.Gorm.WithContext(ctx).Create(&detailRows).Error; err != nil {
 			return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(create specs): %w", err)
 		}
 	}
 
 	result := models.ProductToEntity(model)
-	result.Specs = product.Specs
+	result.SKU = product.SKU
+	result.Brand = product.Brand
+	result.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+	for _, detail := range detailRows {
+		if detail.Key == "sku" || detail.Key == "brand" {
+			continue
+		}
+		result.Specs = append(result.Specs, models.DetailToEntity(detail))
+	}
 
 	return result, nil
 }
