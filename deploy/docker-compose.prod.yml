@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: grip
+      POSTGRES_USER: grip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/18/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grip -d grip"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - grip
+
+  app:
+    image: ${IMAGE_REF:?IMAGE_REF is required}
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "80:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - grip
+
+networks:
+  grip:
+
+volumes:
+  postgres_data:

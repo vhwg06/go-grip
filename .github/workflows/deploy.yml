@@ -1,0 +1,137 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Run tests
+        run: go test ./internal/... ./pkg/...
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Configure SSH
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$VM_PORT" "$VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Render production env file
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          APP_VERSION: ${{ github.sha }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ADMIN_USERS: ${{ secrets.ADMIN_USERS }}
+          PAYMENT_MERCHANT_ID: ${{ secrets.PAYMENT_MERCHANT_ID }}
+          PAYMENT_SECRET_KEY: ${{ secrets.PAYMENT_SECRET_KEY }}
+          PAYMENT_BASE_URL: ${{ secrets.PAYMENT_BASE_URL }}
+          PAYMENT_NOTIFY_URL: ${{ secrets.PAYMENT_NOTIFY_URL }}
+          PAYMENT_RETURN_URL: ${{ secrets.PAYMENT_RETURN_URL }}
+        run: |
+          cat > .deploy.env <<ENV
+          IMAGE_REF=$IMAGE_REF
+          POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+          APP_NAME=go-grip
+          APP_VERSION=$APP_VERSION
+          HTTP_PORT=8080
+          HTTP_USE_PREFORK_MODE=false
+          HTTP_CORS_ALLOWED_ORIGINS=*
+          HTTP_CORS_ALLOW_CREDENTIALS=false
+          LOG_LEVEL=info
+          PG_POOL_MAX=10
+          PG_URL=postgres://grip:$POSTGRES_PASSWORD@db:5432/grip
+          METRICS_ENABLED=true
+          SWAGGER_ENABLED=false
+          JWT_TOKEN_EXPIRY=24h
+          JWT_SECRET=$JWT_SECRET
+          ADMIN_USERS=$ADMIN_USERS
+          PAYMENT_PROVIDER=epay
+          PAYMENT_MERCHANT_ID=$PAYMENT_MERCHANT_ID
+          PAYMENT_SECRET_KEY=$PAYMENT_SECRET_KEY
+          PAYMENT_BASE_URL=$PAYMENT_BASE_URL
+          PAYMENT_NOTIFY_URL=$PAYMENT_NOTIFY_URL
+          PAYMENT_RETURN_URL=$PAYMENT_RETURN_URL
+          PAYMENT_ORDER_TIMEOUT_MINUTES=5
+          ENV
+          chmod 600 .deploy.env
+
+      - name: Copy deployment files
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_DEPLOY_DIR: ${{ secrets.VM_DEPLOY_DIR || '/opt/go-grip' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "mkdir -p '$VM_DEPLOY_DIR/deploy'"
+          scp -i ~/.ssh/deploy_key -P "$VM_PORT" deploy/docker-compose.prod.yml "$VM_USER@$VM_HOST:$VM_DEPLOY_DIR/deploy/docker-compose.prod.yml"
+          scp -i ~/.ssh/deploy_key -P "$VM_PORT" .deploy.env "$VM_USER@$VM_HOST:$VM_DEPLOY_DIR/.env"
+
+      - name: Deploy on VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT || '22' }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_DEPLOY_DIR: ${{ secrets.VM_DEPLOY_DIR || '/opt/go-grip' }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          printf '%s\n' "$GHCR_PAT" | ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
+          ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "VM_DEPLOY_DIR='$VM_DEPLOY_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$VM_DEPLOY_DIR"
+          docker compose -f deploy/docker-compose.prod.yml down --remove-orphans
+          docker compose -f deploy/docker-compose.prod.yml pull
+          docker compose -f deploy/docker-compose.prod.yml up -d
+          curl -f http://127.0.0.1/healthz
+          REMOTE
