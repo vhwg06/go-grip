@@ -133,5 +133,7 @@ jobs:
           docker compose --env-file .env -f deploy/docker-compose.prod.yml down --remove-orphans
           docker compose --env-file .env -f deploy/docker-compose.prod.yml pull
           docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d
-          curl -f http://127.0.0.1/healthz
+
+          sleep 3
+          curl -f http://127.0.0.1:8080/healthz
           REMOTE
