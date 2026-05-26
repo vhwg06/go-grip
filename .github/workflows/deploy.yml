@@ -130,8 +130,8 @@ jobs:
           set -euo pipefail
 
           cd "$VM_DEPLOY_DIR"
-          docker compose -f deploy/docker-compose.prod.yml down --remove-orphans
-          docker compose -f deploy/docker-compose.prod.yml pull
-          docker compose -f deploy/docker-compose.prod.yml up -d
+          docker compose --env-file .env -f deploy/docker-compose.prod.yml down --remove-orphans
+          docker compose --env-file .env -f deploy/docker-compose.prod.yml pull
+          docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d
           curl -f http://127.0.0.1/healthz
           REMOTE
