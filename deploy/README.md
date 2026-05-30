@@ -61,9 +61,10 @@ for example `quan`.
 
 ## GCP Firewall
 
-Open ingress TCP port `80` to `0.0.0.0/0`. Do not open port `8080`; Docker maps
-VM port `80` to app port `8080`. PostgreSQL stays private inside the Docker
-network and does not publish port `5432`.
+Do not expose backend port `8080` publicly. Backend is bound to
+`127.0.0.1:8080` on the VM and should be reached only through a reverse proxy
+(frontend Nginx `/api` path or an edge proxy). PostgreSQL stays private inside
+the Docker network and does not publish port `5432`.
 
 ## Smoke Test
 
@@ -72,11 +73,11 @@ After a deploy:
 ```sh
 cd /opt/go-grip
 docker compose -f deploy/docker-compose.prod.yml ps
-curl -f http://127.0.0.1/healthz
+curl -f http://127.0.0.1:8080/healthz
 ```
 
 From outside the VM:
 
 ```sh
-curl -f http://<VM_EXTERNAL_IP>/healthz
+curl -f http://<VM_EXTERNAL_IP>/api/healthz
 ```
