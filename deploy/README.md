@@ -61,10 +61,11 @@ for example `quan`.
 
 ## GCP Firewall
 
-Do not expose backend port `8080` publicly. Backend is bound to
-`127.0.0.1:8080` on the VM and should be reached only through a reverse proxy
-(frontend Nginx `/api` path or an edge proxy). PostgreSQL stays private inside
-the Docker network and does not publish port `5432`.
+Backend container publishes `8080` on the VM so the frontend container can
+reach it via Docker host networking. Keep port `8080` blocked at the GCP
+firewall (no public ingress), and expose only port `80` publicly for frontend
+traffic. PostgreSQL stays private inside the Docker network and does not
+publish port `5432`.
 
 ## Smoke Test
 
