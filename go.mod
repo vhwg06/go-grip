@@ -33,7 +33,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.51.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.21.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
