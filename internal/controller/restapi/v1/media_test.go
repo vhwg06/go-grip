@@ -17,7 +17,7 @@ import (
 // mediaUseCaseStub implements usecase.Media for testing.
 type mediaUseCaseStub struct {
 	storeFunc                func(ctx context.Context, media entity.MediaAsset) (entity.MediaAsset, error)
-	listFunc                 func(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error)
+	listFunc                 func(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error)
 	deleteFunc               func(ctx context.Context, id string) error
 	generatePresignedURLFunc func(ctx context.Context, fileName string, contentType string) (string, string, string, error)
 }
@@ -29,9 +29,9 @@ func (s *mediaUseCaseStub) Store(ctx context.Context, media entity.MediaAsset) (
 	return media, nil
 }
 
-func (s *mediaUseCaseStub) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
+func (s *mediaUseCaseStub) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
 	if s.listFunc != nil {
-		return s.listFunc(ctx, page)
+		return s.listFunc(ctx, page, q)
 	}
 	return nil, 0, nil
 }
@@ -107,7 +107,7 @@ func TestMediaEndpoints(t *testing.T) {
 
 	t.Run("listMedia endpoint", func(t *testing.T) {
 		uc := &mediaUseCaseStub{
-			listFunc: func(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
+			listFunc: func(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
 				if page.Limit == 999 {
 					return nil, 0, errors.New("limit exceeded")
 				}

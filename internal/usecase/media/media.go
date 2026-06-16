@@ -46,8 +46,8 @@ func (uc *UseCase) Store(ctx context.Context, media entity.MediaAsset) (entity.M
 	return media, nil
 }
 
-func (uc *UseCase) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
-	return uc.repo.List(ctx, page.Normalize())
+func (uc *UseCase) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
+	return uc.repo.List(ctx, page.Normalize(), q)
 }
 
 func (uc *UseCase) Delete(ctx context.Context, id string) error {

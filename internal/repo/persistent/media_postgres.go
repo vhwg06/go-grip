@@ -3,6 +3,7 @@ package persistent
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/evrone/go-clean-template/internal/entity"
@@ -56,19 +57,24 @@ func (r *MediaRepo) Get(ctx context.Context, id string) (entity.MediaAsset, erro
 	return models.MediaAssetToEntity(row), nil
 }
 
-func (r *MediaRepo) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
+func (r *MediaRepo) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		_ = page.Normalize()
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		items := make([]entity.MediaAsset, 0, len(r.items))
 		for _, item := range r.items {
-			items = append(items, item)
+			if q == "" || strings.Contains(strings.ToLower(item.FileName), strings.ToLower(q)) {
+				items = append(items, item)
+			}
 		}
 		return items, len(items), nil
 	}
 
 	db := r.Gorm.WithContext(ctx).Model(&models.MediaAsset{})
+	if q != "" {
+		db = db.Where("LOWER(file_name) LIKE ?", "%"+strings.ToLower(q)+"%")
+	}
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {

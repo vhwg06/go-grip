@@ -52,7 +52,7 @@ type (
 
 	Media interface {
 		Store(ctx context.Context, media entity.MediaAsset) (entity.MediaAsset, error)
-		List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error)
+		List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error)
 		Delete(ctx context.Context, id string) error
 		GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (uploadURL string, publicURL string, fileID string, err error)
 	}
