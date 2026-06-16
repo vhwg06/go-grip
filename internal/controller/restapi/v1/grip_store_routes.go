@@ -97,6 +97,9 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Post("/data/import", r.gripAdminNoop)
 	adminGroup.Post("/data/repair-aggregates", r.gripAdminRepairAggregates)
 	adminGroup.Get("/media/presigned", r.getPresignedURL)
+	adminGroup.Get("/media", r.listMedia)
+	adminGroup.Post("/media", r.createMedia)
+	adminGroup.Delete("/media/:id", r.deleteMedia)
 	adminGroup.Get("/products/new", r.gripAdminProductsNew)
 	adminGroup.Get("/products/:id/form", r.gripAdminProductForm)
 }
