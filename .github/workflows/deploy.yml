@@ -77,6 +77,11 @@ jobs:
           PAYMENT_BASE_URL: ${{ secrets.PAYMENT_BASE_URL }}
           PAYMENT_NOTIFY_URL: ${{ secrets.PAYMENT_NOTIFY_URL }}
           PAYMENT_RETURN_URL: ${{ secrets.PAYMENT_RETURN_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         run: |
           cat > .deploy.env <<ENV
           IMAGE_REF=$IMAGE_REF
@@ -102,6 +107,11 @@ jobs:
           PAYMENT_NOTIFY_URL=$PAYMENT_NOTIFY_URL
           PAYMENT_RETURN_URL=$PAYMENT_RETURN_URL
           PAYMENT_ORDER_TIMEOUT_MINUTES=5
+          R2_ACCOUNT_ID=$R2_ACCOUNT_ID
+          R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID
+          R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY
+          R2_BUCKET_NAME=$R2_BUCKET_NAME
+          R2_PUBLIC_URL=$R2_PUBLIC_URL
           ENV
           chmod 600 .deploy.env
 
