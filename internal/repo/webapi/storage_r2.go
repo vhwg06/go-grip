@@ -45,6 +45,10 @@ func NewR2Storage(accountID, accessKey, secretKey, bucketName, publicURL string)
 
 	presignClient := s3.NewPresignClient(client)
 
+	if publicURL != "" && !strings.HasPrefix(publicURL, "http://") && !strings.HasPrefix(publicURL, "https://") {
+		publicURL = "https://" + publicURL
+	}
+
 	return &R2Storage{
 		client:        client,
 		presignClient: presignClient,
