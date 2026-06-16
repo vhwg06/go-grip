@@ -38,6 +38,24 @@ func (r *MediaRepo) Store(ctx context.Context, media *entity.MediaAsset) error {
 	return nil
 }
 
+func (r *MediaRepo) Get(ctx context.Context, id string) (entity.MediaAsset, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		item, exists := r.items[id]
+		if !exists {
+			return entity.MediaAsset{}, fmt.Errorf("MediaRepo.Get: not found")
+		}
+		return item, nil
+	}
+
+	var row models.MediaAsset
+	if err := r.Gorm.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
+		return entity.MediaAsset{}, fmt.Errorf("MediaRepo.Get: %w", err)
+	}
+	return models.MediaAssetToEntity(row), nil
+}
+
 func (r *MediaRepo) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		_ = page.Normalize()

@@ -21,12 +21,14 @@ type (
 		Notification notification
 		Admin        admin
 		Payment      payment
+		R2           r2
 	}
 
 	// App -.
 	app struct {
 		Name    string `env:"APP_NAME,required"`
 		Version string `env:"APP_VERSION,required"`
+		BaseURL string `env:"APP_BASE_URL" envDefault:"http://localhost:8080"`
 	}
 
 	// HTTP -.
@@ -92,6 +94,15 @@ type (
 		NotifyURL          string `env:"PAYMENT_NOTIFY_URL" envDefault:""`
 		ReturnURL          string `env:"PAYMENT_RETURN_URL" envDefault:""`
 		OrderTimeoutMinute int    `env:"PAYMENT_ORDER_TIMEOUT_MINUTES" envDefault:"5"`
+	}
+
+	// r2 -.
+	r2 struct {
+		AccountID   string `env:"R2_ACCOUNT_ID" envDefault:""`
+		AccessKeyID string `env:"R2_ACCESS_KEY_ID" envDefault:""`
+		SecretKey   string `env:"R2_SECRET_ACCESS_KEY" envDefault:""`
+		BucketName  string `env:"R2_BUCKET_NAME" envDefault:""`
+		PublicURL   string `env:"R2_PUBLIC_URL" envDefault:""`
 	}
 )
 

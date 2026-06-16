@@ -57,6 +57,11 @@ type (
 		GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (uploadURL string, publicURL string, fileID string, err error)
 	}
 
+	MediaStorage interface {
+		GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (uploadURL string, publicURL string, fileID string, err error)
+		Delete(ctx context.Context, key string) error
+	}
+
 	Homepage interface {
 		StoreBlock(ctx context.Context, block entity.HomepageBlock) (entity.HomepageBlock, error)
 		ListBlocks(ctx context.Context, activeOnly bool) ([]entity.HomepageBlock, error)

@@ -84,6 +84,7 @@ type (
 
 	MediaRepo interface {
 		Store(ctx context.Context, media *entity.MediaAsset) error
+		Get(ctx context.Context, id string) (entity.MediaAsset, error)
 		List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error)
 		Delete(ctx context.Context, id string) error
 	}

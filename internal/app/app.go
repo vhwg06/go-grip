@@ -13,6 +13,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/controller/restapi"
 	"github.com/evrone/go-clean-template/internal/repo/persistent"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
+	"github.com/evrone/go-clean-template/internal/usecase"
 	adminuc "github.com/evrone/go-clean-template/internal/usecase/admin"
 	"github.com/evrone/go-clean-template/internal/usecase/auth"
 	"github.com/evrone/go-clean-template/internal/usecase/cart"
@@ -92,6 +93,19 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	checkoutUC := checkout.New(gripCheckoutRepo, gripOrderRepo)
 	checkoutUC.SetPaymentVerifier(epayVerifier)
 
+	var mediaStorage usecase.MediaStorage
+	if cfg.R2.AccountID != "" && cfg.R2.AccessKeyID != "" && cfg.R2.SecretKey != "" && cfg.R2.BucketName != "" {
+		mediaStorage = webapi.NewR2Storage(
+			cfg.R2.AccountID,
+			cfg.R2.AccessKeyID,
+			cfg.R2.SecretKey,
+			cfg.R2.BucketName,
+			cfg.R2.PublicURL,
+		)
+	} else {
+		mediaStorage = webapi.NewLocalStorage(cfg.App.BaseURL)
+	}
+
 	return useCases{
 		user:        user.New(userRepo, jwtManager),
 		task:        task.New(taskRepo),
@@ -105,7 +119,9 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		maintenance: adminuc.NewMaintenance(maintenanceRepo, 5*time.Minute),
 		wishlist:    wishlist.New(wishlistRepo, gripOrderRepo),
 		notify:      notification.NewCenter(notificationRepo),
-		media:       media.New(mediaRepo, cfg.Ecommerce.MediaMaxBytes),
+		media:       media.New(mediaRepo, mediaStorage, media.Config{
+			MaxBytes:    cfg.Ecommerce.MediaMaxBytes,
+		}),
 		homepage:    content.NewHomepage(homepageRepo, supportRepo),
 		cart:        cart.New(cartRepo, orderRepo, notificationUseCase),
 		lead:        lead.New(leadRepo),
