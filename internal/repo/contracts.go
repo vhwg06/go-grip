@@ -127,8 +127,9 @@ type (
 	ContentRepo interface {
 		StoreArticle(ctx context.Context, article *entity.ContentArticle) error
 		UpdateArticle(ctx context.Context, article *entity.ContentArticle) error
-		ListArticles(ctx context.Context, publicOnly bool, page entity.Pagination) ([]entity.ContentArticle, int, error)
+		ListArticles(ctx context.Context, filter entity.ArticleFilter) ([]entity.ContentArticle, int, error)
 		GetArticle(ctx context.Context, idOrSlug string) (entity.ContentArticle, error)
+		DeleteArticle(ctx context.Context, id string) error
 		StorePage(ctx context.Context, page *entity.StaticPage) error
 		UpdatePage(ctx context.Context, page *entity.StaticPage) error
 		GetPageBySlug(ctx context.Context, slug string) (entity.StaticPage, error)

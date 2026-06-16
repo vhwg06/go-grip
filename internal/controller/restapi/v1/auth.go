@@ -10,7 +10,7 @@ import (
 type gripTokenPairResponse struct {
 	AccessToken  string      `json:"accessToken"`
 	RefreshToken string      `json:"refreshToken"`
-	User         entity.User `json:"user,omitempty"`
+	User         entity.User `json:"user"`
 }
 
 type gripRefreshRequest struct {

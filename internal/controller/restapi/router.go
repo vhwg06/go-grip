@@ -39,7 +39,6 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 		AllowCredentials: cfg.HTTP.CORSAllowCredentials,
 	}))
 
-
 	// Prometheus metrics
 	if cfg.Metrics.Enabled {
 		prometheus := fiberprometheus.New("my-service-name")

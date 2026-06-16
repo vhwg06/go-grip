@@ -41,7 +41,13 @@ func (r *V1) listPublicArticles(ctx *fiber.Ctx) error {
 }
 
 func (r *V1) listArticles(ctx *fiber.Ctx, publicOnly bool) error {
-	items, total, err := r.content.ListArticles(ctx.UserContext(), publicOnly, queryPage(ctx))
+	filter := entity.ArticleFilter{
+		PublicOnly: publicOnly,
+		Topic:      ctx.Query("topic"),
+		Tag:        ctx.Query("tag"),
+		Pagination: queryPage(ctx),
+	}
+	items, total, err := r.content.ListArticles(ctx.UserContext(), filter)
 	if err != nil {
 		return errorResponse(ctx, http.StatusInternalServerError, err.Error())
 	}
@@ -54,6 +60,14 @@ func (r *V1) getArticle(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, http.StatusNotFound, "article not found")
 	}
 	return ctx.JSON(article)
+}
+
+func (r *V1) deleteArticle(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	if err := r.content.DeleteArticle(ctx.UserContext(), id); err != nil {
+		return errorResponse(ctx, http.StatusNotFound, "article not found")
+	}
+	return ctx.SendStatus(http.StatusNoContent)
 }
 
 func (r *V1) createPage(ctx *fiber.Ctx) error {

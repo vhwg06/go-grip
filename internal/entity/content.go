@@ -19,6 +19,17 @@ type ContentArticle struct {
 	ScheduledAt *time.Time    `json:"scheduled_at,omitempty"`
 	PublishedAt *time.Time    `json:"published_at,omitempty"`
 	AuthorID    string        `json:"author_id,omitempty"`
+	ImageURL    string        `json:"image_url,omitempty"`
+	Tags        []string      `json:"tags,omitempty"`
+	Topic       string        `json:"topic,omitempty"`
+	Priority    int           `json:"priority"`
 	CreatedAt   time.Time     `json:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at"`
+}
+
+type ArticleFilter struct {
+	PublicOnly bool
+	Topic      string
+	Tag        string
+	Pagination Pagination
 }

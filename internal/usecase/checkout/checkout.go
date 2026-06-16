@@ -34,10 +34,7 @@ func (uc *UseCase) Preview(_ context.Context, _ entity.Actor, _ string, quantity
 	if usePoints {
 		points = quantity * 100
 	}
-	final := subtotal - entity.Amount(points)
-	if final < 0 {
-		final = 0
-	}
+	final := max(subtotal-entity.Amount(points), 0)
 
 	return usecase.AmountBreakdown{
 		Subtotal:    subtotal,
@@ -121,7 +118,7 @@ func (uc *UseCase) PaymentNotify(ctx context.Context, payload map[string]string)
 		Amount:            order.Amount,
 		Status:            "success",
 		IsSignatureValid:  true,
-		ProcessedAt:       ptrTime(time.Now().UTC()),
+		ProcessedAt:       new(time.Now().UTC()),
 		CreatedAt:         time.Now().UTC(),
 	}
 	if err := uc.checkoutRepo.AttachPayment(ctx, payment); err != nil {
@@ -155,6 +152,7 @@ func (uc *UseCase) Cancel(ctx context.Context, actor entity.Actor, orderID strin
 	return nil
 }
 
+//go:fix inline
 func ptrTime(v time.Time) *time.Time {
-	return &v
+	return new(v)
 }

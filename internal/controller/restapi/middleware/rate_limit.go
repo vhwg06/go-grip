@@ -28,7 +28,6 @@ func RateLimitByIP(limit int, window time.Duration) fiber.Handler {
 			return ctx.Next()
 		}
 
-
 		now := time.Now().UTC()
 		key := ctx.IP()
 

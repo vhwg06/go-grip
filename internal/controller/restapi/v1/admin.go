@@ -328,10 +328,7 @@ func (r *V1) gripAdminListOrders(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_orders_not_available"})
 	}
 
-	pageNum := ctx.QueryInt("page", 1)
-	if pageNum < 1 {
-		pageNum = 1
-	}
+	pageNum := max(ctx.QueryInt("page", 1), 1)
 	pageSize := ctx.QueryInt("pageSize", 50)
 	if pageSize < 1 {
 		pageSize = 50

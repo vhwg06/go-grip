@@ -47,5 +47,3 @@ func mapDomainError(err error) (int, envelope) {
 
 	return http.StatusInternalServerError, envelope{Error: "internal_error"}
 }
-
-

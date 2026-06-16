@@ -35,12 +35,12 @@ type RefreshSession struct {
 }
 
 type Product struct {
-	ID              string `gorm:"type:text;primaryKey"`
-	Name            string `gorm:"column:title;type:text;index"`
-	SKU             string `gorm:"column:sku;type:text;uniqueIndex"`
-	Description     string `gorm:"type:text"`
-	Price           int64  `gorm:"not null"`
-	CompareAtPrice  int64 `gorm:"column:compare_price"`
+	ID              string    `gorm:"type:text;primaryKey"`
+	Name            string    `gorm:"column:title;type:text;index"`
+	SKU             string    `gorm:"column:sku;type:text;uniqueIndex"`
+	Description     string    `gorm:"type:text"`
+	Price           int64     `gorm:"not null"`
+	CompareAtPrice  int64     `gorm:"column:compare_price"`
 	Category        string    `gorm:"type:text;index"`
 	Image           string    `gorm:"type:text"`
 	IsHot           bool      `gorm:"not null;default:false"`

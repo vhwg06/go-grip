@@ -80,5 +80,4 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		translationGroup.Get("/history", r.history)
 		translationGroup.Post("/do-translate", r.doTranslate)
 	}
-
 }

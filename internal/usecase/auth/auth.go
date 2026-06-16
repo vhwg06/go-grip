@@ -23,7 +23,7 @@ type UseCase struct {
 
 func New(authRepo repo.AuthRepository, jwtManager *jwt.Manager, refreshTTL time.Duration, adminUsersCSV string) *UseCase {
 	adminUsers := make(map[string]struct{})
-	for _, user := range strings.Split(adminUsersCSV, ",") {
+	for user := range strings.SplitSeq(adminUsersCSV, ",") {
 		trimmed := strings.ToLower(strings.TrimSpace(user))
 		if trimmed == "" {
 			continue

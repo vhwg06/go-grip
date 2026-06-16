@@ -17,6 +17,7 @@ func NewNoopAdminNotifier() AdminNotifier {
 }
 
 func (n *noopAdminNotifier) SendBroadcast(_ context.Context, _ string, _ string) error { return nil }
+
 func (n *noopAdminNotifier) SendTargeted(_ context.Context, _ string, _ string, _ string) error {
 	return nil
 }

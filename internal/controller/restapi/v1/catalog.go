@@ -18,7 +18,7 @@ type gripCatalogUseCase interface {
 
 type gripListResponse struct {
 	Data any         `json:"data"`
-	Meta entity.Page `json:"meta,omitempty"`
+	Meta entity.Page `json:"meta"`
 }
 
 type gripBuyMeta struct {

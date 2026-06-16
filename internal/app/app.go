@@ -119,14 +119,14 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		maintenance: adminuc.NewMaintenance(maintenanceRepo, 5*time.Minute),
 		wishlist:    wishlist.New(wishlistRepo, gripOrderRepo),
 		notify:      notification.NewCenter(notificationRepo),
-		media:       media.New(mediaRepo, mediaStorage, media.Config{
-			MaxBytes:    cfg.Ecommerce.MediaMaxBytes,
+		media: media.New(mediaRepo, mediaStorage, media.Config{
+			MaxBytes: cfg.Ecommerce.MediaMaxBytes,
 		}),
-		homepage:    content.NewHomepage(homepageRepo, supportRepo),
-		cart:        cart.New(cartRepo, orderRepo, notificationUseCase),
-		lead:        lead.New(leadRepo),
-		content:     content.New(contentRepo),
-		importer:    importer.New(importRepo, cfg.Ecommerce.InitialImportMax),
+		homepage: content.NewHomepage(homepageRepo, supportRepo),
+		cart:     cart.New(cartRepo, orderRepo, notificationUseCase),
+		lead:     lead.New(leadRepo),
+		content:  content.New(contentRepo),
+		importer: importer.New(importRepo, cfg.Ecommerce.InitialImportMax),
 	}
 }
 

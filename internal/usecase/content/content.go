@@ -37,12 +37,16 @@ func (uc *UseCase) UpdateArticle(ctx context.Context, article entity.ContentArti
 	return article, nil
 }
 
-func (uc *UseCase) ListArticles(ctx context.Context, publicOnly bool, page entity.Pagination) ([]entity.ContentArticle, int, error) {
-	return uc.repo.ListArticles(ctx, publicOnly, page.Normalize())
+func (uc *UseCase) ListArticles(ctx context.Context, filter entity.ArticleFilter) ([]entity.ContentArticle, int, error) {
+	return uc.repo.ListArticles(ctx, filter)
 }
 
 func (uc *UseCase) GetArticle(ctx context.Context, idOrSlug string) (entity.ContentArticle, error) {
 	return uc.repo.GetArticle(ctx, idOrSlug)
+}
+
+func (uc *UseCase) DeleteArticle(ctx context.Context, id string) error {
+	return uc.repo.DeleteArticle(ctx, id)
 }
 
 func (uc *UseCase) CreatePage(ctx context.Context, page entity.StaticPage) (entity.StaticPage, error) {

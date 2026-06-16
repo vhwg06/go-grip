@@ -31,7 +31,7 @@ type UseCase struct {
 
 func New(adminRepo adminStore, notifier webapi.AdminNotifier, adminUsersCSV string) *UseCase {
 	adminUsers := make(map[string]struct{})
-	for _, raw := range strings.Split(adminUsersCSV, ",") {
+	for raw := range strings.SplitSeq(adminUsersCSV, ",") {
 		trimmed := strings.ToLower(strings.TrimSpace(raw))
 		if trimmed == "" {
 			continue
