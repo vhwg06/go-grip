@@ -142,31 +142,20 @@ func EntityToDetail(productID string, e entity.ProductSpecItem) ProductDetail {
 }
 
 func CategoryToEntity(m Category) entity.Category {
-	var parentID *string
-	if m.ParentID != "" {
-		parent := m.ParentID
-		parentID = &parent
-	}
-
 	return entity.Category{
 		ID:       m.ID,
 		Name:     m.Name,
-		ParentID: parentID,
+		ParentID: m.ParentID,
 		Position: m.SortOrder,
 		IsActive: m.IsActive,
 	}
 }
 
 func EntityToCategory(e entity.Category) Category {
-	var parentID string
-	if e.ParentID != nil {
-		parentID = *e.ParentID
-	}
-
 	return Category{
 		ID:        e.ID,
 		Name:      e.Name,
-		ParentID:  parentID,
+		ParentID:  e.ParentID,
 		SortOrder: e.Position,
 		IsActive:  e.IsActive,
 	}

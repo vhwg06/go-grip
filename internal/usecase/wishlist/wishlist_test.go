@@ -86,7 +86,7 @@ func (s *orderRepoStub) CancelPendingOrder(context.Context, entity.Actor, string
 	return nil
 }
 
-func (s *orderRepoStub) SubmitRefundRequest(context.Context, entity.RefundRequest) error {
+func (s *orderRepoStub) SubmitRefundRequest(context.Context, *entity.RefundRequest) error {
 	return nil
 }
 

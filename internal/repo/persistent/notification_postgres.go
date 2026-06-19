@@ -9,6 +9,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
+	"gorm.io/gorm/clause"
 )
 
 type NotificationRepo struct {
@@ -104,7 +105,12 @@ func (r *NotificationRepo) ClearAll(ctx context.Context, userID string) error {
 		UserID:    userID,
 		CreatedAt: time.Now().UTC(),
 	}
-	if err := r.Gorm.WithContext(ctx).Create(&marker).Error; err != nil {
+	if err := r.Gorm.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "message_id"}, {Name: "user_id"}},
+			DoNothing: true,
+		}).
+		Create(&marker).Error; err != nil {
 		return fmt.Errorf("NotificationRepo.ClearAll(marker): %w", err)
 	}
 	return nil

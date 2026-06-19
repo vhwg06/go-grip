@@ -11,7 +11,7 @@ import (
 type orderRepoStub struct {
 	listFunc         func(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error)
 	getFunc          func(ctx context.Context, orderID string) (entity.Order, error)
-	submitRefundFunc func(ctx context.Context, refund entity.RefundRequest) error
+	submitRefundFunc func(ctx context.Context, refund *entity.RefundRequest) error
 }
 
 func (s *orderRepoStub) ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error) {
@@ -32,7 +32,7 @@ func (s *orderRepoStub) CancelPendingOrder(context.Context, entity.Actor, string
 	return nil
 }
 
-func (s *orderRepoStub) SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error {
+func (s *orderRepoStub) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
 	if s.submitRefundFunc != nil {
 		return s.submitRefundFunc(ctx, refund)
 	}
@@ -107,8 +107,8 @@ func TestUseCase_US3OrderLifecycle_TDD(t *testing.T) {
 			getFunc: func(_ context.Context, orderID string) (entity.Order, error) {
 				return entity.Order{ID: orderID, UserID: "u1", Status: entity.OrderStatusDelivered}, nil
 			},
-			submitRefundFunc: func(_ context.Context, refund entity.RefundRequest) error {
-				submitted = refund
+			submitRefundFunc: func(_ context.Context, refund *entity.RefundRequest) error {
+				submitted = *refund
 				return nil
 			},
 		})

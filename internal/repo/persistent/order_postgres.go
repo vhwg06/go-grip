@@ -89,7 +89,7 @@ func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor entity.Act
 	return nil
 }
 
-func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error {
+func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
 	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		model := models.RefundRequest{
 			OrderID:       refund.OrderID,
@@ -106,6 +106,7 @@ func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund entity.R
 		if err := tx.Create(&model).Error; err != nil {
 			return fmt.Errorf("GripOrderRepo.SubmitRefundRequest(create): %w", err)
 		}
+		refund.ID = model.ID
 		if err := tx.Model(&models.Order{}).
 			Where("order_id = ?", refund.OrderID).
 			Updates(map[string]any{

@@ -171,7 +171,7 @@ type (
 		ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error)
 		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
 		CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error
-		SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error
+		SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error
 	}
 
 	ProfileRepository interface {

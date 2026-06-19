@@ -76,7 +76,7 @@ func (ProductDetail) TableName() string { return "product_details" }
 type Category struct {
 	ID        string    `gorm:"type:text;primaryKey"`
 	Name      string    `gorm:"type:text"`
-	ParentID  string    `gorm:"type:text"`
+	ParentID  *string   `gorm:"type:text"`
 	SortOrder int       `gorm:"not null;default:0"`
 	IsActive  bool      `gorm:"not null;default:true"`
 	CreatedAt time.Time `gorm:"not null"`

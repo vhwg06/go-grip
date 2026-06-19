@@ -677,6 +677,9 @@ func (r *AdminRepo) ListCategories(ctx context.Context) ([]entity.Category, erro
 }
 
 func (r *AdminRepo) UpsertCategory(ctx context.Context, category entity.Category) (entity.Category, error) {
+	if category.ID == "" {
+		category.ID = uuid.NewString()
+	}
 	model := models.EntityToCategory(category)
 	now := time.Now().UTC()
 	if model.CreatedAt.IsZero() {

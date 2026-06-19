@@ -70,7 +70,7 @@ func (uc *UseCase) RequestRefund(ctx context.Context, actor entity.Actor, orderI
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	}
-	if err := uc.repo.SubmitRefundRequest(ctx, refund); err != nil {
+	if err := uc.repo.SubmitRefundRequest(ctx, &refund); err != nil {
 		return entity.RefundRequest{}, fmt.Errorf("OrdersUseCase - RequestRefund - repo.SubmitRefundRequest: %w", err)
 	}
 	return refund, nil
