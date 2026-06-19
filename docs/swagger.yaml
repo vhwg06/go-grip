@@ -142,8 +142,6 @@ definitions:
         type: boolean
       is_hot:
         type: boolean
-      is_shared:
-        type: boolean
       locked_count:
         type: integer
       max_purchaseable_quantity:
@@ -440,36 +438,6 @@ info:
   title: Grip Store Backend REST API
   version: "1.0"
 paths:
-  /admin/cards/import:
-    post:
-      consumes:
-      - application/json
-      description: Bulk imports card keys for a product
-      operationId: grip_admin_import_cards
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
-      security:
-      - BearerAuth: []
-      summary: Import product cards
-      tags:
-      - admin
   /admin/data/repair-aggregates:
     post:
       description: Recalculates product stock aggregates

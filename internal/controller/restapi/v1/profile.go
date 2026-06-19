@@ -9,6 +9,7 @@ import (
 
 type gripProfileUpdateRequest struct {
 	Email                       string `json:"email"`
+	DisplayName                 string `json:"displayName"`
 	DesktopNotificationsEnabled bool   `json:"desktopNotificationsEnabled"`
 }
 
@@ -41,7 +42,7 @@ func (r *V1) gripProfileUpdate(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	user, err := r.profileUC.Update(ctx.UserContext(), r.gripActor(ctx), body.Email, body.DesktopNotificationsEnabled)
+	user, err := r.profileUC.Update(ctx.UserContext(), r.gripActor(ctx), body.Email, body.DisplayName, body.DesktopNotificationsEnabled)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)

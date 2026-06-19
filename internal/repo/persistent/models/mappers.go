@@ -10,6 +10,7 @@ func UserToEntity(m User) entity.User {
 	return entity.User{
 		ID:                          m.ID,
 		Username:                    m.Username,
+		DisplayName:                 m.DisplayName,
 		Email:                       m.Email,
 		PasswordHash:                m.PasswordHash,
 		RoleID:                      m.RoleID,
@@ -33,6 +34,7 @@ func EntityToUser(e entity.User) User {
 	return User{
 		ID:                          e.ID,
 		Username:                    e.Username,
+		DisplayName:                 e.DisplayName,
 		Email:                       e.Email,
 		PasswordHash:                e.PasswordHash,
 		RoleID:                      e.RoleID,

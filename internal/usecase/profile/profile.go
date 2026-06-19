@@ -36,13 +36,14 @@ func (uc *UseCase) Get(ctx context.Context, actor entity.Actor) (entity.User, er
 	return user, nil
 }
 
-func (uc *UseCase) Update(ctx context.Context, actor entity.Actor, email string, desktopNotificationsEnabled bool) (entity.User, error) {
+func (uc *UseCase) Update(ctx context.Context, actor entity.Actor, email string, displayName string, desktopNotificationsEnabled bool) (entity.User, error) {
 	user, err := uc.Get(ctx, actor)
 	if err != nil {
 		return entity.User{}, err
 	}
 
 	user.Email = email
+	user.DisplayName = displayName
 	user.DesktopNotificationsEnabled = desktopNotificationsEnabled
 	updated, err := uc.repo.UpdateProfile(ctx, user)
 	if err != nil {

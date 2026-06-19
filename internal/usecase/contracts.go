@@ -129,7 +129,7 @@ type (
 
 	Profile interface {
 		Get(ctx context.Context, actor entity.Actor) (entity.User, error)
-		Update(ctx context.Context, actor entity.Actor, email string, desktopNotificationsEnabled bool) (entity.User, error)
+		Update(ctx context.Context, actor entity.Actor, email string, displayName string, desktopNotificationsEnabled bool) (entity.User, error)
 		Checkin(ctx context.Context, actor entity.Actor) (entity.DailyCheckin, error)
 	}
 

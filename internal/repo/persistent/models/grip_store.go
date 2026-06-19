@@ -7,6 +7,7 @@ type User struct {
 	Provider                    string `gorm:"type:text;index"`
 	ProviderID                  string `gorm:"type:text;index"`
 	Username                    string `gorm:"type:text;index"`
+	DisplayName                 string `gorm:"type:text"`
 	Email                       string `gorm:"type:text;index"`
 	PasswordHash                string `gorm:"type:text"`
 	RoleID                      string `gorm:"type:text"`

@@ -37,6 +37,7 @@ func (r *ProfileRepo) GetProfile(ctx context.Context, userID string) (entity.Use
 func (r *ProfileRepo) UpdateProfile(ctx context.Context, user entity.User) (entity.User, error) {
 	model := map[string]any{
 		"email":                         user.Email,
+		"display_name":                  user.DisplayName,
 		"desktop_notifications_enabled": user.DesktopNotificationsEnabled,
 		"points":                        user.Points,
 		"last_checkin_at":               profileTimeOrZero(user.LastCheckinAt),

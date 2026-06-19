@@ -15,53 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/cards/import": {
-            "post": {
-                "description": "Bulk imports card keys for a product",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "summary": "Import product cards",
-                "operationId": "grip_admin_import_cards",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ]
-            }
-        },
         "/admin/data/repair-aggregates": {
             "post": {
                 "description": "Recalculates product stock aggregates",
@@ -2170,9 +2123,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_hot": {
-                    "type": "boolean"
-                },
-                "is_shared": {
                     "type": "boolean"
                 },
                 "locked_count": {
