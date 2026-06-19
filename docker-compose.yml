@@ -20,7 +20,12 @@ x-backend-app-environment: &x-backend-app-environment
   LOG_LEVEL: "debug"
   # PG
   PG_POOL_MAX: "2"
-  PG_URL: "postgres://user:myAwEsOm3pa55@w0rd@db:5432/db"
+  POSTGRES_HOST: "db"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "db"
+  POSTGRES_USER: "user"
+  POSTGRES_PASSWORD: "myAwEsOm3pa55@w0rd"
+  POSTGRES_SSL_MODE: "disable"
   # Metrics
   METRICS_ENABLED: "true"
   # Swagger

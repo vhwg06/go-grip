@@ -162,7 +162,6 @@ type (
 
 	Maintenance interface {
 		CancelExpiredPendingOrders(ctx context.Context) error
-		CleanupExpiredCards(ctx context.Context) error
 		SyncProductAggregates(ctx context.Context) error
 	}
 )

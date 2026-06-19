@@ -2263,14 +2263,26 @@ const docTemplate = `{
         "github_com_evrone_go-clean-template_internal_entity.Review": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "comment": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
+                "flagged_reason": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "is_verified_purchase": {
+                    "type": "boolean"
                 },
                 "order_id": {
                     "type": "string"
@@ -2278,8 +2290,14 @@ const docTemplate = `{
                 "product_id": {
                     "type": "string"
                 },
+                "product_name": {
+                    "type": "string"
+                },
                 "rating": {
                     "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.ReviewStatus"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2291,6 +2309,21 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "github_com_evrone_go-clean-template_internal_entity.ReviewStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "APPROVED",
+                "HIDDEN",
+                "FEATURED"
+            ],
+            "x-enum-varnames": [
+                "ReviewStatusPending",
+                "ReviewStatusApproved",
+                "ReviewStatusHidden",
+                "ReviewStatusFeatured"
+            ]
         },
         "github_com_evrone_go-clean-template_internal_entity.RoleName": {
             "type": "string",

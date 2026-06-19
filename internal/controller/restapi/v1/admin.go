@@ -30,10 +30,6 @@ type adminExtendedUseCase interface {
 	UpdateReviewStatus(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 	BulkPublishReviews(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error)
 	DeleteReview(ctx context.Context, actor entity.Actor, reviewID int64) error
-	ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error)
-	CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error)
-	DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error
-	ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error)
 	ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
 	SetSetting(ctx context.Context, actor entity.Actor, key, value string) error
 	DeleteSetting(ctx context.Context, actor entity.Actor, key string) error
@@ -41,10 +37,6 @@ type adminExtendedUseCase interface {
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
 }
 
-type gripImportCardsRequest struct {
-	ProductID string   `json:"productId"`
-	Keys      []string `json:"keys"`
-}
 
 func parseBoolForm(value string) bool {
 	normalized := strings.TrimSpace(strings.ToLower(value))
@@ -464,100 +456,6 @@ func (r *V1) gripAdminDeleteOrder(ctx *fiber.Ctx) error {
 	if err := ext.DeleteOrder(ctx.UserContext(), r.gripActor(ctx), ctx.Params("id")); err != nil {
 		httpStatus, payload := mapDomainError(err)
 		return ctx.Status(httpStatus).JSON(payload)
-	}
-
-	return ctx.SendStatus(http.StatusNoContent)
-}
-
-// @Summary     Import product cards
-// @Description Bulk imports card keys for a product
-// @ID          grip_admin_import_cards
-// @Tags        admin
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} envelope
-// @Failure     400 {object} envelope
-// @Failure     403 {object} envelope
-// @Failure     500 {object} envelope
-// @Security    BearerAuth
-// @Router      /admin/cards/import [post]
-func (r *V1) gripAdminCardsImport(ctx *fiber.Ctx) error {
-	ext, ok := r.adminUC.(adminExtendedUseCase)
-	if !ok {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
-	}
-
-	var body gripImportCardsRequest
-	if err := ctx.BodyParser(&body); err != nil {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
-		return ctx.Status(status).JSON(payload)
-	}
-	count, err := ext.ImportCards(ctx.UserContext(), r.gripActor(ctx), body.ProductID, body.Keys)
-	if err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-	return ctx.JSON(apiSuccessEnvelope(fiber.Map{"imported": count}))
-}
-
-func (r *V1) gripAdminCardsReplenish(ctx *fiber.Ctx) error {
-	return r.gripAdminCardsImport(ctx)
-}
-
-func (r *V1) gripAdminListCards(ctx *fiber.Ctx) error {
-	ext, ok := r.adminUC.(adminExtendedUseCase)
-	if !ok {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
-	}
-
-	cards, err := ext.ListCards(ctx.UserContext(), r.gripActor(ctx), strings.TrimSpace(ctx.Query("productId")))
-	if err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	return ctx.JSON(apiSuccessEnvelope(cards))
-}
-
-func (r *V1) gripAdminCreateCard(ctx *fiber.Ctx) error {
-	ext, ok := r.adminUC.(adminExtendedUseCase)
-	if !ok {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
-	}
-
-	var body struct {
-		ProductID string `json:"productId"`
-		CardKey   string `json:"cardKey"`
-	}
-	if err := ctx.BodyParser(&body); err != nil {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	card, err := ext.CreateCard(ctx.UserContext(), r.gripActor(ctx), body.ProductID, body.CardKey)
-	if err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	return ctx.Status(http.StatusCreated).JSON(apiSuccessEnvelope(card))
-}
-
-func (r *V1) gripAdminDeleteCard(ctx *fiber.Ctx) error {
-	ext, ok := r.adminUC.(adminExtendedUseCase)
-	if !ok {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
-	}
-
-	cardID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
-	if err != nil {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	if err := ext.DeleteCard(ctx.UserContext(), r.gripActor(ctx), cardID); err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
 	}
 
 	return ctx.SendStatus(http.StatusNoContent)

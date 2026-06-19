@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -521,22 +520,6 @@ func (r *AdminRepo) StoreSetting(ctx context.Context, setting entity.Setting) er
 	return nil
 }
 
-func splitCardIDs(raw string) []int64 {
-	parts := strings.Split(raw, ",")
-	ids := make([]int64, 0, len(parts))
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
-		}
-		id, err := strconv.ParseInt(part, 10, 64)
-		if err != nil {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	return ids
-}
 
 func (r *AdminRepo) ListSettings(ctx context.Context) ([]entity.Setting, error) {
 	var rows []models.Setting
@@ -743,87 +726,3 @@ func (r *AdminRepo) DeleteCategory(ctx context.Context, categoryID string) error
 	return nil
 }
 
-func (r *AdminRepo) ImportCards(ctx context.Context, productID string, keys []string) (int, error) {
-	if len(keys) == 0 {
-		return 0, nil
-	}
-	now := time.Now().UTC()
-	modelsToCreate := make([]models.Card, 0, len(keys))
-	for _, key := range keys {
-		modelsToCreate = append(modelsToCreate, models.Card{
-			ProductID: productID,
-			CardKey:   key,
-			IsUsed:    false,
-			CreatedAt: now,
-		})
-	}
-	if err := r.Gorm.WithContext(ctx).Create(&modelsToCreate).Error; err != nil {
-		return 0, fmt.Errorf("AdminRepo.ImportCards: %w", err)
-	}
-	return len(modelsToCreate), nil
-}
-
-func (r *AdminRepo) ListCards(ctx context.Context, productID string) ([]entity.Card, error) {
-	db := r.Gorm.WithContext(ctx).Model(&models.Card{})
-	if trimmed := strings.TrimSpace(productID); trimmed != "" {
-		db = db.Where("product_id = ?", trimmed)
-	}
-
-	var rows []models.Card
-	if err := db.Order("created_at DESC, id DESC").Find(&rows).Error; err != nil {
-		return nil, fmt.Errorf("AdminRepo.ListCards: %w", err)
-	}
-
-	items := make([]entity.Card, 0, len(rows))
-	for _, row := range rows {
-		item := entity.Card{
-			ID:              row.ID,
-			ProductID:       row.ProductID,
-			CardKey:         row.CardKey,
-			IsUsed:          row.IsUsed,
-			ReservedOrderID: row.ReservedOrderID,
-			CreatedAt:       row.CreatedAt,
-		}
-		if !row.ReservedAt.IsZero() {
-			reservedAt := row.ReservedAt
-			item.ReservedAt = &reservedAt
-		}
-		if !row.ExpiresAt.IsZero() {
-			expiresAt := row.ExpiresAt
-			item.ExpiresAt = &expiresAt
-		}
-		if !row.UsedAt.IsZero() {
-			usedAt := row.UsedAt
-			item.UsedAt = &usedAt
-		}
-		items = append(items, item)
-	}
-	return items, nil
-}
-
-func (r *AdminRepo) CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error) {
-	now := time.Now().UTC()
-	model := models.Card{
-		ProductID: productID,
-		CardKey:   cardKey,
-		IsUsed:    false,
-		CreatedAt: now,
-	}
-	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
-		return entity.Card{}, fmt.Errorf("AdminRepo.CreateCard: %w", err)
-	}
-	return entity.Card{
-		ID:        model.ID,
-		ProductID: productID,
-		CardKey:   cardKey,
-		IsUsed:    false,
-		CreatedAt: now,
-	}, nil
-}
-
-func (r *AdminRepo) DeleteCard(ctx context.Context, cardID int64) error {
-	if err := r.Gorm.WithContext(ctx).Where("id = ?", cardID).Delete(&models.Card{}).Error; err != nil {
-		return fmt.Errorf("AdminRepo.DeleteCard: %w", err)
-	}
-	return nil
-}

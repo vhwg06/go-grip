@@ -10,9 +10,8 @@ import (
 )
 
 type MaintenanceUseCase struct {
-	repo              repo.MaintenanceRepository
-	pendingWindow     time.Duration
-	expiredCardsAfter time.Duration
+	repo          repo.MaintenanceRepository
+	pendingWindow time.Duration
 }
 
 func NewMaintenance(maintenanceRepo repo.MaintenanceRepository, pendingWindow time.Duration) *MaintenanceUseCase {
@@ -31,13 +30,6 @@ func (uc *MaintenanceUseCase) CancelExpiredPendingOrders(ctx context.Context) er
 	olderThan := time.Now().UTC().Add(-uc.pendingWindow)
 	if err := uc.repo.CancelExpiredPendingOrders(ctx, olderThan); err != nil {
 		return fmt.Errorf("MaintenanceUseCase.CancelExpiredPendingOrders: %w", err)
-	}
-	return nil
-}
-
-func (uc *MaintenanceUseCase) CleanupExpiredCards(ctx context.Context) error {
-	if err := uc.repo.CleanupExpiredCards(ctx, time.Now().UTC()); err != nil {
-		return fmt.Errorf("MaintenanceUseCase.CleanupExpiredCards: %w", err)
 	}
 	return nil
 }

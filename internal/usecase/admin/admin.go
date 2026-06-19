@@ -20,10 +20,6 @@ type adminStore interface {
 	ListCategories(ctx context.Context) ([]entity.Category, error)
 	UpsertCategory(ctx context.Context, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, categoryID string) error
-	ImportCards(ctx context.Context, productID string, keys []string) (int, error)
-	ListCards(ctx context.Context, productID string) ([]entity.Card, error)
-	CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error)
-	DeleteCard(ctx context.Context, cardID int64) error
 	ListSettings(ctx context.Context) ([]entity.Setting, error)
 	DeleteSetting(ctx context.Context, key string) error
 	ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
@@ -183,39 +179,6 @@ func (uc *UseCase) DeleteCategory(ctx context.Context, actor entity.Actor, categ
 	return uc.repo.DeleteCategory(ctx, categoryID)
 }
 
-func (uc *UseCase) ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error) {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return 0, err
-	}
-	return uc.repo.ImportCards(ctx, productID, keys)
-}
-
-func (uc *UseCase) ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return nil, err
-	}
-	return uc.repo.ListCards(ctx, productID)
-}
-
-func (uc *UseCase) CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return entity.Card{}, err
-	}
-	if strings.TrimSpace(productID) == "" || strings.TrimSpace(cardKey) == "" {
-		return entity.Card{}, entity.ErrInvalidInput
-	}
-	return uc.repo.CreateCard(ctx, productID, cardKey)
-}
-
-func (uc *UseCase) DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return err
-	}
-	if cardID <= 0 {
-		return entity.ErrInvalidInput
-	}
-	return uc.repo.DeleteCard(ctx, cardID)
-}
 
 func (uc *UseCase) ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error) {
 	if err := uc.ensureAdmin(actor); err != nil {

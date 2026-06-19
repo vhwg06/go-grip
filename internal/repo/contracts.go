@@ -209,9 +209,6 @@ type (
 		ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
 		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
 		DeleteOrder(ctx context.Context, orderID string) error
-		ListCards(ctx context.Context, productID string) ([]entity.Card, error)
-		CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error)
-		DeleteCard(ctx context.Context, cardID int64) error
 		ListSettings(ctx context.Context) ([]entity.Setting, error)
 		StoreSetting(ctx context.Context, setting entity.Setting) error
 		DeleteSetting(ctx context.Context, key string) error
@@ -224,7 +221,6 @@ type (
 
 	MaintenanceRepository interface {
 		CancelExpiredPendingOrders(ctx context.Context, olderThan time.Time) error
-		CleanupExpiredCards(ctx context.Context, now time.Time) error
 		SyncProductAggregates(ctx context.Context) error
 	}
 

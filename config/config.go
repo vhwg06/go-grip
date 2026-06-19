@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -46,8 +47,15 @@ type (
 
 	// PG -.
 	pg struct {
-		PoolMax int    `env:"PG_POOL_MAX,required"`
-		URL     string `env:"PG_URL,required"`
+		PoolMax      int    `env:"PG_POOL_MAX,required"`
+		URL          string `env:"PG_URL"`
+		Host         string `env:"POSTGRES_HOST"`
+		Port         string `env:"POSTGRES_PORT"`
+		DB           string `env:"POSTGRES_DB"`
+		User         string `env:"POSTGRES_USER"`
+		Password     string `env:"POSTGRES_PASSWORD"`
+		SSLMode      string `env:"POSTGRES_SSL_MODE" envDefault:"disable"`
+		ConnAttempts int    `env:"POSTGRES_CONN_ATTEMPTS" envDefault:"10"`
 	}
 
 	// JWT -.
@@ -111,6 +119,24 @@ func NewConfig() (*Config, error) {
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("config error: %w", err)
+	}
+
+	if cfg.PG.URL == "" {
+		if cfg.PG.Host == "" || cfg.PG.Port == "" || cfg.PG.DB == "" || cfg.PG.User == "" {
+			return nil, fmt.Errorf("config error: either PG_URL or POSTGRES_HOST/PORT/DB/USER must be set")
+		}
+
+		userInfo := url.UserPassword(cfg.PG.User, cfg.PG.Password)
+		cfg.PG.URL = (&url.URL{
+			Scheme: "postgres",
+			User:   userInfo,
+			Host:   fmt.Sprintf("%s:%s", cfg.PG.Host, cfg.PG.Port),
+			Path:   cfg.PG.DB,
+		}).String()
+
+		if cfg.PG.SSLMode != "" {
+			cfg.PG.URL += "?sslmode=" + url.QueryEscape(cfg.PG.SSLMode)
+		}
 	}
 
 	return cfg, nil

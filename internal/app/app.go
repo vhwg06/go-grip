@@ -165,7 +165,6 @@ func (s *servers) startMaintenance() {
 			case <-s.maintenanceTicker.C:
 				ctx := context.Background()
 				_ = s.maintenance.CancelExpiredPendingOrders(ctx)
-				_ = s.maintenance.CleanupExpiredCards(ctx)
 				_ = s.maintenance.SyncProductAggregates(ctx)
 			}
 		}

@@ -204,18 +204,30 @@ definitions:
     - ProductStatusSuspended
   github_com_evrone_go-clean-template_internal_entity.Review:
     properties:
+      attachments:
+        items:
+          type: string
+        type: array
       comment:
         type: string
       created_at:
         type: string
+      flagged_reason:
+        type: string
       id:
         type: integer
+      is_verified_purchase:
+        type: boolean
       order_id:
         type: string
       product_id:
         type: string
+      product_name:
+        type: string
       rating:
         type: integer
+      status:
+        $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.ReviewStatus'
       updated_at:
         type: string
       user_id:
@@ -223,6 +235,18 @@ definitions:
       username:
         type: string
     type: object
+  github_com_evrone_go-clean-template_internal_entity.ReviewStatus:
+    enum:
+    - PENDING
+    - APPROVED
+    - HIDDEN
+    - FEATURED
+    type: string
+    x-enum-varnames:
+    - ReviewStatusPending
+    - ReviewStatusApproved
+    - ReviewStatusHidden
+    - ReviewStatusFeatured
   github_com_evrone_go-clean-template_internal_entity.RoleName:
     enum:
     - Administrator

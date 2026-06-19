@@ -61,15 +61,6 @@ func (r *MaintenanceRepo) CancelExpiredPendingOrders(ctx context.Context, olderT
 	})
 }
 
-func (r *MaintenanceRepo) CleanupExpiredCards(ctx context.Context, now time.Time) error {
-	if err := r.Gorm.WithContext(ctx).
-		Where("expires_at < ?", now).
-		Where("is_used = ?", false).
-		Delete(&models.Card{}).Error; err != nil {
-		return fmt.Errorf("MaintenanceRepo.CleanupExpiredCards: %w", err)
-	}
-	return nil
-}
 
 func (r *MaintenanceRepo) SyncProductAggregates(ctx context.Context) error {
 	sql := `
