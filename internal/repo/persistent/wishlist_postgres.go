@@ -134,6 +134,7 @@ func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (e
 		Username:  review.Username,
 		Rating:    review.Rating,
 		Comment:   review.Comment,
+		Status:    string(entity.ReviewStatusPending),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	}
@@ -172,6 +173,7 @@ func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (e
 	review.ID = model.ID
 	review.CreatedAt = model.CreatedAt
 	review.UpdatedAt = model.UpdatedAt
+	review.Status = entity.ReviewStatus(model.Status)
 	return review, nil
 }
 
@@ -179,7 +181,8 @@ func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]ent
 	var rows []models.Review
 	if err := r.Gorm.WithContext(ctx).
 		Where("product_id = ?", productID).
-		Order("created_at DESC").
+		Where("status IN ?", []string{string(entity.ReviewStatusApproved), string(entity.ReviewStatusFeatured)}).
+		Order("CASE WHEN status = 'FEATURED' THEN 0 ELSE 1 END, created_at DESC").
 		Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("WishlistRepo.ListReviews: %w", err)
 	}
@@ -194,6 +197,7 @@ func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]ent
 			Username:  row.Username,
 			Rating:    row.Rating,
 			Comment:   row.Comment,
+			Status:    entity.ReviewStatus(row.Status),
 			CreatedAt: row.CreatedAt,
 			UpdatedAt: row.UpdatedAt,
 		})

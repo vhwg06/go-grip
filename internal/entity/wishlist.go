@@ -2,16 +2,30 @@ package entity
 
 import "time"
 
+type ReviewStatus string
+
+const (
+	ReviewStatusPending  ReviewStatus = "PENDING"
+	ReviewStatusApproved ReviewStatus = "APPROVED"
+	ReviewStatusHidden   ReviewStatus = "HIDDEN"
+	ReviewStatusFeatured ReviewStatus = "FEATURED"
+)
+
 type Review struct {
-	ID        int64     `json:"id"`
-	ProductID string    `json:"product_id"`
-	OrderID   string    `json:"order_id"`
-	UserID    string    `json:"user_id"`
-	Username  string    `json:"username"`
-	Rating    int       `json:"rating"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                 int64        `json:"id"`
+	ProductID          string       `json:"product_id"`
+	ProductName        string       `json:"product_name,omitempty"`
+	OrderID            string       `json:"order_id"`
+	UserID             string       `json:"user_id"`
+	Username           string       `json:"username"`
+	Rating             int          `json:"rating"`
+	Comment            string       `json:"comment"`
+	Status             ReviewStatus `json:"status"`
+	Attachments        []string     `json:"attachments,omitempty"`
+	IsVerifiedPurchase bool         `json:"is_verified_purchase,omitempty"`
+	FlaggedReason      *string      `json:"flagged_reason,omitempty"`
+	CreatedAt          time.Time    `json:"created_at"`
+	UpdatedAt          time.Time    `json:"updated_at"`
 }
 
 type WishlistItem struct {

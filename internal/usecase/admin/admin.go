@@ -21,6 +21,19 @@ type adminStore interface {
 	UpsertCategory(ctx context.Context, category entity.Category) (entity.Category, error)
 	DeleteCategory(ctx context.Context, categoryID string) error
 	ImportCards(ctx context.Context, productID string, keys []string) (int, error)
+	ListCards(ctx context.Context, productID string) ([]entity.Card, error)
+	CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error)
+	DeleteCard(ctx context.Context, cardID int64) error
+	ListSettings(ctx context.Context) ([]entity.Setting, error)
+	DeleteSetting(ctx context.Context, key string) error
+	ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
+	ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
+	UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
+	DeleteOrder(ctx context.Context, orderID string) error
+	ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
+	UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
+	BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
+	DeleteReview(ctx context.Context, reviewID int64) error
 }
 
 type UseCase struct {
@@ -76,6 +89,42 @@ func (uc *UseCase) GetOrder(ctx context.Context, actor entity.Actor, orderID str
 		return entity.Order{}, err
 	}
 	return uc.repo.GetOrderByID(ctx, orderID)
+}
+
+func (uc *UseCase) UpdateOrderStatus(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	switch status {
+	case entity.OrderStatusPaid, entity.OrderStatusDelivered, entity.OrderStatusCancelled:
+		return uc.repo.UpdateOrderStatus(ctx, orderID, status)
+	default:
+		return entity.ErrInvalidInput
+	}
+}
+
+func (uc *UseCase) DeleteOrder(ctx context.Context, actor entity.Actor, orderID string) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	return uc.repo.DeleteOrder(ctx, orderID)
+}
+
+func (uc *UseCase) ListRefunds(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, err
+	}
+	return uc.repo.ListRefundRequests(ctx, status)
+}
+
+func (uc *UseCase) DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.RefundRequest{}, err
+	}
+	if refundID <= 0 {
+		return entity.RefundRequest{}, entity.ErrInvalidInput
+	}
+	return uc.repo.ProcessRefund(ctx, refundID, approve, actor.Username, note)
 }
 
 func (uc *UseCase) RepairAggregates(ctx context.Context, actor entity.Actor) error {
@@ -141,6 +190,102 @@ func (uc *UseCase) ImportCards(ctx context.Context, actor entity.Actor, productI
 	return uc.repo.ImportCards(ctx, productID, keys)
 }
 
+func (uc *UseCase) ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, err
+	}
+	return uc.repo.ListCards(ctx, productID)
+}
+
+func (uc *UseCase) CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.Card{}, err
+	}
+	if strings.TrimSpace(productID) == "" || strings.TrimSpace(cardKey) == "" {
+		return entity.Card{}, entity.ErrInvalidInput
+	}
+	return uc.repo.CreateCard(ctx, productID, cardKey)
+}
+
+func (uc *UseCase) DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	if cardID <= 0 {
+		return entity.ErrInvalidInput
+	}
+	return uc.repo.DeleteCard(ctx, cardID)
+}
+
+func (uc *UseCase) ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, err
+	}
+	return uc.repo.ListSettings(ctx)
+}
+
+func (uc *UseCase) SetSetting(ctx context.Context, actor entity.Actor, key, value string) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	if strings.TrimSpace(key) == "" {
+		return entity.ErrInvalidInput
+	}
+	return uc.repo.StoreSetting(ctx, entity.Setting{Key: key, Value: value})
+}
+
+func (uc *UseCase) DeleteSetting(ctx context.Context, actor entity.Actor, key string) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	if strings.TrimSpace(key) == "" {
+		return entity.ErrInvalidInput
+	}
+	return uc.repo.DeleteSetting(ctx, key)
+}
+
+func (uc *UseCase) ListReviews(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, repo.ReviewModerationStats{}, 0, err
+	}
+	return uc.repo.ListReviews(ctx, page, query, status)
+}
+
+func (uc *UseCase) UpdateReviewStatus(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.Review{}, err
+	}
+	if reviewID <= 0 {
+		return entity.Review{}, entity.ErrInvalidInput
+	}
+	switch status {
+	case entity.ReviewStatusApproved, entity.ReviewStatusHidden, entity.ReviewStatusFeatured:
+		return uc.repo.UpdateReviewStatus(ctx, reviewID, status)
+	default:
+		return entity.Review{}, entity.ErrInvalidInput
+	}
+}
+
+func (uc *UseCase) BulkPublishReviews(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return 0, err
+	}
+	if len(reviewIDs) == 0 {
+		return 0, entity.ErrInvalidInput
+	}
+	return uc.repo.BulkUpdateReviewStatus(ctx, reviewIDs, entity.ReviewStatusApproved)
+}
+
+func (uc *UseCase) DeleteReview(ctx context.Context, actor entity.Actor, reviewID int64) error {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return err
+	}
+	if reviewID <= 0 {
+		return entity.ErrInvalidInput
+	}
+	return uc.repo.DeleteReview(ctx, reviewID)
+}
+
 func (uc *UseCase) SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
@@ -172,23 +317,11 @@ func (uc *UseCase) ensureAdmin(actor entity.Actor) error {
 }
 
 func (uc *UseCase) setSetting(ctx context.Context, actor entity.Actor, key, value string) error {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return err
-	}
-	if key == "" {
-		return entity.ErrInvalidInput
-	}
-	return uc.repo.StoreSetting(ctx, entity.Setting{Key: key, Value: value})
+	return uc.SetSetting(ctx, actor, key, value)
 }
 
 func (uc *UseCase) deleteSetting(ctx context.Context, actor entity.Actor, key string) error {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return err
-	}
-	if key == "" {
-		return entity.ErrInvalidInput
-	}
-	return uc.repo.StoreSetting(ctx, entity.Setting{Key: key, Value: ""})
+	return uc.DeleteSetting(ctx, actor, key)
 }
 
 func (uc *UseCase) requireInput(v string) error {

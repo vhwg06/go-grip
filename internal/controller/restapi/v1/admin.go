@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,7 +22,21 @@ type adminExtendedUseCase interface {
 	DeleteCategory(ctx context.Context, actor entity.Actor, categoryID string) error
 	ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error)
 	GetOrder(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error)
+	UpdateOrderStatus(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error
+	DeleteOrder(ctx context.Context, actor entity.Actor, orderID string) error
+	ListRefunds(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
+	DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
+	ListReviews(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
+	UpdateReviewStatus(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
+	BulkPublishReviews(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error)
+	DeleteReview(ctx context.Context, actor entity.Actor, reviewID int64) error
+	ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error)
+	CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error)
+	DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error
 	ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error)
+	ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
+	SetSetting(ctx context.Context, actor entity.Actor, key, value string) error
+	DeleteSetting(ctx context.Context, actor entity.Actor, key string) error
 	SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
 }
@@ -418,6 +433,42 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 	})
 }
 
+func (r *V1) gripAdminUpdateOrder(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_orders_not_available"})
+	}
+
+	var body struct {
+		Status entity.OrderStatus `json:"status"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	if err := ext.UpdateOrderStatus(ctx.UserContext(), r.gripActor(ctx), ctx.Params("id"), body.Status); err != nil {
+		httpStatus, payload := mapDomainError(err)
+		return ctx.Status(httpStatus).JSON(payload)
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (r *V1) gripAdminDeleteOrder(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_orders_not_available"})
+	}
+
+	if err := ext.DeleteOrder(ctx.UserContext(), r.gripActor(ctx), ctx.Params("id")); err != nil {
+		httpStatus, payload := mapDomainError(err)
+		return ctx.Status(httpStatus).JSON(payload)
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
+}
+
 // @Summary     Import product cards
 // @Description Bulk imports card keys for a product
 // @ID          grip_admin_import_cards
@@ -447,6 +498,217 @@ func (r *V1) gripAdminCardsImport(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 	return ctx.JSON(apiSuccessEnvelope(fiber.Map{"imported": count}))
+}
+
+func (r *V1) gripAdminCardsReplenish(ctx *fiber.Ctx) error {
+	return r.gripAdminCardsImport(ctx)
+}
+
+func (r *V1) gripAdminListCards(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
+	}
+
+	cards, err := ext.ListCards(ctx.UserContext(), r.gripActor(ctx), strings.TrimSpace(ctx.Query("productId")))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(cards))
+}
+
+func (r *V1) gripAdminCreateCard(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
+	}
+
+	var body struct {
+		ProductID string `json:"productId"`
+		CardKey   string `json:"cardKey"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	card, err := ext.CreateCard(ctx.UserContext(), r.gripActor(ctx), body.ProductID, body.CardKey)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.Status(http.StatusCreated).JSON(apiSuccessEnvelope(card))
+}
+
+func (r *V1) gripAdminDeleteCard(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_cards_not_available"})
+	}
+
+	cardID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	if err := ext.DeleteCard(ctx.UserContext(), r.gripActor(ctx), cardID); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (r *V1) gripAdminListRefunds(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_refunds_not_available"})
+	}
+
+	refunds, err := ext.ListRefunds(ctx.UserContext(), r.gripActor(ctx), strings.TrimSpace(ctx.Query("status", "pending")))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(refunds))
+}
+
+func (r *V1) gripAdminApproveRefund(ctx *fiber.Ctx) error {
+	return r.gripAdminDecideRefund(ctx, true)
+}
+
+func (r *V1) gripAdminRejectRefund(ctx *fiber.Ctx) error {
+	return r.gripAdminDecideRefund(ctx, false)
+}
+
+func (r *V1) gripAdminDecideRefund(ctx *fiber.Ctx, approve bool) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_refunds_not_available"})
+	}
+
+	refundID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	var body struct {
+		Note string `json:"note"`
+	}
+	if len(ctx.Body()) > 0 {
+		if err := ctx.BodyParser(&body); err != nil {
+			status, payload := mapDomainError(entity.ErrInvalidInput)
+			return ctx.Status(status).JSON(payload)
+		}
+	}
+
+	refund, err := ext.DecideRefund(ctx.UserContext(), r.gripActor(ctx), refundID, approve, body.Note)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(refund))
+}
+
+func (r *V1) gripAdminNotificationTest(ctx *fiber.Ctx) error {
+	var body struct {
+		Channel string `json:"channel"`
+		To      string `json:"to"`
+		Subject string `json:"subject"`
+		Body    string `json:"body"`
+	}
+	if len(ctx.Body()) > 0 {
+		if err := ctx.BodyParser(&body); err != nil {
+			status, payload := mapDomainError(entity.ErrInvalidInput)
+			return ctx.Status(status).JSON(payload)
+		}
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+		"status":  "queued",
+		"channel": body.Channel,
+	}))
+}
+
+func (r *V1) gripAdminImportData(ctx *fiber.Ctx) error {
+	if r.importer == nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "importer_not_configured"})
+	}
+
+	var body importBody
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	result, err := r.importer.Import(ctx.UserContext(), body.Items)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(result))
+}
+
+func (r *V1) gripAdminListSettings(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	settings, err := ext.ListSettings(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(settings))
+}
+
+func (r *V1) gripAdminUpsertSetting(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	var body struct {
+		Value string `json:"value"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), ctx.Params("key"), body.Value); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+		"key":   ctx.Params("key"),
+		"value": body.Value,
+	}))
+}
+
+func (r *V1) gripAdminDeleteSetting(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	if err := ext.DeleteSetting(ctx.UserContext(), r.gripActor(ctx), ctx.Params("key")); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
 }
 
 // @Summary     List users for admin

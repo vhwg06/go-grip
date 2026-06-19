@@ -284,63 +284,7 @@ func (r *V1) gripListSettings(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(body)
 	}
 
-	res := fiber.Map{
-		"shopName":          "Grip Store",
-		"shopDescription":   "High-quality virtual goods, instant delivery",
-		"shopLogo":          nil,
-		"shopFooter":        "Copyright © 2026 Grip Store",
-		"themeColor":        "purple",
-		"noindexEnabled":    false,
-		"wishlistEnabled":   true,
-		"checkinEnabled":    true,
-		"checkinReward":     1,
-		"lowStockThreshold": 3,
-
-		"site_name":        "Grip Store",
-		"site_description": "High-quality virtual goods, instant delivery",
-		"currency":         "VND",
-	}
-
-	for _, s := range settings {
-		switch s.Key {
-		case "test.announcement":
-			// skip
-		case "test.support.email":
-			// skip
-		case "shopName", "site_name":
-			res["shopName"] = s.Value
-			res["site_name"] = s.Value
-		case "shopDescription", "site_description":
-			res["shopDescription"] = s.Value
-			res["site_description"] = s.Value
-		case "shopLogo":
-			res["shopLogo"] = s.Value
-		case "shopFooter":
-			res["shopFooter"] = s.Value
-		case "themeColor":
-			res["themeColor"] = s.Value
-		case "currency":
-			res["currency"] = s.Value
-		case "noindexEnabled":
-			res["noindexEnabled"] = s.Value == "true"
-		case "wishlistEnabled":
-			res["wishlistEnabled"] = s.Value == "true"
-		case "checkinEnabled":
-			res["checkinEnabled"] = s.Value == "true"
-		case "checkinReward":
-			if val, err := strconv.Atoi(s.Value); err == nil {
-				res["checkinReward"] = val
-			}
-		case "lowStockThreshold":
-			if val, err := strconv.Atoi(s.Value); err == nil {
-				res["lowStockThreshold"] = val
-			}
-		default:
-			res[s.Key] = s.Value
-		}
-	}
-
-	return ctx.JSON(apiSuccessEnvelope(res))
+	return ctx.JSON(apiSuccessEnvelope(buildCatalogSettingsProjection(settings)))
 }
 
 // @Summary     Get active announcement

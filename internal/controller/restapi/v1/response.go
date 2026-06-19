@@ -29,6 +29,9 @@ func mapDomainError(err error) (int, envelope) {
 	if errors.Is(err, entity.ErrForbidden) {
 		return http.StatusForbidden, envelope{Error: "forbidden"}
 	}
+	if errors.Is(err, entity.ErrOrderStateConflict) || errors.Is(err, entity.ErrInvalidTransition) || errors.Is(err, entity.ErrRefundNotAllowed) {
+		return http.StatusConflict, envelope{Error: "conflict"}
+	}
 	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) || errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, gorm.ErrRecordNotFound) {
 		return http.StatusNotFound, envelope{Error: "not_found"}
 	}

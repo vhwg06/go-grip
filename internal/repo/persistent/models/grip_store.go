@@ -177,6 +177,7 @@ type Review struct {
 	Username  string    `gorm:"type:text"`
 	Rating    int       `gorm:"not null"`
 	Comment   string    `gorm:"type:text"`
+	Status    string    `gorm:"type:text;not null;default:'PENDING';index"`
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt time.Time `gorm:"not null"`
 }

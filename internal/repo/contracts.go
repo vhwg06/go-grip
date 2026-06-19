@@ -205,7 +205,20 @@ type (
 		UpdateUserPoints(ctx context.Context, userID string, points int) error
 		ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
 		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
+		ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
+		ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
+		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
+		DeleteOrder(ctx context.Context, orderID string) error
+		ListCards(ctx context.Context, productID string) ([]entity.Card, error)
+		CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error)
+		DeleteCard(ctx context.Context, cardID int64) error
+		ListSettings(ctx context.Context) ([]entity.Setting, error)
 		StoreSetting(ctx context.Context, setting entity.Setting) error
+		DeleteSetting(ctx context.Context, key string) error
+		ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, ReviewModerationStats, int, error)
+		UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
+		BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
+		DeleteReview(ctx context.Context, reviewID int64) error
 		RebuildProductAggregates(ctx context.Context) error
 	}
 
@@ -213,5 +226,11 @@ type (
 		CancelExpiredPendingOrders(ctx context.Context, olderThan time.Time) error
 		CleanupExpiredCards(ctx context.Context, now time.Time) error
 		SyncProductAggregates(ctx context.Context) error
+	}
+
+	ReviewModerationStats struct {
+		Pending  int `json:"pending"`
+		Featured int `json:"featured"`
+		Hidden   int `json:"hidden"`
 	}
 )

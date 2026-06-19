@@ -7,6 +7,7 @@ type StaticPage struct {
 	Title       string        `json:"title"`
 	Slug        string        `json:"slug"`
 	Body        string        `json:"body"`
+	Gallery     []string      `json:"gallery,omitempty"`
 	TemplateKey string        `json:"template_key"`
 	Status      ContentStatus `json:"status"`
 	UpdatedAt   time.Time     `json:"updated_at"`

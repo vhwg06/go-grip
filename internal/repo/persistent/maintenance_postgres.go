@@ -88,7 +88,7 @@ func (r *MaintenanceRepo) SyncProductAggregates(ctx context.Context) error {
 			FROM cards
 			GROUP BY product_id
 		) src
-		WHERE p.id = src.product_id
+		WHERE p.id::text = src.product_id
 	`
 	if err := r.Gorm.WithContext(ctx).Exec(sql).Error; err != nil {
 		return fmt.Errorf("MaintenanceRepo.SyncProductAggregates: %w", err)

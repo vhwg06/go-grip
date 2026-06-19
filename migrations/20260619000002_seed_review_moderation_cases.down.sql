@@ -1,0 +1,2 @@
+DELETE FROM reviews
+WHERE id IN (930002, 930003);

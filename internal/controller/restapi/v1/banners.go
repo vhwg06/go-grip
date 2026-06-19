@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/gofiber/fiber/v2"
@@ -43,11 +45,7 @@ func (r *V1) listAdminBanners(ctx *fiber.Ctx) error {
 		return ctx.JSON([]any{})
 	}
 
-	slides := []AdminBannerSlide{}
-	if slidesRaw, ok := bannerBlock.Config["slides"]; ok {
-		jsBytes, _ := json.Marshal(slidesRaw)
-		_ = json.Unmarshal(jsBytes, &slides)
-	}
+	slides := extractBannerSlides(*bannerBlock)
 
 	log.Printf("[banners-debug] listAdminBanners returning %d slides: %+v", len(slides), slides)
 	return ctx.JSON(slides)
@@ -79,60 +77,23 @@ func (r *V1) saveAdminBanner(ctx *fiber.Ctx) error {
 		}
 	}
 
-	slides := []AdminBannerSlide{}
-	if slidesRaw, ok := bannerBlock.Config["slides"]; ok {
-		jsBytes, _ := json.Marshal(slidesRaw)
-		_ = json.Unmarshal(jsBytes, &slides)
-	}
+	slides := extractBannerSlides(bannerBlock)
+	payload := parseBannerPayload(ctx)
 
-	idStr := ctx.FormValue("id")
-	title := ctx.FormValue("title")
-	subtitle := ctx.FormValue("subtitle")
-	image := ctx.FormValue("image")
-	mobileImage := ctx.FormValue("mobileImage")
-	ctaText := ctx.FormValue("ctaText")
-	ctaLink := ctx.FormValue("ctaLink")
-	sortOrderStr := ctx.FormValue("sortOrder")
-	isActiveStr := ctx.FormValue("isActive")
+	log.Printf("[banners-debug] saveAdminBanner inputs: id=%d, title=%s, sortOrder=%d, isActive=%t", payload.ID, payload.Title, payload.SortOrder, payload.IsActive)
 
-	id, _ := strconv.Atoi(idStr)
-	sortOrder, _ := strconv.Atoi(sortOrderStr)
-	isActive := true
-	if isActiveStr == "false" {
-		isActive = false
-	}
-
-	log.Printf("[banners-debug] saveAdminBanner inputs: id=%d (%s), title=%s, sortOrder=%d, isActive=%t", id, idStr, title, sortOrder, isActive)
-
-	if id > 0 {
+	if payload.ID > 0 {
 		// Update existing
 		updated := false
 		for i := range slides {
-			if slides[i].ID == id {
-				slides[i].Title = title
-				slides[i].Subtitle = subtitle
-				slides[i].Image = image
-				slides[i].MobileImage = mobileImage
-				slides[i].CtaText = ctaText
-				slides[i].CtaLink = ctaLink
-				slides[i].SortOrder = sortOrder
-				slides[i].IsActive = isActive
+			if slides[i].ID == payload.ID {
+				slides[i] = payload
 				updated = true
 				break
 			}
 		}
 		if !updated {
-			slides = append(slides, AdminBannerSlide{
-				ID:          id,
-				Title:       title,
-				Subtitle:    subtitle,
-				Image:       image,
-				MobileImage: mobileImage,
-				CtaText:     ctaText,
-				CtaLink:     ctaLink,
-				SortOrder:   sortOrder,
-				IsActive:    isActive,
-			})
+			slides = append(slides, payload)
 		}
 	} else {
 		// Create new, find max ID
@@ -143,20 +104,12 @@ func (r *V1) saveAdminBanner(ctx *fiber.Ctx) error {
 			}
 		}
 		newID := maxID + 1
-		slides = append(slides, AdminBannerSlide{
-			ID:          newID,
-			Title:       title,
-			Subtitle:    subtitle,
-			Image:       image,
-			MobileImage: mobileImage,
-			CtaText:     ctaText,
-			CtaLink:     ctaLink,
-			SortOrder:   sortOrder,
-			IsActive:    isActive,
-		})
+		payload.ID = newID
+		slides = append(slides, payload)
 		log.Printf("[banners-debug] saveAdminBanner created new slide ID=%d", newID)
 	}
 
+	sortBannerSlides(slides)
 	bannerBlock.Config["slides"] = slides
 
 	if !found {
@@ -208,10 +161,7 @@ func (r *V1) deleteAdminBanner(ctx *fiber.Ctx) error {
 	}
 
 	slides := []AdminBannerSlide{}
-	if slidesRaw, ok := bannerBlock.Config["slides"]; ok {
-		jsBytes, _ := json.Marshal(slidesRaw)
-		_ = json.Unmarshal(jsBytes, &slides)
-	}
+	slides = extractBannerSlides(bannerBlock)
 
 	log.Printf("[banners-debug] deleteAdminBanner: current slides: %+v", slides)
 
@@ -223,6 +173,7 @@ func (r *V1) deleteAdminBanner(ctx *fiber.Ctx) error {
 	}
 
 	log.Printf("[banners-debug] deleteAdminBanner: slides after deletion: %+v", nextSlides)
+	sortBannerSlides(nextSlides)
 	bannerBlock.Config["slides"] = nextSlides
 
 	_, err = r.homepage.UpdateBlock(ctx.UserContext(), bannerBlock)
@@ -233,4 +184,51 @@ func (r *V1) deleteAdminBanner(ctx *fiber.Ctx) error {
 
 	log.Println("[banners-debug] deleteAdminBanner completed successfully")
 	return ctx.JSON(fiber.Map{"success": true})
+}
+
+func extractBannerSlides(block entity.HomepageBlock) []AdminBannerSlide {
+	slides := []AdminBannerSlide{}
+	if slidesRaw, ok := block.Config["slides"]; ok {
+		jsBytes, _ := json.Marshal(slidesRaw)
+		_ = json.Unmarshal(jsBytes, &slides)
+	}
+	sortBannerSlides(slides)
+	return slides
+}
+
+func sortBannerSlides(slides []AdminBannerSlide) {
+	slices.SortFunc(slides, func(a, b AdminBannerSlide) int {
+		if a.SortOrder != b.SortOrder {
+			return a.SortOrder - b.SortOrder
+		}
+		return a.ID - b.ID
+	})
+}
+
+func parseBannerPayload(ctx *fiber.Ctx) AdminBannerSlide {
+	var payload AdminBannerSlide
+	if len(ctx.Body()) > 0 {
+		_ = ctx.BodyParser(&payload)
+	}
+	if payload.Title != "" || payload.Image != "" || payload.SortOrder != 0 || payload.ID != 0 || payload.MobileImage != "" || payload.CtaText != "" || payload.CtaLink != "" {
+		return payload
+	}
+
+	id, _ := strconv.Atoi(ctx.FormValue("id"))
+	sortOrder, _ := strconv.Atoi(ctx.FormValue("sortOrder"))
+	isActive := true
+	if strings.TrimSpace(ctx.FormValue("isActive")) == "false" {
+		isActive = false
+	}
+	return AdminBannerSlide{
+		ID:          id,
+		Title:       ctx.FormValue("title"),
+		Subtitle:    ctx.FormValue("subtitle"),
+		Image:       ctx.FormValue("image"),
+		MobileImage: ctx.FormValue("mobileImage"),
+		CtaText:     ctx.FormValue("ctaText"),
+		CtaLink:     ctx.FormValue("ctaLink"),
+		SortOrder:   sortOrder,
+		IsActive:    isActive,
+	}
 }
