@@ -15,10 +15,6 @@ import (
 )
 
 type adminCardsImportUseCaseStub struct {
-	listCardsFunc   func(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error)
-	createCardFunc  func(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error)
-	deleteCardFunc  func(ctx context.Context, actor entity.Actor, cardID int64) error
-	importCardsFunc func(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error)
 }
 
 func (s *adminCardsImportUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
@@ -71,34 +67,6 @@ func (s *adminCardsImportUseCaseStub) BulkPublishReviews(context.Context, entity
 
 func (s *adminCardsImportUseCaseStub) DeleteReview(context.Context, entity.Actor, int64) error {
 	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
-	if s.listCardsFunc != nil {
-		return s.listCardsFunc(ctx, actor, productID)
-	}
-	return nil, nil
-}
-
-func (s *adminCardsImportUseCaseStub) CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
-	if s.createCardFunc != nil {
-		return s.createCardFunc(ctx, actor, productID, cardKey)
-	}
-	return entity.Card{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error {
-	if s.deleteCardFunc != nil {
-		return s.deleteCardFunc(ctx, actor, cardID)
-	}
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error) {
-	if s.importCardsFunc != nil {
-		return s.importCardsFunc(ctx, actor, productID, keys)
-	}
-	return 0, nil
 }
 
 func (s *adminCardsImportUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {
@@ -183,52 +151,7 @@ func TestAdminCardsAndImportEndpoints(t *testing.T) {
 		return app
 	}
 
-	t.Run("card routes perform CRUD and import", func(t *testing.T) {
-		var deletedCardID int64
-		var createdCardKey string
-		var importedProductID string
-		app := setupApp(&adminCardsImportUseCaseStub{
-			listCardsFunc: func(_ context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
-				require.True(t, actor.IsAdmin)
-				require.Equal(t, "p1", productID)
-				return []entity.Card{{ID: 1, ProductID: "p1", CardKey: "k1"}}, nil
-			},
-			createCardFunc: func(_ context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
-				require.True(t, actor.IsAdmin)
-				createdCardKey = cardKey
-				return entity.Card{ID: 2, ProductID: productID, CardKey: cardKey}, nil
-			},
-			deleteCardFunc: func(_ context.Context, actor entity.Actor, cardID int64) error {
-				require.True(t, actor.IsAdmin)
-				deletedCardID = cardID
-				return nil
-			},
-			importCardsFunc: func(_ context.Context, actor entity.Actor, productID string, keys []string) (int, error) {
-				require.True(t, actor.IsAdmin)
-				importedProductID = productID
-				require.Equal(t, []string{"a", "b"}, keys)
-				return 2, nil
-			},
-		}, &importerStub{})
 
-		resp := testRequest(t, app, http.MethodGet, "/v1/admin/cards?productId=p1", nil, "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		resp = testRequest(t, app, http.MethodPost, "/v1/admin/cards", []byte(`{"productId":"p1","cardKey":"new-key"}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
-		require.Equal(t, "new-key", createdCardKey)
-
-		resp = testRequest(t, app, http.MethodDelete, "/v1/admin/cards/7", nil, "Bearer "+adminToken)
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
-		require.Equal(t, int64(7), deletedCardID)
-
-		resp = testRequest(t, app, http.MethodPost, "/v1/admin/cards/import", []byte(`{"productId":"p1","keys":["a","b"]}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		require.Equal(t, "p1", importedProductID)
-
-		resp = testRequest(t, app, http.MethodPost, "/v1/admin/cards/replenish", []byte(`{"productId":"p1","keys":["a","b"]}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-	})
 
 	t.Run("notification test and data import return success envelopes", func(t *testing.T) {
 		app := setupApp(&adminCardsImportUseCaseStub{}, &importerStub{

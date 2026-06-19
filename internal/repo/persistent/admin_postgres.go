@@ -309,41 +309,15 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 				}
 			}
 
-			cardIDs := splitCardIDs(order.CardIDs)
-			if len(cardIDs) > 0 {
-				if err := tx.Model(&models.Card{}).
-					Where("id IN ?", cardIDs).
-					Updates(map[string]any{
-						"is_used":           false,
-						"reserved_order_id": "",
-						"reserved_at":       time.Time{},
-						"used_at":           time.Time{},
-					}).Error; err != nil {
-					return fmt.Errorf("AdminRepo.ProcessRefund(reclaim cards): %w", err)
-				}
+			if err := tx.Model(&models.Product{}).
+				Where("id = ?", order.ProductID).
+				Updates(map[string]any{
+					"stock_count": gorm.Expr("stock_count + ?", order.Quantity),
+					"sold_count":  gorm.Expr("sold_count - ?", order.Quantity),
+				}).Error; err != nil {
+				return fmt.Errorf("AdminRepo.ProcessRefund(restore product stock): %w", err)
 			}
 
-			if err := tx.Exec(`
-				UPDATE products p
-				SET
-					stock_count = COALESCE(src.stock_count, 0),
-					locked_count = COALESCE(src.locked_count, 0),
-					sold_count = COALESCE(src.sold_count, 0),
-					updated_at = NOW()
-				FROM (
-					SELECT
-						product_id,
-						COUNT(*) FILTER (WHERE is_used = FALSE AND (reserved_order_id = '' OR reserved_order_id IS NULL)) AS stock_count,
-						COUNT(*) FILTER (WHERE is_used = FALSE AND reserved_order_id <> '') AS locked_count,
-						COUNT(*) FILTER (WHERE is_used = TRUE) AS sold_count
-					FROM cards
-					WHERE product_id = ?
-					GROUP BY product_id
-				) src
-				WHERE p.id::text = src.product_id
-			`, order.ProductID).Error; err != nil {
-				return fmt.Errorf("AdminRepo.ProcessRefund(rebuild aggregate): %w", err)
-			}
 		}
 
 		result = entity.RefundRequest{
@@ -470,13 +444,21 @@ func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, statu
 				}
 			}
 
-			if err := tx.Model(&models.Card{}).
-				Where("reserved_order_id = ?", orderID).
-				Updates(map[string]any{
-					"reserved_order_id": "",
-					"reserved_at":       time.Time{},
-				}).Error; err != nil {
-				return fmt.Errorf("AdminRepo.UpdateOrderStatus(release cards): %w", err)
+			if current == entity.OrderStatusPending {
+				if err := tx.Model(&models.Product{}).
+					Where("id = ?", order.ProductID).
+					UpdateColumn("locked_count", gorm.Expr("locked_count - ?", order.Quantity)).Error; err != nil {
+					return fmt.Errorf("AdminRepo.UpdateOrderStatus(release locked count): %w", err)
+				}
+			} else if current == entity.OrderStatusPaid {
+				if err := tx.Model(&models.Product{}).
+					Where("id = ?", order.ProductID).
+					Updates(map[string]any{
+						"stock_count": gorm.Expr("stock_count + ?", order.Quantity),
+						"sold_count":  gorm.Expr("sold_count - ?", order.Quantity),
+					}).Error; err != nil {
+					return fmt.Errorf("AdminRepo.UpdateOrderStatus(restore stock from paid): %w", err)
+				}
 			}
 		}
 
@@ -488,14 +470,6 @@ func (r *AdminRepo) DeleteOrder(ctx context.Context, orderID string) error {
 	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		if err := tx.Where("order_id = ?", orderID).Delete(&models.RefundRequest{}).Error; err != nil {
 			return fmt.Errorf("AdminRepo.DeleteOrder(delete refunds): %w", err)
-		}
-		if err := tx.Model(&models.Card{}).
-			Where("reserved_order_id = ?", orderID).
-			Updates(map[string]any{
-				"reserved_order_id": "",
-				"reserved_at":       time.Time{},
-			}).Error; err != nil {
-			return fmt.Errorf("AdminRepo.DeleteOrder(release cards): %w", err)
 		}
 		if err := tx.Where("order_id = ?", orderID).Delete(&models.Order{}).Error; err != nil {
 			return fmt.Errorf("AdminRepo.DeleteOrder(delete order): %w", err)
@@ -542,27 +516,6 @@ func (r *AdminRepo) DeleteSetting(ctx context.Context, key string) error {
 }
 
 func (r *AdminRepo) RebuildProductAggregates(ctx context.Context) error {
-	sql := `
-		UPDATE products p
-		SET
-			stock_count = COALESCE(src.stock_count, 0),
-			locked_count = COALESCE(src.locked_count, 0),
-			sold_count = COALESCE(src.sold_count, 0),
-			updated_at = NOW()
-		FROM (
-			SELECT
-				product_id,
-				COUNT(*) FILTER (WHERE is_used = FALSE AND (reserved_order_id = '' OR reserved_order_id IS NULL)) AS stock_count,
-				COUNT(*) FILTER (WHERE is_used = FALSE AND reserved_order_id <> '') AS locked_count,
-				COUNT(*) FILTER (WHERE is_used = TRUE) AS sold_count
-			FROM cards
-			GROUP BY product_id
-		) src
-		WHERE p.id::text = src.product_id
-	`
-	if err := r.Gorm.WithContext(ctx).Exec(sql).Error; err != nil {
-		return fmt.Errorf("AdminRepo.RebuildProductAggregates: %w", err)
-	}
 	return nil
 }
 
@@ -648,7 +601,7 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 			Columns: []clause.Column{{Name: "id"}},
 			DoUpdates: clause.AssignmentColumns([]string{
 				"title", "sku", "description", "price", "compare_price", "category", "image", "is_hot", "is_active",
-				"is_shared", "sort_order", "purchase_limit", "purchase_warning", "visibility_level",
+				"sort_order", "purchase_limit", "purchase_warning", "visibility_level",
 				"stock_count", "locked_count", "sold_count", "rating", "review_count", "updated_at",
 			}),
 		}).

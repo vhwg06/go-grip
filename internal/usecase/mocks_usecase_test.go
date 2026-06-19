@@ -544,9 +544,9 @@ func (mr *MockMediaMockRecorder) GeneratePresignedURL(ctx, fileName, contentType
 }
 
 // List mocks base method.
-func (m *MockMedia) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
+func (m *MockMedia) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx, page)
+	ret := m.ctrl.Call(m, "List", ctx, page, q)
 	ret0, _ := ret[0].([]entity.MediaAsset)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(error)
@@ -554,9 +554,9 @@ func (m *MockMedia) List(ctx context.Context, page entity.Pagination) ([]entity.
 }
 
 // List indicates an expected call of List.
-func (mr *MockMediaMockRecorder) List(ctx, page any) *gomock.Call {
+func (mr *MockMediaMockRecorder) List(ctx, page, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMedia)(nil).List), ctx, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMedia)(nil).List), ctx, page, q)
 }
 
 // Store mocks base method.
@@ -1857,20 +1857,6 @@ func (m *MockMaintenance) CancelExpiredPendingOrders(ctx context.Context) error 
 func (mr *MockMaintenanceMockRecorder) CancelExpiredPendingOrders(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelExpiredPendingOrders", reflect.TypeOf((*MockMaintenance)(nil).CancelExpiredPendingOrders), ctx)
-}
-
-// CleanupExpiredCards mocks base method.
-func (m *MockMaintenance) CleanupExpiredCards(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CleanupExpiredCards", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CleanupExpiredCards indicates an expected call of CleanupExpiredCards.
-func (mr *MockMaintenanceMockRecorder) CleanupExpiredCards(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupExpiredCards", reflect.TypeOf((*MockMaintenance)(nil).CleanupExpiredCards), ctx)
 }
 
 // SyncProductAggregates mocks base method.

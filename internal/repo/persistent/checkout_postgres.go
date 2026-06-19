@@ -2,9 +2,8 @@ package persistent
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
@@ -42,18 +41,14 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: select product: %w", err)
 		}
 
-		reservedCards, err := r.reserveCardsTx(tx, order.ID, order.ProductID, order.Quantity, product.IsShared)
-		if err != nil {
-			return err
+		if product.StockCount-product.LockedCount < order.Quantity {
+			return entity.ErrOutOfStock
 		}
 
-		cardIDs := make([]string, 0, len(reservedCards))
-		for _, card := range reservedCards {
-			cardIDs = append(cardIDs, strconv.FormatInt(card.ID, 10))
-		}
-		orderModel.CardIDs = strings.Join(cardIDs, ",")
-		if product.IsShared && len(reservedCards) > 0 {
-			orderModel.CardKey = reservedCards[0].CardKey
+		if err := tx.Model(&models.Product{}).
+			Where("id = ?", product.ID).
+			UpdateColumn("locked_count", gorm.Expr("locked_count + ?", order.Quantity)).Error; err != nil {
+			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: update product stock: %w", err)
 		}
 
 		if actor.UserID != "" && order.PointsUsed > 0 {
@@ -114,122 +109,52 @@ func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment
 }
 
 func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error {
-	query := r.Gorm.WithContext(ctx).
-		Model(&models.Order{}).
-		Where("order_id = ?", orderID)
-
-	if status == entity.OrderStatusPaid {
-		query = query.Where("status = ?", string(entity.OrderStatusPending))
-	}
-	if status == entity.OrderStatusDelivered {
-		query = query.Where("status <> ?", string(entity.OrderStatusDelivered))
-	}
-
-	now := time.Now().UTC()
-	updates := map[string]any{
-		"status":     string(status),
-		"updated_at": now,
-	}
-	if status == entity.OrderStatusPaid {
-		updates["paid_at"] = now
-	}
-	if status == entity.OrderStatusDelivered {
-		updates["delivered_at"] = now
-	}
-
-	result := query.Updates(updates)
-	if result.Error != nil {
-		return fmt.Errorf("CheckoutRepo.UpdateOrderStatus: %w", result.Error)
-	}
-	if result.RowsAffected == 0 && status == entity.OrderStatusPaid {
-		return nil
-	}
-
-	return nil
-}
-
-func (r *CheckoutRepo) ReserveCards(ctx context.Context, orderID, productID string, quantity int, isShared bool) ([]entity.Card, error) {
-	reserved := make([]entity.Card, 0, quantity)
-
-	err := withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
-		cards, err := r.reserveCardsTx(tx, orderID, productID, quantity, isShared)
-		if err != nil {
-			return err
+	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
+		var order models.Order
+		if err := tx.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return fmt.Errorf("CheckoutRepo.UpdateOrderStatus: select order: %w", err)
 		}
-		reserved = append(reserved, cards...)
+
+		if order.Status == string(status) {
+			return nil
+		}
+
+		currentStatus := entity.OrderStatus(order.Status)
+		now := time.Now().UTC()
+		updates := map[string]any{
+			"status":     string(status),
+			"updated_at": now,
+		}
+		if status == entity.OrderStatusPaid {
+			updates["paid_at"] = now
+		}
+		if status == entity.OrderStatusDelivered {
+			updates["delivered_at"] = now
+		}
+
+		if err := tx.Model(&models.Order{}).Where("order_id = ?", orderID).Updates(updates).Error; err != nil {
+			return fmt.Errorf("CheckoutRepo.UpdateOrderStatus: update order: %w", err)
+		}
+
+		// Adjust stock count, locked count, and sold count
+		if status == entity.OrderStatusPaid || status == entity.OrderStatusDelivered {
+			if currentStatus == entity.OrderStatusPending {
+				if err := tx.Model(&models.Product{}).Where("id = ?", order.ProductID).
+					Updates(map[string]any{
+						"locked_count": gorm.Expr("locked_count - ?", order.Quantity),
+						"stock_count":  gorm.Expr("stock_count - ?", order.Quantity),
+						"sold_count":   gorm.Expr("sold_count + ?", order.Quantity),
+					}).Error; err != nil {
+					return fmt.Errorf("CheckoutRepo.UpdateOrderStatus: adjust product stock: %w", err)
+				}
+			}
+		}
+
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return reserved, nil
-}
-
-func (r *CheckoutRepo) reserveCardsTx(tx *gorm.DB, orderID, productID string, quantity int, isShared bool) ([]entity.Card, error) {
-	reserved := make([]entity.Card, 0, quantity)
-	now := time.Now().UTC()
-	expireBefore := now.Add(-5 * time.Minute)
-
-	if err := tx.Model(&models.Card{}).
-		Where("reserved_order_id <> ''").
-		Where("reserved_at < ?", expireBefore).
-		Updates(map[string]any{"reserved_order_id": "", "reserved_at": time.Time{}}).Error; err != nil {
-		return nil, fmt.Errorf("CheckoutRepo.reserveCardsTx(expire old): %w", err)
-	}
-
-	if isShared {
-		var card models.Card
-		if err := forUpdate(tx).
-			Where("product_id = ?", productID).
-			Where("is_used = ?", false).
-			Where("expires_at IS NULL OR expires_at = ? OR expires_at > ?", time.Time{}, now).
-			Order("id ASC").
-			First(&card).Error; err != nil {
-			return nil, fmt.Errorf("CheckoutRepo.reserveCardsTx(shared): %w", err)
-		}
-		reserved = append(reserved, entity.Card{
-			ID:        card.ID,
-			ProductID: card.ProductID,
-			CardKey:   card.CardKey,
-			IsUsed:    card.IsUsed,
-			CreatedAt: card.CreatedAt,
-		})
-		return reserved, nil
-	}
-
-	var cards []models.Card
-	if err := forUpdate(tx).
-		Where("product_id = ?", productID).
-		Where("is_used = ?", false).
-		Where("expires_at IS NULL OR expires_at = ? OR expires_at > ?", time.Time{}, now).
-		Where("(reserved_order_id = '' OR reserved_order_id IS NULL OR reserved_at < ?)", expireBefore).
-		Limit(quantity).
-		Find(&cards).Error; err != nil {
-		return nil, fmt.Errorf("CheckoutRepo.reserveCardsTx(find): %w", err)
-	}
-	if len(cards) < quantity {
-		return nil, entity.ErrOutOfStock
-	}
-
-	for _, card := range cards {
-		if err := tx.Model(&models.Card{}).
-			Where("id = ?", card.ID).
-			Updates(map[string]any{"reserved_order_id": orderID, "reserved_at": now}).Error; err != nil {
-			return nil, fmt.Errorf("CheckoutRepo.reserveCardsTx(update): %w", err)
-		}
-		reserved = append(reserved, entity.Card{
-			ID:              card.ID,
-			ProductID:       card.ProductID,
-			CardKey:         card.CardKey,
-			IsUsed:          card.IsUsed,
-			ReservedOrderID: orderID,
-			ReservedAt:      &now,
-			CreatedAt:       card.CreatedAt,
-		})
-	}
-
-	return reserved, nil
 }
 
 func (r *CheckoutRepo) DeductPoints(ctx context.Context, userID string, points int) error {
@@ -248,14 +173,20 @@ func (r *CheckoutRepo) DeductPoints(ctx context.Context, userID string, points i
 }
 
 func (r *CheckoutRepo) ReleaseReservation(ctx context.Context, orderID string) error {
-	if err := r.Gorm.WithContext(ctx).
-		Model(&models.Card{}).
-		Where("reserved_order_id = ?", orderID).
-		Updates(map[string]any{
-			"reserved_order_id": "",
-			"reserved_at":       time.Time{},
-		}).Error; err != nil {
-		return fmt.Errorf("CheckoutRepo.ReleaseReservation: %w", err)
-	}
-	return nil
+	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
+		var order models.Order
+		if err := tx.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return fmt.Errorf("CheckoutRepo.ReleaseReservation: select order: %w", err)
+		}
+
+		if err := tx.Model(&models.Product{}).
+			Where("id = ?", order.ProductID).
+			UpdateColumn("locked_count", gorm.Expr("locked_count - ?", order.Quantity)).Error; err != nil {
+			return fmt.Errorf("CheckoutRepo.ReleaseReservation: update product: %w", err)
+		}
+		return nil
+	})
 }

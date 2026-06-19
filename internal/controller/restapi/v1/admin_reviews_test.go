@@ -69,16 +69,6 @@ func (s *adminReviewsUseCaseStub) ListRefunds(context.Context, entity.Actor, str
 func (s *adminReviewsUseCaseStub) DecideRefund(context.Context, entity.Actor, int64, bool, string) (entity.RefundRequest, error) {
 	return entity.RefundRequest{}, nil
 }
-func (s *adminReviewsUseCaseStub) ListCards(context.Context, entity.Actor, string) ([]entity.Card, error) {
-	return nil, nil
-}
-func (s *adminReviewsUseCaseStub) CreateCard(context.Context, entity.Actor, string, string) (entity.Card, error) {
-	return entity.Card{}, nil
-}
-func (s *adminReviewsUseCaseStub) DeleteCard(context.Context, entity.Actor, int64) error { return nil }
-func (s *adminReviewsUseCaseStub) ImportCards(context.Context, entity.Actor, string, []string) (int, error) {
-	return 0, nil
-}
 func (s *adminReviewsUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
 	return nil, nil
 }

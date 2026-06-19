@@ -85,18 +85,6 @@ func (s *adminOrderRefundUseCaseStub) DeleteReview(context.Context, entity.Actor
 	return nil
 }
 
-func (s *adminOrderRefundUseCaseStub) ListCards(context.Context, entity.Actor, string) ([]entity.Card, error) {
-	return nil, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) CreateCard(context.Context, entity.Actor, string, string) (entity.Card, error) {
-	return entity.Card{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) DeleteCard(context.Context, entity.Actor, int64) error {
-	return nil
-}
-
 func (s *adminOrderRefundUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {
 	return nil
 }
@@ -127,10 +115,6 @@ func (s *adminOrderRefundUseCaseStub) UpsertCategory(context.Context, entity.Act
 
 func (s *adminOrderRefundUseCaseStub) DeleteCategory(context.Context, entity.Actor, string) error {
 	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ImportCards(context.Context, entity.Actor, string, []string) (int, error) {
-	return 0, nil
 }
 
 func (s *adminOrderRefundUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {

@@ -56,9 +56,5 @@ func gripDecorateOrderStatus(order entity.Order) entity.Order {
 		order.StatusText, order.StatusColor = "Khong xac dinh", "#94a3b8"
 	}
 
-	if order.Status != entity.OrderStatusDelivered {
-		order.CardKey = ""
-	}
-
 	return order
 }

@@ -45,7 +45,6 @@ type Product struct {
 	Image           string    `gorm:"type:text"`
 	IsHot           bool      `gorm:"not null;default:false"`
 	IsActive        bool      `gorm:"not null;default:true"`
-	IsShared        bool      `gorm:"not null;default:false"`
 	SortOrder       int       `gorm:"not null;default:0"`
 	PurchaseLimit   int       `gorm:"not null;default:0"`
 	PurchaseWarning string    `gorm:"type:text"`
@@ -85,20 +84,6 @@ type Category struct {
 
 func (Category) TableName() string { return "categories" }
 
-type Card struct {
-	ID              int64  `gorm:"primaryKey;autoIncrement"`
-	ProductID       string `gorm:"type:text;index"`
-	CardKey         string `gorm:"type:text"`
-	IsUsed          bool   `gorm:"not null;default:false"`
-	ReservedOrderID string `gorm:"type:text;index"`
-	ReservedAt      time.Time
-	ExpiresAt       time.Time
-	UsedAt          time.Time
-	CreatedAt       time.Time `gorm:"not null"`
-}
-
-func (Card) TableName() string { return "cards" }
-
 type Order struct {
 	OrderID           string `gorm:"type:text;primaryKey"`
 	ProductID         string `gorm:"type:text;index"`
@@ -107,8 +92,6 @@ type Order struct {
 	Email             string `gorm:"type:text;index"`
 	Status            string `gorm:"type:text;index"`
 	TradeNo           string `gorm:"type:text"`
-	CardKey           string `gorm:"type:text"`
-	CardIDs           string `gorm:"type:text"`
 	PaidAt            time.Time
 	DeliveredAt       time.Time
 	UserID            string    `gorm:"type:text;index"`

@@ -17,9 +17,6 @@ type adminStoreStub struct {
 	processRefundFunc func(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
 	updateOrderFunc   func(ctx context.Context, orderID string, status entity.OrderStatus) error
 	deleteOrderFunc   func(ctx context.Context, orderID string) error
-	listCardsFunc     func(ctx context.Context, productID string) ([]entity.Card, error)
-	createCardFunc    func(ctx context.Context, productID, cardKey string) (entity.Card, error)
-	deleteCardFunc    func(ctx context.Context, cardID int64) error
 	listReviewsFunc   func(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
 	updateReviewFunc  func(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 	bulkReviewsFunc   func(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
@@ -70,27 +67,6 @@ func (s *adminStoreStub) UpdateOrderStatus(ctx context.Context, orderID string, 
 func (s *adminStoreStub) DeleteOrder(ctx context.Context, orderID string) error {
 	if s.deleteOrderFunc != nil {
 		return s.deleteOrderFunc(ctx, orderID)
-	}
-	return nil
-}
-
-func (s *adminStoreStub) ListCards(ctx context.Context, productID string) ([]entity.Card, error) {
-	if s.listCardsFunc != nil {
-		return s.listCardsFunc(ctx, productID)
-	}
-	return nil, nil
-}
-
-func (s *adminStoreStub) CreateCard(ctx context.Context, productID, cardKey string) (entity.Card, error) {
-	if s.createCardFunc != nil {
-		return s.createCardFunc(ctx, productID, cardKey)
-	}
-	return entity.Card{}, nil
-}
-
-func (s *adminStoreStub) DeleteCard(ctx context.Context, cardID int64) error {
-	if s.deleteCardFunc != nil {
-		return s.deleteCardFunc(ctx, cardID)
 	}
 	return nil
 }
@@ -174,10 +150,6 @@ func (s *adminStoreStub) UpsertCategory(context.Context, entity.Category) (entit
 
 func (s *adminStoreStub) DeleteCategory(context.Context, string) error {
 	return nil
-}
-
-func (s *adminStoreStub) ImportCards(context.Context, string, []string) (int, error) {
-	return 0, nil
 }
 
 func TestUseCase_SettingsRequireAdminAndPersist(t *testing.T) {
@@ -316,65 +288,7 @@ func TestUseCase_OrderAndRefundAdminActions(t *testing.T) {
 	})
 }
 
-func TestUseCase_CardInventoryAdminActions(t *testing.T) {
-	t.Parallel()
 
-	ctx := context.Background()
-	adminActor := entity.Actor{IsAdmin: true}
-	userActor := entity.Actor{}
-
-	t.Run("list cards requires admin", func(t *testing.T) {
-		uc := New(&adminStoreStub{
-			listCardsFunc: func(_ context.Context, productID string) ([]entity.Card, error) {
-				require.Equal(t, "p1", productID)
-				return []entity.Card{{ID: 1, ProductID: "p1"}}, nil
-			},
-		}, nil, "")
-
-		_, err := uc.ListCards(ctx, userActor, "p1")
-		require.ErrorIs(t, err, entity.ErrForbidden)
-
-		cards, err := uc.ListCards(ctx, adminActor, "p1")
-		require.NoError(t, err)
-		require.Len(t, cards, 1)
-	})
-
-	t.Run("create card validates input", func(t *testing.T) {
-		var gotProductID, gotCardKey string
-		uc := New(&adminStoreStub{
-			createCardFunc: func(_ context.Context, productID, cardKey string) (entity.Card, error) {
-				gotProductID = productID
-				gotCardKey = cardKey
-				return entity.Card{ID: 3, ProductID: productID, CardKey: cardKey}, nil
-			},
-		}, nil, "")
-
-		_, err := uc.CreateCard(ctx, adminActor, "", "key")
-		require.ErrorIs(t, err, entity.ErrInvalidInput)
-		_, err = uc.CreateCard(ctx, adminActor, "p1", "")
-		require.ErrorIs(t, err, entity.ErrInvalidInput)
-
-		card, err := uc.CreateCard(ctx, adminActor, "p1", "secret")
-		require.NoError(t, err)
-		require.Equal(t, "p1", gotProductID)
-		require.Equal(t, "secret", gotCardKey)
-		require.Equal(t, int64(3), card.ID)
-	})
-
-	t.Run("delete card validates id", func(t *testing.T) {
-		var deleted int64
-		uc := New(&adminStoreStub{
-			deleteCardFunc: func(_ context.Context, cardID int64) error {
-				deleted = cardID
-				return nil
-			},
-		}, nil, "")
-
-		require.ErrorIs(t, uc.DeleteCard(ctx, adminActor, 0), entity.ErrInvalidInput)
-		require.NoError(t, uc.DeleteCard(ctx, adminActor, 11))
-		require.Equal(t, int64(11), deleted)
-	})
-}
 
 func TestUseCase_ReviewModerationAdminActions(t *testing.T) {
 	t.Parallel()

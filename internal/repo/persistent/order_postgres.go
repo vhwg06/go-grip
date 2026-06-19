@@ -47,9 +47,6 @@ func (r *GripOrderRepo) ListOrdersByOwner(ctx context.Context, userID, email str
 	orders := make([]entity.Order, 0, len(rows))
 	for _, row := range rows {
 		order := models.OrderToEntity(row)
-		if order.Status != entity.OrderStatusDelivered {
-			order.CardKey = ""
-		}
 		orders = append(orders, order)
 	}
 	return orders, int(total), nil
@@ -64,9 +61,6 @@ func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (entit
 		return entity.Order{}, fmt.Errorf("GripOrderRepo.GetOrderByID: %w", err)
 	}
 	order := models.OrderToEntity(row)
-	if order.Status != entity.OrderStatusDelivered {
-		order.CardKey = ""
-	}
 	return order, nil
 }
 

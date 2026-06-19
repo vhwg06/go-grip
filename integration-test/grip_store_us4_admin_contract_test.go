@@ -30,10 +30,7 @@ type adminContractAdminStub struct {
 	deleteOrderFunc       func(ctx context.Context, actor entity.Actor, orderID string) error
 	listRefundsFunc       func(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
 	decideRefundFunc      func(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
-	listCardsFunc         func(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error)
-	createCardFunc        func(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error)
-	deleteCardFunc        func(ctx context.Context, actor entity.Actor, cardID int64) error
-	importCardsFunc       func(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error)
+
 	listSettingsFunc      func(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
 	setSettingFunc        func(ctx context.Context, actor entity.Actor, key, value string) error
 	deleteSettingFunc     func(ctx context.Context, actor entity.Actor, key string) error
@@ -129,34 +126,6 @@ func (s *adminContractAdminStub) UpsertCategory(context.Context, entity.Actor, e
 
 func (s *adminContractAdminStub) DeleteCategory(context.Context, entity.Actor, string) error {
 	return nil
-}
-
-func (s *adminContractAdminStub) ListCards(ctx context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
-	if s.listCardsFunc != nil {
-		return s.listCardsFunc(ctx, actor, productID)
-	}
-	return nil, nil
-}
-
-func (s *adminContractAdminStub) CreateCard(ctx context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
-	if s.createCardFunc != nil {
-		return s.createCardFunc(ctx, actor, productID, cardKey)
-	}
-	return entity.Card{}, nil
-}
-
-func (s *adminContractAdminStub) DeleteCard(ctx context.Context, actor entity.Actor, cardID int64) error {
-	if s.deleteCardFunc != nil {
-		return s.deleteCardFunc(ctx, actor, cardID)
-	}
-	return nil
-}
-
-func (s *adminContractAdminStub) ImportCards(ctx context.Context, actor entity.Actor, productID string, keys []string) (int, error) {
-	if s.importCardsFunc != nil {
-		return s.importCardsFunc(ctx, actor, productID, keys)
-	}
-	return 0, nil
 }
 
 func (s *adminContractAdminStub) ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error) {
@@ -283,28 +252,7 @@ func TestUS4_AdminContract_TDD(t *testing.T) {
 			}
 			return entity.RefundRequest{ID: refundID, Status: status, AdminNote: note}, nil
 		},
-		listCardsFunc: func(_ context.Context, actor entity.Actor, productID string) ([]entity.Card, error) {
-			require.True(t, actor.IsAdmin)
-			require.Equal(t, "p1", productID)
-			return []entity.Card{{ID: 1, ProductID: "p1", CardKey: "key1"}}, nil
-		},
-		createCardFunc: func(_ context.Context, actor entity.Actor, productID, cardKey string) (entity.Card, error) {
-			require.True(t, actor.IsAdmin)
-			require.Equal(t, "p1", productID)
-			require.Equal(t, "new-key", cardKey)
-			return entity.Card{ID: 2, ProductID: productID, CardKey: cardKey}, nil
-		},
-		deleteCardFunc: func(_ context.Context, actor entity.Actor, cardID int64) error {
-			require.True(t, actor.IsAdmin)
-			require.Equal(t, int64(2), cardID)
-			return nil
-		},
-		importCardsFunc: func(_ context.Context, actor entity.Actor, productID string, keys []string) (int, error) {
-			require.True(t, actor.IsAdmin)
-			require.Equal(t, "p1", productID)
-			require.Equal(t, []string{"a", "b"}, keys)
-			return 2, nil
-		},
+
 		listSettingsFunc: func(_ context.Context, actor entity.Actor) ([]entity.Setting, error) {
 			require.True(t, actor.IsAdmin)
 			return []entity.Setting{{Key: "shopName", Value: "Grip Store"}}, nil
@@ -372,22 +320,6 @@ func TestUS4_AdminContract_TDD(t *testing.T) {
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
 
-	t.Run("cards routes", func(t *testing.T) {
-		resp := adminContractRequest(t, app, http.MethodGet, "/v1/admin/cards?productId=p1", nil, "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		resp = adminContractRequest(t, app, http.MethodPost, "/v1/admin/cards", []byte(`{"productId":"p1","cardKey":"new-key"}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		resp = adminContractRequest(t, app, http.MethodDelete, "/v1/admin/cards/2", nil, "Bearer "+adminToken)
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
-
-		resp = adminContractRequest(t, app, http.MethodPost, "/v1/admin/cards/import", []byte(`{"productId":"p1","keys":["a","b"]}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		resp = adminContractRequest(t, app, http.MethodPost, "/v1/admin/cards/replenish", []byte(`{"productId":"p1","keys":["a","b"]}`), "Bearer "+adminToken)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-	})
 
 	t.Run("orders and refunds routes", func(t *testing.T) {
 		resp := adminContractRequest(t, app, http.MethodGet, "/v1/admin/orders?q=search&status=pending", nil, "Bearer "+adminToken)

@@ -583,9 +583,9 @@ func (mr *MockMediaRepoMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // List mocks base method.
-func (m *MockMediaRepo) List(ctx context.Context, page entity.Pagination) ([]entity.MediaAsset, int, error) {
+func (m *MockMediaRepo) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx, page)
+	ret := m.ctrl.Call(m, "List", ctx, page, q)
 	ret0, _ := ret[0].([]entity.MediaAsset)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(error)
@@ -593,9 +593,9 @@ func (m *MockMediaRepo) List(ctx context.Context, page entity.Pagination) ([]ent
 }
 
 // List indicates an expected call of List.
-func (mr *MockMediaRepoMockRecorder) List(ctx, page any) *gomock.Call {
+func (mr *MockMediaRepoMockRecorder) List(ctx, page, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMediaRepo)(nil).List), ctx, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMediaRepo)(nil).List), ctx, page, q)
 }
 
 // Store mocks base method.
@@ -1514,21 +1514,6 @@ func (mr *MockCheckoutRepositoryMockRecorder) ReleaseReservation(ctx, orderID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseReservation", reflect.TypeOf((*MockCheckoutRepository)(nil).ReleaseReservation), ctx, orderID)
 }
 
-// ReserveCards mocks base method.
-func (m *MockCheckoutRepository) ReserveCards(ctx context.Context, orderID, productID string, quantity int, isShared bool) ([]entity.Card, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReserveCards", ctx, orderID, productID, quantity, isShared)
-	ret0, _ := ret[0].([]entity.Card)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ReserveCards indicates an expected call of ReserveCards.
-func (mr *MockCheckoutRepositoryMockRecorder) ReserveCards(ctx, orderID, productID, quantity, isShared any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReserveCards", reflect.TypeOf((*MockCheckoutRepository)(nil).ReserveCards), ctx, orderID, productID, quantity, isShared)
-}
-
 // UpdateOrderStatus mocks base method.
 func (m *MockCheckoutRepository) UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error {
 	m.ctrl.T.Helper()
@@ -1945,6 +1930,63 @@ func (m *MockAdminRepository) EXPECT() *MockAdminRepositoryMockRecorder {
 	return m.recorder
 }
 
+// BulkUpdateReviewStatus mocks base method.
+func (m *MockAdminRepository) BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BulkUpdateReviewStatus", ctx, reviewIDs, status)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BulkUpdateReviewStatus indicates an expected call of BulkUpdateReviewStatus.
+func (mr *MockAdminRepositoryMockRecorder) BulkUpdateReviewStatus(ctx, reviewIDs, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpdateReviewStatus", reflect.TypeOf((*MockAdminRepository)(nil).BulkUpdateReviewStatus), ctx, reviewIDs, status)
+}
+
+// DeleteOrder mocks base method.
+func (m *MockAdminRepository) DeleteOrder(ctx context.Context, orderID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOrder", ctx, orderID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteOrder indicates an expected call of DeleteOrder.
+func (mr *MockAdminRepositoryMockRecorder) DeleteOrder(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrder", reflect.TypeOf((*MockAdminRepository)(nil).DeleteOrder), ctx, orderID)
+}
+
+// DeleteReview mocks base method.
+func (m *MockAdminRepository) DeleteReview(ctx context.Context, reviewID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteReview", ctx, reviewID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteReview indicates an expected call of DeleteReview.
+func (mr *MockAdminRepositoryMockRecorder) DeleteReview(ctx, reviewID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockAdminRepository)(nil).DeleteReview), ctx, reviewID)
+}
+
+// DeleteSetting mocks base method.
+func (m *MockAdminRepository) DeleteSetting(ctx context.Context, key string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSetting", ctx, key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSetting indicates an expected call of DeleteSetting.
+func (mr *MockAdminRepositoryMockRecorder) DeleteSetting(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSetting", reflect.TypeOf((*MockAdminRepository)(nil).DeleteSetting), ctx, key)
+}
+
 // GetOrderByID mocks base method.
 func (m *MockAdminRepository) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
 	m.ctrl.T.Helper()
@@ -1976,6 +2018,53 @@ func (mr *MockAdminRepositoryMockRecorder) ListOrders(ctx, page, query, status a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOrders", reflect.TypeOf((*MockAdminRepository)(nil).ListOrders), ctx, page, query, status)
 }
 
+// ListRefundRequests mocks base method.
+func (m *MockAdminRepository) ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRefundRequests", ctx, status)
+	ret0, _ := ret[0].([]entity.RefundRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListRefundRequests indicates an expected call of ListRefundRequests.
+func (mr *MockAdminRepositoryMockRecorder) ListRefundRequests(ctx, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRefundRequests", reflect.TypeOf((*MockAdminRepository)(nil).ListRefundRequests), ctx, status)
+}
+
+// ListReviews mocks base method.
+func (m *MockAdminRepository) ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListReviews", ctx, page, query, status)
+	ret0, _ := ret[0].([]entity.Review)
+	ret1, _ := ret[1].(repo.ReviewModerationStats)
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// ListReviews indicates an expected call of ListReviews.
+func (mr *MockAdminRepositoryMockRecorder) ListReviews(ctx, page, query, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReviews", reflect.TypeOf((*MockAdminRepository)(nil).ListReviews), ctx, page, query, status)
+}
+
+// ListSettings mocks base method.
+func (m *MockAdminRepository) ListSettings(ctx context.Context) ([]entity.Setting, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSettings", ctx)
+	ret0, _ := ret[0].([]entity.Setting)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSettings indicates an expected call of ListSettings.
+func (mr *MockAdminRepositoryMockRecorder) ListSettings(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSettings", reflect.TypeOf((*MockAdminRepository)(nil).ListSettings), ctx)
+}
+
 // ListUsers mocks base method.
 func (m *MockAdminRepository) ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error) {
 	m.ctrl.T.Helper()
@@ -1990,6 +2079,21 @@ func (m *MockAdminRepository) ListUsers(ctx context.Context, page entity.Paginat
 func (mr *MockAdminRepositoryMockRecorder) ListUsers(ctx, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockAdminRepository)(nil).ListUsers), ctx, page)
+}
+
+// ProcessRefund mocks base method.
+func (m *MockAdminRepository) ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessRefund", ctx, refundID, approve, adminUsername, note)
+	ret0, _ := ret[0].(entity.RefundRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessRefund indicates an expected call of ProcessRefund.
+func (mr *MockAdminRepositoryMockRecorder) ProcessRefund(ctx, refundID, approve, adminUsername, note any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessRefund", reflect.TypeOf((*MockAdminRepository)(nil).ProcessRefund), ctx, refundID, approve, adminUsername, note)
 }
 
 // RebuildProductAggregates mocks base method.
@@ -2018,6 +2122,35 @@ func (m *MockAdminRepository) StoreSetting(ctx context.Context, setting entity.S
 func (mr *MockAdminRepositoryMockRecorder) StoreSetting(ctx, setting any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreSetting", reflect.TypeOf((*MockAdminRepository)(nil).StoreSetting), ctx, setting)
+}
+
+// UpdateOrderStatus mocks base method.
+func (m *MockAdminRepository) UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateOrderStatus", ctx, orderID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateOrderStatus indicates an expected call of UpdateOrderStatus.
+func (mr *MockAdminRepositoryMockRecorder) UpdateOrderStatus(ctx, orderID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrderStatus", reflect.TypeOf((*MockAdminRepository)(nil).UpdateOrderStatus), ctx, orderID, status)
+}
+
+// UpdateReviewStatus mocks base method.
+func (m *MockAdminRepository) UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateReviewStatus", ctx, reviewID, status)
+	ret0, _ := ret[0].(entity.Review)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateReviewStatus indicates an expected call of UpdateReviewStatus.
+func (mr *MockAdminRepositoryMockRecorder) UpdateReviewStatus(ctx, reviewID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReviewStatus", reflect.TypeOf((*MockAdminRepository)(nil).UpdateReviewStatus), ctx, reviewID, status)
 }
 
 // UpdateUserPoints mocks base method.
@@ -2084,20 +2217,6 @@ func (m *MockMaintenanceRepository) CancelExpiredPendingOrders(ctx context.Conte
 func (mr *MockMaintenanceRepositoryMockRecorder) CancelExpiredPendingOrders(ctx, olderThan any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelExpiredPendingOrders", reflect.TypeOf((*MockMaintenanceRepository)(nil).CancelExpiredPendingOrders), ctx, olderThan)
-}
-
-// CleanupExpiredCards mocks base method.
-func (m *MockMaintenanceRepository) CleanupExpiredCards(ctx context.Context, now time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CleanupExpiredCards", ctx, now)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CleanupExpiredCards indicates an expected call of CleanupExpiredCards.
-func (mr *MockMaintenanceRepositoryMockRecorder) CleanupExpiredCards(ctx, now any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanupExpiredCards", reflect.TypeOf((*MockMaintenanceRepository)(nil).CleanupExpiredCards), ctx, now)
 }
 
 // SyncProductAggregates mocks base method.

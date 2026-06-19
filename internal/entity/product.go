@@ -30,7 +30,6 @@ type Product struct {
 	Images                  []string          `json:"images"`
 	IsHot                   bool              `json:"is_hot"`
 	IsActive                bool              `json:"is_active"`
-	IsShared                bool              `json:"is_shared"`
 	SortOrder               int               `json:"sort_order"`
 	PurchaseLimit           int               `json:"purchase_limit"`
 	PurchaseWarning         string            `json:"purchase_warning,omitempty"`
@@ -46,18 +45,6 @@ type Product struct {
 	Specs                   []ProductSpecItem `json:"specs,omitempty"`
 	CreatedAt               time.Time         `json:"created_at"`
 	UpdatedAt               time.Time         `json:"updated_at"`
-}
-
-type Card struct {
-	ID              int64      `json:"id"`
-	ProductID       string     `json:"product_id"`
-	CardKey         string     `json:"card_key"`
-	IsUsed          bool       `json:"is_used"`
-	ReservedOrderID string     `json:"reserved_order_id,omitempty"`
-	ReservedAt      *time.Time `json:"reserved_at,omitempty"`
-	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
-	UsedAt          *time.Time `json:"used_at,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
 }
 
 type Setting struct {

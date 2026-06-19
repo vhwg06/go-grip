@@ -16,8 +16,6 @@ type Order struct {
 	StatusText       string      `json:"status_text,omitempty"`
 	StatusColor      string      `json:"status_color,omitempty"`
 	TradeNo          string      `json:"trade_no,omitempty"`
-	CardKey          string      `json:"card_key,omitempty"`
-	CardIDs          []int64     `json:"card_ids,omitempty"`
 	PointsUsed       int         `json:"points_used"`
 	CurrentPaymentID string      `json:"current_payment_id,omitempty"`
 	PaidAt           *time.Time  `json:"paid_at,omitempty"`

@@ -48,10 +48,6 @@ func (s *adminSettingsUseCaseStub) DeleteCategory(context.Context, entity.Actor,
 	return nil
 }
 
-func (s *adminSettingsUseCaseStub) ImportCards(context.Context, entity.Actor, string, []string) (int, error) {
-	return 0, nil
-}
-
 func (s *adminSettingsUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
 	return nil, 0, nil
 }
@@ -101,18 +97,6 @@ func (s *adminSettingsUseCaseStub) BulkPublishReviews(context.Context, entity.Ac
 }
 
 func (s *adminSettingsUseCaseStub) DeleteReview(context.Context, entity.Actor, int64) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) ListCards(context.Context, entity.Actor, string) ([]entity.Card, error) {
-	return nil, nil
-}
-
-func (s *adminSettingsUseCaseStub) CreateCard(context.Context, entity.Actor, string, string) (entity.Card, error) {
-	return entity.Card{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) DeleteCard(context.Context, entity.Actor, int64) error {
 	return nil
 }
 

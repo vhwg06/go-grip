@@ -167,13 +167,6 @@ func defaultProductStatus(status entity.ProductStatus) entity.ProductStatus {
 
 func resolveMaxPurchasable(product entity.Product) int {
 	displayStock := product.StockCount - product.LockedCount
-	if product.IsShared {
-		if product.StockCount > 0 {
-			displayStock = 999999
-		} else {
-			displayStock = 0
-		}
-	}
 
 	if product.PurchaseLimit > 0 && product.PurchaseLimit < displayStock {
 		return product.PurchaseLimit

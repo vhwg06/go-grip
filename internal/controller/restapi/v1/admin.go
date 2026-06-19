@@ -109,9 +109,6 @@ func patchProductFromForm(product *entity.Product, ctx *fiber.Ctx) {
 	if value := strings.TrimSpace(ctx.FormValue("isHot")); value != "" {
 		product.IsHot = parseBoolForm(value)
 	}
-	if value := strings.TrimSpace(ctx.FormValue("isShared")); value != "" {
-		product.IsShared = parseBoolForm(value)
-	}
 	if value := strings.TrimSpace(ctx.FormValue("isActive")); value != "" {
 		product.IsActive = parseBoolForm(value)
 	}
@@ -367,7 +364,6 @@ func (r *V1) gripAdminListOrders(ctx *fiber.Ctx) error {
 			"productName": order.ProductName,
 			"amount":      order.Amount,
 			"status":      string(order.Status),
-			"cardKey":     order.CardKey,
 			"tradeNo":     order.TradeNo,
 			"createdAt":   order.CreatedAt,
 		})

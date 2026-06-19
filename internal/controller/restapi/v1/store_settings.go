@@ -96,11 +96,10 @@ type storeSettingsFloatingAction struct {
 }
 
 type storeSettingsVisibility struct {
-	NoIndexEnabled    bool `json:"noIndexEnabled"`
-	WishlistEnabled   bool `json:"wishlistEnabled"`
-	CheckinEnabled    bool `json:"checkinEnabled"`
-	CheckinReward     int  `json:"checkinReward"`
-	RefundReclaimCard bool `json:"refundReclaimCards"`
+	NoIndexEnabled  bool `json:"noIndexEnabled"`
+	WishlistEnabled bool `json:"wishlistEnabled"`
+	CheckinEnabled  bool `json:"checkinEnabled"`
+	CheckinReward   int  `json:"checkinReward"`
 }
 
 type storeSettingsRegistry struct {
@@ -238,11 +237,10 @@ func (r *V1) gripAdminPutStoreSettingsVisibility(ctx *fiber.Ctx) error {
 	}
 
 	return r.persistStoreSettings(ctx, map[string]string{
-		"noIndexEnabled":     strconv.FormatBool(body.NoIndexEnabled),
-		"wishlistEnabled":    strconv.FormatBool(body.WishlistEnabled),
-		"checkinEnabled":     strconv.FormatBool(body.CheckinEnabled),
-		"checkinReward":      strconv.Itoa(body.CheckinReward),
-		"refundReclaimCards": strconv.FormatBool(body.RefundReclaimCard),
+		"noIndexEnabled":  strconv.FormatBool(body.NoIndexEnabled),
+		"wishlistEnabled": strconv.FormatBool(body.WishlistEnabled),
+		"checkinEnabled":  strconv.FormatBool(body.CheckinEnabled),
+		"checkinReward":   strconv.Itoa(body.CheckinReward),
 	})
 }
 
@@ -368,11 +366,10 @@ func buildStoreSettingsConfig(settings []entity.Setting) storeSettingsConfig {
 			{Key: "scroll_to_top", Enabled: true, Target: nil},
 		}),
 		Visibility: storeSettingsVisibility{
-			NoIndexEnabled:    parseBoolSetting(values["noIndexEnabled"], false),
-			WishlistEnabled:   parseBoolSetting(values["wishlistEnabled"], true),
-			CheckinEnabled:    parseBoolSetting(values["checkinEnabled"], true),
-			CheckinReward:     parseIntSetting(values["checkinReward"], 1),
-			RefundReclaimCard: parseBoolSetting(values["refundReclaimCards"], true),
+			NoIndexEnabled:  parseBoolSetting(values["noIndexEnabled"], false),
+			WishlistEnabled: parseBoolSetting(values["wishlistEnabled"], true),
+			CheckinEnabled:  parseBoolSetting(values["checkinEnabled"], true),
+			CheckinReward:   parseIntSetting(values["checkinReward"], 1),
 		},
 		Registry: storeSettingsRegistry{
 			Enabled: true,

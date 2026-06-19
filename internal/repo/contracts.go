@@ -163,7 +163,6 @@ type (
 		CreateOrderWithReservation(ctx context.Context, actor entity.Actor, order entity.Order) (entity.Order, error)
 		AttachPayment(ctx context.Context, payment entity.Payment) error
 		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
-		ReserveCards(ctx context.Context, orderID, productID string, quantity int, isShared bool) ([]entity.Card, error)
 		DeductPoints(ctx context.Context, userID string, points int) error
 		ReleaseReservation(ctx context.Context, orderID string) error
 	}
