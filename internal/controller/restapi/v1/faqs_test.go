@@ -23,7 +23,7 @@ func TestFAQEndpoints(t *testing.T) {
 	require.NoError(t, err)
 
 	v := &V1{
-		homepage:   contentuc.NewHomepage(persistent.NewHomepageRepo(nil)),
+		homepage:   contentuc.NewHomepage(persistent.NewHomepageRepo(nil), persistent.NewSupportChannelRepo(nil)),
 		jwtManager: jwtManager,
 		adminUsers: "admin",
 	}

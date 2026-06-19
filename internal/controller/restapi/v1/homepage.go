@@ -32,6 +32,19 @@ func (r *V1) listPublicHomepage(ctx *fiber.Ctx) error {
 	if err != nil {
 		return errorResponse(ctx, http.StatusInternalServerError, err.Error())
 	}
+	for i := range items {
+		if items[i].BlockType != "banner" {
+			continue
+		}
+		slides := extractBannerSlides(items[i])
+		activeSlides := slides[:0]
+		for _, slide := range slides {
+			if slide.IsActive {
+				activeSlides = append(activeSlides, slide)
+			}
+		}
+		items[i].Config["slides"] = activeSlides
+	}
 	return ctx.JSON(listResponse{Data: items})
 }
 
