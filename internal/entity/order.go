@@ -55,6 +55,11 @@ type RefundRequest struct {
 	Status        RefundStatus `json:"status"`
 	AdminUsername string       `json:"admin_username,omitempty"`
 	AdminNote     string       `json:"admin_note,omitempty"`
+	ProductName   string       `json:"product_name,omitempty"`
+	Amount        Amount       `json:"amount,omitempty"`
+	PointsUsed    int          `json:"points_used,omitempty"`
+	TradeNo       string       `json:"trade_no,omitempty"`
+	OrderStatus   string       `json:"order_status,omitempty"`
 	ProcessedAt   *time.Time   `json:"processed_at,omitempty"`
 	CreatedAt     time.Time    `json:"created_at"`
 	UpdatedAt     time.Time    `json:"updated_at"`

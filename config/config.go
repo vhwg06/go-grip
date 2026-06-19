@@ -114,6 +114,32 @@ type (
 	}
 )
 
+// BuildPostgresURL returns a PostgreSQL connection URL from either a direct URL
+// or discrete connection fields.
+func BuildPostgresURL(rawURL, host, port, dbName, user, password, sslMode string) (string, error) {
+	if rawURL != "" {
+		return rawURL, nil
+	}
+
+	if host == "" || port == "" || dbName == "" || user == "" {
+		return "", fmt.Errorf("either PG_URL or POSTGRES_HOST/PORT/DB/USER must be set")
+	}
+
+	userInfo := url.UserPassword(user, password)
+	pgURL := (&url.URL{
+		Scheme: "postgres",
+		User:   userInfo,
+		Host:   fmt.Sprintf("%s:%s", host, port),
+		Path:   dbName,
+	}).String()
+
+	if sslMode != "" {
+		pgURL += "?sslmode=" + url.QueryEscape(sslMode)
+	}
+
+	return pgURL, nil
+}
+
 // NewConfig returns app config.
 func NewConfig() (*Config, error) {
 	cfg := &Config{}
@@ -121,23 +147,19 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("config error: %w", err)
 	}
 
-	if cfg.PG.URL == "" {
-		if cfg.PG.Host == "" || cfg.PG.Port == "" || cfg.PG.DB == "" || cfg.PG.User == "" {
-			return nil, fmt.Errorf("config error: either PG_URL or POSTGRES_HOST/PORT/DB/USER must be set")
-		}
-
-		userInfo := url.UserPassword(cfg.PG.User, cfg.PG.Password)
-		cfg.PG.URL = (&url.URL{
-			Scheme: "postgres",
-			User:   userInfo,
-			Host:   fmt.Sprintf("%s:%s", cfg.PG.Host, cfg.PG.Port),
-			Path:   cfg.PG.DB,
-		}).String()
-
-		if cfg.PG.SSLMode != "" {
-			cfg.PG.URL += "?sslmode=" + url.QueryEscape(cfg.PG.SSLMode)
-		}
+	pgURL, err := BuildPostgresURL(
+		cfg.PG.URL,
+		cfg.PG.Host,
+		cfg.PG.Port,
+		cfg.PG.DB,
+		cfg.PG.User,
+		cfg.PG.Password,
+		cfg.PG.SSLMode,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("config error: %w", err)
 	}
+	cfg.PG.URL = pgURL
 
 	return cfg, nil
 }

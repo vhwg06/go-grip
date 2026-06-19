@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/evrone/go-clean-template/config"
 	"github.com/golang-migrate/migrate/v4"
 	// migrate tools
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -20,16 +21,21 @@ const (
 )
 
 func init() {
-	databaseURL, ok := os.LookupEnv("PG_URL")
-	if !ok || len(databaseURL) == 0 {
-		log.Fatalf("migrate: environment variable not declared: PG_URL")
+	databaseURL, err := config.BuildPostgresURL(
+		os.Getenv("PG_URL"),
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_DB"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_SSL_MODE"),
+	)
+	if err != nil {
+		log.Fatalf("migrate: %v", err)
 	}
-
-	databaseURL += "?sslmode=disable"
 
 	var (
 		attempts = _defaultAttempts
-		err      error
 		m        *migrate.Migrate
 	)
 

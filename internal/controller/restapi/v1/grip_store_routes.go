@@ -94,6 +94,8 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Get("/settings", r.gripAdminListSettings)
 	adminGroup.Put("/settings/:key", r.gripAdminUpsertSetting)
 	adminGroup.Delete("/settings/:key", r.gripAdminDeleteSetting)
+	adminGroup.Get("/collect", r.gripAdminGetCollect)
+	adminGroup.Put("/collect", r.gripAdminPutCollect)
 	adminGroup.Get("/store-settings", r.gripAdminGetStoreSettings)
 	adminGroup.Put("/store-settings/brand", r.gripAdminPutStoreSettingsBrand)
 	adminGroup.Put("/store-settings/contact", r.gripAdminPutStoreSettingsContact)

@@ -397,6 +397,11 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 		"orderNumber": order.ID,
 		"status":      status,
 		"createdAt":   order.CreatedAt,
+		"paidAt":      order.PaidAt,
+		"deliveredAt": order.DeliveredAt,
+		"updatedAt":   order.UpdatedAt,
+		"tradeNo":     order.TradeNo,
+		"pointsUsed":  order.PointsUsed,
 		"items": []fiber.Map{
 			{
 				"productName": order.ProductName,
@@ -774,3 +779,63 @@ func (r *V1) gripAdminProductForm(ctx *fiber.Ctx) error {
 		"categories": categories,
 	})
 }
+
+func (r *V1) gripAdminGetCollect(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	settings, err := ext.ListSettings(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	payee := ""
+	payLink := ""
+	for _, setting := range settings {
+		if setting.Key == "payee" {
+			payee = setting.Value
+		}
+		if setting.Key == "payLink" {
+			payLink = setting.Value
+		}
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+		"payee":   payee,
+		"payLink": payLink,
+	}))
+}
+
+func (r *V1) gripAdminPutCollect(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	var body struct {
+		Payee   string `json:"payee"`
+		PayLink string `json:"payLink"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payee", body.Payee); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+	if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payLink", body.PayLink); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+		"payee":   body.Payee,
+		"payLink": body.PayLink,
+	}))
+}
+

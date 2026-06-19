@@ -149,6 +149,14 @@ jobs:
           docker compose --env-file .env -f deploy/docker-compose.prod.yml pull
           docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d
 
-          sleep 3
-          curl -f http://127.0.0.1:8080/healthz
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/healthz; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker compose --env-file .env -f deploy/docker-compose.prod.yml ps
+          docker compose --env-file .env -f deploy/docker-compose.prod.yml logs app --tail=200
+          exit 1
           REMOTE

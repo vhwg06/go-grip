@@ -211,13 +211,25 @@ func (r *AdminRepo) GetOrderByID(ctx context.Context, orderID string) (entity.Or
 }
 
 func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error) {
-	db := r.Gorm.WithContext(ctx).Model(&models.RefundRequest{})
+	db := r.Gorm.WithContext(ctx).Table("refund_requests")
 	if trimmed := strings.TrimSpace(strings.ToLower(status)); trimmed != "" && trimmed != "all" {
-		db = db.Where("LOWER(status) = ?", trimmed)
+		db = db.Where("LOWER(refund_requests.status) = ?", trimmed)
 	}
 
-	var rows []models.RefundRequest
-	if err := db.Order("created_at DESC, id DESC").Find(&rows).Error; err != nil {
+	type refundRow struct {
+		models.RefundRequest
+		ProductName string `gorm:"column:product_name"`
+		Amount      int64  `gorm:"column:amount"`
+		PointsUsed  int    `gorm:"column:points_used"`
+		TradeNo     string `gorm:"column:trade_no"`
+		OrderStatus string `gorm:"column:order_status"`
+	}
+
+	var rows []refundRow
+	if err := db.Select("refund_requests.*, orders.product_name, orders.amount, orders.points_used, orders.trade_no, orders.status AS order_status").
+		Joins("LEFT JOIN orders ON orders.order_id = refund_requests.order_id").
+		Order("refund_requests.created_at DESC, refund_requests.id DESC").
+		Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("AdminRepo.ListRefundRequests: %w", err)
 	}
 
@@ -232,6 +244,11 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 			Status:        entity.RefundStatus(row.Status),
 			AdminUsername: row.AdminUsername,
 			AdminNote:     row.AdminNote,
+			ProductName:   row.ProductName,
+			Amount:        entity.Amount(row.Amount),
+			PointsUsed:    row.PointsUsed,
+			TradeNo:       row.TradeNo,
+			OrderStatus:   row.OrderStatus,
 			CreatedAt:     row.CreatedAt,
 			UpdatedAt:     row.UpdatedAt,
 		}
@@ -329,6 +346,11 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 			Status:        nextRefundStatus,
 			AdminUsername: adminUsername,
 			AdminNote:     note,
+			ProductName:   order.ProductName,
+			Amount:        entity.Amount(order.Amount),
+			PointsUsed:    order.PointsUsed,
+			TradeNo:       order.TradeNo,
+			OrderStatus:   string(nextOrderStatus),
 			ProcessedAt:   &now,
 			CreatedAt:     refund.CreatedAt,
 			UpdatedAt:     now,
