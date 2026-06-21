@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
@@ -38,6 +39,7 @@ type adminExtendedUseCase interface {
 	DeleteSetting(ctx context.Context, actor entity.Actor, key string) error
 	SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
+	ListAdminMessages(ctx context.Context, actor entity.Actor) ([]entity.AdminMessage, error)
 	ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error)
 }
 
@@ -1103,9 +1105,39 @@ func (r *V1) gripAdminGetCollect(ctx *fiber.Ctx) error {
 		}
 	}
 
+	warnings := make([]string, 0)
+	if payee == "" {
+		warnings = append(warnings, "Payee is not configured")
+	}
+	if len(payLink) < 10 {
+		warnings = append(warnings, "PayLink must be at least 10 characters")
+	}
+	ready := payee != "" && len(payLink) >= 10
+
+	sources := []fiber.Map{
+		{
+			"id":      "vcb",
+			"key":     "vcb",
+			"label":   "Vietcombank QR",
+			"enabled": ready,
+			"status":  "active",
+		},
+		{
+			"id":      "momo",
+			"key":     "momo",
+			"label":   "MoMo",
+			"enabled": false,
+			"status":  "inactive",
+		},
+	}
+
 	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
-		"payee":   payee,
-		"payLink": payLink,
+		"payee":    payee,
+		"payLink":  payLink,
+		"ready":    ready,
+		"is_ready": ready,
+		"warnings": warnings,
+		"sources":  sources,
 	}))
 }
 
@@ -1120,6 +1152,11 @@ func (r *V1) gripAdminPutCollect(ctx *fiber.Ctx) error {
 		PayLink string `json:"payLink"`
 	}
 	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	if len(body.PayLink) < 10 || body.Payee == "" {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
@@ -1157,7 +1194,29 @@ func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	return ctx.JSON(apiSuccessEnvelope(refund))
+	res := fiber.Map{
+		"id":            refund.ID,
+		"order_id":      refund.OrderID,
+		"user_id":       refund.UserID,
+		"username":      refund.Username,
+		"reason":        refund.Reason,
+		"status":        refund.Status,
+		"admin_username": refund.AdminUsername,
+		"admin_note":     refund.AdminNote,
+		"product_name":  refund.ProductName,
+		"amount":        refund.Amount,
+		"points_used":   refund.PointsUsed,
+		"trade_no":      refund.TradeNo,
+		"order_status":  refund.OrderStatus,
+		"created_at":    refund.CreatedAt,
+		"updated_at":    refund.UpdatedAt,
+	}
+	if refund.ProcessedAt != nil {
+		res["processed_at"] = refund.ProcessedAt
+	}
+	res["data"] = res
+
+	return ctx.JSON(res)
 }
 
 func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
@@ -1209,6 +1268,125 @@ func (r *V1) gripAdminListCards(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(apiSuccessEnvelope(cards))
 }
+
+func (r *V1) gripAdminGetNotifications(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	settings, err := ext.ListSettings(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	values := map[string]string{}
+	for _, setting := range settings {
+		values[setting.Key] = setting.Value
+	}
+
+	telegramEnabled := parseBoolSetting(values["telegramEnabled"], false)
+	barkEnabled := parseBoolSetting(values["barkEnabled"], false)
+	resendEnabled := parseBoolSetting(values["resendEnabled"], false)
+
+	res := fiber.Map{
+		"telegramBotToken": values["telegramBotToken"],
+		"telegramChatId":   values["telegramChatId"],
+		"telegramLanguage": firstNonEmpty(values["telegramLanguage"], "vi"),
+		"telegramEnabled":  telegramEnabled,
+		"barkEnabled":      barkEnabled,
+		"barkServerUrl":    firstNonEmpty(values["barkServerUrl"], "https://api.day.app"),
+		"barkDeviceKey":    values["barkDeviceKey"],
+		"resendApiKey":     values["resendApiKey"],
+		"resendFromEmail":  values["resendFromEmail"],
+		"resendFromName":   values["resendFromName"],
+		"resendEnabled":    resendEnabled,
+		"emailLanguage":    firstNonEmpty(values["emailLanguage"], "vi"),
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+		"telegramEnabled": telegramEnabled,
+		"barkEnabled":      barkEnabled,
+		"resendEnabled":    resendEnabled,
+		"settings":         res,
+	}))
+}
+
+func (r *V1) gripAdminPostNotifications(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_settings_not_available"})
+	}
+
+	var body map[string]string
+	_ = ctx.BodyParser(&body)
+
+	getVal := func(key string) string {
+		if val := ctx.FormValue(key); val != "" {
+			return val
+		}
+		if body != nil {
+			return body[key]
+		}
+		return ""
+	}
+
+	keys := []string{
+		"telegramBotToken", "telegramChatId", "telegramLanguage", "telegramEnabled",
+		"barkEnabled", "barkServerUrl", "barkDeviceKey",
+		"resendApiKey", "resendFromEmail", "resendFromName", "resendEnabled", "emailLanguage",
+	}
+
+	for _, k := range keys {
+		v := getVal(k)
+		if v != "" {
+			if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), k, v); err != nil {
+				status, payload := mapDomainError(err)
+				return ctx.Status(status).JSON(payload)
+			}
+		}
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(fiber.Map{"success": true}))
+}
+
+func (r *V1) gripAdminListMessages(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_messages_not_available"})
+	}
+
+	msgs, err := ext.ListAdminMessages(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	rows := make([]fiber.Map, 0, len(msgs))
+	for _, m := range msgs {
+		status := "sent"
+		rows = append(rows, fiber.Map{
+			"id":         m.ID,
+			"title":      m.Title,
+			"subject":    m.Title,
+			"body":       m.Body,
+			"targetType": m.TargetType,
+			"targetValue": m.TargetValue,
+			"sender":     m.Sender,
+			"status":     status,
+			"result":     status,
+			"outcome":    status,
+			"sentAt":     m.CreatedAt.Format(time.RFC3339),
+			"sent_at":    m.CreatedAt.Format(time.RFC3339),
+			"createdAt":  m.CreatedAt.Format(time.RFC3339),
+			"created_at": m.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(rows))
+}
+
 
 
 

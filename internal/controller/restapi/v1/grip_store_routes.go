@@ -44,6 +44,8 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	profileGroup.Get("/", r.gripProfileGet)
 	profileGroup.Patch("/", r.gripProfileUpdate)
 	profileGroup.Post("/check-in", r.gripProfileCheckin)
+	profileGroup.Get("/security", r.gripProfileGetSecurity)
+	profileGroup.Get("/sessions", r.gripProfileGetSessions)
 
 	wishlistGroup := apiV1Group.Group("/wishlist")
 	wishlistGroup.Get("/", r.gripWishlistList)
@@ -112,6 +114,9 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Put("/store-settings/registry", r.gripAdminPutStoreSettingsRegistry)
 	adminGroup.Post("/messages/broadcast", r.gripAdminBroadcast)
 	adminGroup.Post("/messages/targeted", r.gripAdminTargeted)
+	adminGroup.Get("/messages", r.gripAdminListMessages)
+	adminGroup.Get("/notifications", r.gripAdminGetNotifications)
+	adminGroup.Post("/notifications", r.gripAdminPostNotifications)
 	adminGroup.Post("/notifications/test", r.gripAdminNotificationTest)
 	adminGroup.Post("/data/import", r.gripAdminImportData)
 	adminGroup.Post("/data/repair-aggregates", r.gripAdminRepairAggregates)

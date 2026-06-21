@@ -75,3 +75,8 @@ func profileTimeOrZero(t *time.Time) time.Time {
 	}
 	return *t
 }
+
+func (r *ProfileRepo) GetGorm() *gorm.DB {
+	return r.Gorm
+}
+

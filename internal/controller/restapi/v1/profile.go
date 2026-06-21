@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/internal/entity"
@@ -64,3 +65,38 @@ func (r *V1) gripProfileCheckin(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(apiSuccessEnvelope(checkin))
 }
+
+func (r *V1) gripProfileGetSecurity(ctx *fiber.Ctx) error {
+	ext, ok := r.profileUC.(interface {
+		GetSecurityPosture(ctx context.Context, actor entity.Actor) (any, error)
+	})
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "profile_security_not_available"})
+	}
+
+	data, err := ext.GetSecurityPosture(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(data))
+}
+
+func (r *V1) gripProfileGetSessions(ctx *fiber.Ctx) error {
+	ext, ok := r.profileUC.(interface {
+		GetRecentSessions(ctx context.Context, actor entity.Actor) (any, error)
+	})
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "profile_sessions_not_available"})
+	}
+
+	data, err := ext.GetRecentSessions(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(data))
+}
+

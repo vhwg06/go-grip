@@ -274,6 +274,13 @@ func (uc *UseCase) SendBroadcast(ctx context.Context, actor entity.Actor, title,
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
+	_, _ = uc.repo.StoreAdminMessage(ctx, entity.AdminMessage{
+		TargetType:  "broadcast",
+		TargetValue: "",
+		Title:       title,
+		Body:        body,
+		Sender:      actor.Username,
+	})
 	if uc.notifier == nil {
 		return nil
 	}
@@ -284,11 +291,26 @@ func (uc *UseCase) SendTargeted(ctx context.Context, actor entity.Actor, userID,
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
+	_, _ = uc.repo.StoreAdminMessage(ctx, entity.AdminMessage{
+		TargetType:  "targeted",
+		TargetValue: userID,
+		Title:       title,
+		Body:        body,
+		Sender:      actor.Username,
+	})
 	if uc.notifier == nil {
 		return nil
 	}
 	return uc.notifier.SendTargeted(ctx, userID, title, body)
 }
+
+func (uc *UseCase) ListAdminMessages(ctx context.Context, actor entity.Actor) ([]entity.AdminMessage, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return nil, err
+	}
+	return uc.repo.ListAdminMessages(ctx)
+}
+
 
 func (uc *UseCase) ensureAdmin(actor entity.Actor) error {
 	if actor.IsAdmin {
