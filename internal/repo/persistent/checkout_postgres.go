@@ -41,6 +41,19 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: select product: %w", err)
 		}
 
+		actualLockedCount, err := currentLockedCount(tx, product.ID)
+		if err != nil {
+			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: compute locked count: %w", err)
+		}
+		if product.LockedCount != actualLockedCount {
+			if err := tx.Model(&models.Product{}).
+				Where("id = ?", product.ID).
+				UpdateColumn("locked_count", actualLockedCount).Error; err != nil {
+				return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: sync locked count: %w", err)
+			}
+			product.LockedCount = actualLockedCount
+		}
+
 		if product.StockCount-product.LockedCount < order.Quantity {
 			return entity.ErrOutOfStock
 		}
@@ -72,6 +85,31 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 	}
 
 	return models.OrderToEntity(orderModel), nil
+}
+
+func currentLockedCount(tx *gorm.DB, productID string) (int, error) {
+	var pendingOrders int
+	if err := tx.Model(&models.Order{}).
+		Where("product_id = ?", productID).
+		Where("status = ?", string(entity.OrderStatusPending)).
+		Select("COALESCE(SUM(quantity), 0)").
+		Scan(&pendingOrders).Error; err != nil {
+		return 0, err
+	}
+
+	var reservedCards int64
+	if err := tx.Model(&models.Card{}).
+		Where("product_id = ?", productID).
+		Where("is_used = ?", false).
+		Where("reserved_order_id <> ''").
+		Count(&reservedCards).Error; err != nil {
+		return 0, err
+	}
+
+	if int(reservedCards) > pendingOrders {
+		return int(reservedCards), nil
+	}
+	return pendingOrders, nil
 }
 
 func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment) error {
