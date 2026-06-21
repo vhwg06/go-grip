@@ -15,84 +15,13 @@ import (
 )
 
 type adminReviewsUseCaseStub struct {
+	BaseAdminUseCaseStub
 	listFunc   func(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
 	updateFunc func(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 	bulkFunc   func(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error)
 	deleteFunc func(ctx context.Context, actor entity.Actor, reviewID int64) error
 }
 
-func (s *adminReviewsUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
-	return nil, 0, nil
-}
-func (s *adminReviewsUseCaseStub) UpdateUserStatus(context.Context, entity.Actor, string, entity.UserStatus) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) ListProducts(context.Context, entity.Actor, entity.Pagination) ([]entity.Product, int, error) {
-	return nil, 0, nil
-}
-func (s *adminReviewsUseCaseStub) GetProduct(context.Context, entity.Actor, string) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-func (s *adminReviewsUseCaseStub) UpsertProduct(context.Context, entity.Actor, entity.Product) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-func (s *adminReviewsUseCaseStub) DeleteProduct(context.Context, entity.Actor, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) ListCategories(context.Context, entity.Actor) ([]entity.Category, error) {
-	return nil, nil
-}
-func (s *adminReviewsUseCaseStub) UpsertCategory(context.Context, entity.Actor, entity.Category) (entity.Category, error) {
-	return entity.Category{}, nil
-}
-func (s *adminReviewsUseCaseStub) DeleteCategory(context.Context, entity.Actor, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) ListOrders(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Order, int, error) {
-	return nil, 0, nil
-}
-func (s *adminReviewsUseCaseStub) GetOrder(context.Context, entity.Actor, string) (entity.Order, error) {
-	return entity.Order{}, nil
-}
-func (s *adminReviewsUseCaseStub) UpdateOrderStatus(context.Context, entity.Actor, string, entity.OrderStatus) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) DeleteOrder(context.Context, entity.Actor, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) ListRefunds(context.Context, entity.Actor, string) ([]entity.RefundRequest, error) {
-	return nil, nil
-}
-func (s *adminReviewsUseCaseStub) DecideRefund(context.Context, entity.Actor, int64, bool, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-func (s *adminReviewsUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-func (s *adminReviewsUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-func (s *adminReviewsUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
-	return nil, nil
-}
-func (s *adminReviewsUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
-	return nil, nil
-}
-func (s *adminReviewsUseCaseStub) SetSetting(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) DeleteSetting(context.Context, entity.Actor, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) SendBroadcast(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-func (s *adminReviewsUseCaseStub) SendTargeted(context.Context, entity.Actor, string, string, string) error {
-	return nil
-}
 func (s *adminReviewsUseCaseStub) ListReviews(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
 	if s.listFunc != nil {
 		return s.listFunc(ctx, actor, page, query, status)
@@ -117,7 +46,6 @@ func (s *adminReviewsUseCaseStub) DeleteReview(ctx context.Context, actor entity
 	}
 	return nil
 }
-func (s *adminReviewsUseCaseStub) RepairAggregates(context.Context, entity.Actor) error { return nil }
 
 func TestAdminReviewModerationEndpoints(t *testing.T) {
 	t.Parallel()

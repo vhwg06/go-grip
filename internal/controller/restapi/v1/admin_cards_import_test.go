@@ -8,129 +8,13 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
 
 type adminCardsImportUseCaseStub struct {
-}
-
-func (s *adminCardsImportUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpdateUserStatus(context.Context, entity.Actor, string, entity.UserStatus) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListOrders(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Order, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminCardsImportUseCaseStub) GetOrder(context.Context, entity.Actor, string) (entity.Order, error) {
-	return entity.Order{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpdateOrderStatus(context.Context, entity.Actor, string, entity.OrderStatus) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteOrder(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListRefunds(context.Context, entity.Actor, string) ([]entity.RefundRequest, error) {
-	return nil, nil
-}
-
-func (s *adminCardsImportUseCaseStub) DecideRefund(context.Context, entity.Actor, int64, bool, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
-	return nil, nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
-	return nil, repo.ReviewModerationStats{}, 0, nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpdateReviewStatus(context.Context, entity.Actor, int64, entity.ReviewStatus) (entity.Review, error) {
-	return entity.Review{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) BulkPublishReviews(context.Context, entity.Actor, []int64) (int, error) {
-	return 0, nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteReview(context.Context, entity.Actor, int64) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListProducts(context.Context, entity.Actor, entity.Pagination) ([]entity.Product, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminCardsImportUseCaseStub) GetProduct(context.Context, entity.Actor, string) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpsertProduct(context.Context, entity.Actor, entity.Product) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteProduct(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListCategories(context.Context, entity.Actor) ([]entity.Category, error) {
-	return nil, nil
-}
-
-func (s *adminCardsImportUseCaseStub) UpsertCategory(context.Context, entity.Actor, entity.Category) (entity.Category, error) {
-	return entity.Category{}, nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteCategory(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
-	return nil, nil
-}
-
-func (s *adminCardsImportUseCaseStub) SetSetting(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) DeleteSetting(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) SendBroadcast(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-
-func (s *adminCardsImportUseCaseStub) SendTargeted(context.Context, entity.Actor, string, string, string) error {
-	return nil
+	BaseAdminUseCaseStub
 }
 
 type importerStub struct {

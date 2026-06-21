@@ -164,6 +164,14 @@ func (s *adminStoreStub) DeleteCategory(context.Context, string) error {
 	return nil
 }
 
+func (s *adminStoreStub) StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error) {
+	return entity.AdminMessage{}, nil
+}
+
+func (s *adminStoreStub) ListAdminMessages(ctx context.Context) ([]entity.AdminMessage, error) {
+	return nil, nil
+}
+
 func TestUseCase_SettingsRequireAdminAndPersist(t *testing.T) {
 	t.Parallel()
 

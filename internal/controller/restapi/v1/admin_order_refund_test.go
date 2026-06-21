@@ -8,39 +8,19 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
 
 type adminOrderRefundUseCaseStub struct {
+	BaseAdminUseCaseStub
 	updateOrderFunc          func(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error
 	deleteOrderFunc          func(ctx context.Context, actor entity.Actor, orderID string) error
 	listRefundsFunc          func(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
 	decideRefundFunc         func(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
 	getRefundFunc            func(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error)
 	getOrderRefundStatusFunc func(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error)
-}
-
-func (s *adminOrderRefundUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) UpdateUserStatus(context.Context, entity.Actor, string, entity.UserStatus) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListOrders(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Order, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) GetOrder(context.Context, entity.Actor, string) (entity.Order, error) {
-	return entity.Order{}, nil
 }
 
 func (s *adminOrderRefundUseCaseStub) UpdateOrderStatus(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error {
@@ -83,78 +63,6 @@ func (s *adminOrderRefundUseCaseStub) GetOrderRefundStatus(ctx context.Context, 
 		return s.getOrderRefundStatusFunc(ctx, actor, orderID)
 	}
 	return entity.RefundRequest{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error) {
-	return nil, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
-	return nil, repo.ReviewModerationStats{}, 0, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) UpdateReviewStatus(context.Context, entity.Actor, int64, entity.ReviewStatus) (entity.Review, error) {
-	return entity.Review{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) BulkPublishReviews(context.Context, entity.Actor, []int64) (int, error) {
-	return 0, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) DeleteReview(context.Context, entity.Actor, int64) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListProducts(context.Context, entity.Actor, entity.Pagination) ([]entity.Product, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) GetProduct(context.Context, entity.Actor, string) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) UpsertProduct(context.Context, entity.Actor, entity.Product) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) DeleteProduct(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListCategories(context.Context, entity.Actor) ([]entity.Category, error) {
-	return nil, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) UpsertCategory(context.Context, entity.Actor, entity.Category) (entity.Category, error) {
-	return entity.Category{}, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) DeleteCategory(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
-	return nil, nil
-}
-
-func (s *adminOrderRefundUseCaseStub) SetSetting(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) DeleteSetting(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) SendBroadcast(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-
-func (s *adminOrderRefundUseCaseStub) SendTargeted(context.Context, entity.Actor, string, string, string) error {
-	return nil
 }
 
 func TestAdminOrderAndRefundEndpoints(t *testing.T) {

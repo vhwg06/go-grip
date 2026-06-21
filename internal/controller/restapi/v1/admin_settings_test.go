@@ -8,112 +8,16 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
 
 type adminSettingsUseCaseStub struct {
+	BaseAdminUseCaseStub
 	listSettingsFunc  func(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
 	setSettingFunc    func(ctx context.Context, actor entity.Actor, key, value string) error
 	deleteSettingFunc func(ctx context.Context, actor entity.Actor, key string) error
-}
-
-func (s *adminSettingsUseCaseStub) ListProducts(context.Context, entity.Actor, entity.Pagination) ([]entity.Product, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminSettingsUseCaseStub) GetProduct(context.Context, entity.Actor, string) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) UpsertProduct(context.Context, entity.Actor, entity.Product) (entity.Product, error) {
-	return entity.Product{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) DeleteProduct(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) ListCategories(context.Context, entity.Actor) ([]entity.Category, error) {
-	return nil, nil
-}
-
-func (s *adminSettingsUseCaseStub) UpsertCategory(context.Context, entity.Actor, entity.Category) (entity.Category, error) {
-	return entity.Category{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) DeleteCategory(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminSettingsUseCaseStub) UpdateUserStatus(context.Context, entity.Actor, string, entity.UserStatus) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) ListOrders(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Order, int, error) {
-	return nil, 0, nil
-}
-
-func (s *adminSettingsUseCaseStub) GetOrder(context.Context, entity.Actor, string) (entity.Order, error) {
-	return entity.Order{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) UpdateOrderStatus(context.Context, entity.Actor, string, entity.OrderStatus) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) DeleteOrder(context.Context, entity.Actor, string) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) ListRefunds(context.Context, entity.Actor, string) ([]entity.RefundRequest, error) {
-	return nil, nil
-}
-
-func (s *adminSettingsUseCaseStub) DecideRefund(context.Context, entity.Actor, int64, bool, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
-	return entity.RefundRequest{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
-	return nil, nil
-}
-
-func (s *adminSettingsUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
-	return nil, repo.ReviewModerationStats{}, 0, nil
-}
-
-func (s *adminSettingsUseCaseStub) UpdateReviewStatus(context.Context, entity.Actor, int64, entity.ReviewStatus) (entity.Review, error) {
-	return entity.Review{}, nil
-}
-
-func (s *adminSettingsUseCaseStub) BulkPublishReviews(context.Context, entity.Actor, []int64) (int, error) {
-	return 0, nil
-}
-
-func (s *adminSettingsUseCaseStub) DeleteReview(context.Context, entity.Actor, int64) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {
-	return nil
 }
 
 func (s *adminSettingsUseCaseStub) ListSettings(ctx context.Context, actor entity.Actor) ([]entity.Setting, error) {
@@ -134,14 +38,6 @@ func (s *adminSettingsUseCaseStub) DeleteSetting(ctx context.Context, actor enti
 	if s.deleteSettingFunc != nil {
 		return s.deleteSettingFunc(ctx, actor, key)
 	}
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) SendBroadcast(context.Context, entity.Actor, string, string) error {
-	return nil
-}
-
-func (s *adminSettingsUseCaseStub) SendTargeted(context.Context, entity.Actor, string, string, string) error {
 	return nil
 }
 
