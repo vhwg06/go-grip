@@ -802,3 +802,17 @@ func (r *AdminRepo) DeleteCategory(ctx context.Context, categoryID string) error
 	return nil
 }
 
+func (r *AdminRepo) ListCards(ctx context.Context) ([]entity.Card, error) {
+	var rows []models.Card
+	if err := r.Gorm.WithContext(ctx).Order("id ASC").Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("AdminRepo.ListCards: %w", err)
+	}
+
+	cards := make([]entity.Card, 0, len(rows))
+	for _, row := range rows {
+		cards = append(cards, models.CardToEntity(row))
+	}
+	return cards, nil
+}
+
+

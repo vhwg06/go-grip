@@ -38,6 +38,7 @@ type adminExtendedUseCase interface {
 	DeleteSetting(ctx context.Context, actor entity.Actor, key string) error
 	SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
+	ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error)
 }
 
 
@@ -1193,5 +1194,21 @@ func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
 		"msg":              "Pending refund request exists",
 	})
 }
+
+func (r *V1) gripAdminListCards(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_products_not_available"})
+	}
+
+	cards, err := ext.ListCards(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(cards))
+}
+
 
 

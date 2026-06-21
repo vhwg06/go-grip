@@ -85,6 +85,10 @@ func (s *adminOrderRefundUseCaseStub) GetOrderRefundStatus(ctx context.Context, 
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminOrderRefundUseCaseStub) ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error) {
+	return nil, nil
+}
+
 func (s *adminOrderRefundUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
 	return nil, repo.ReviewModerationStats{}, 0, nil
 }

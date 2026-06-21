@@ -128,6 +128,10 @@ func (s *adminStoreStub) GetOrderRefundStatus(ctx context.Context, orderID strin
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminStoreStub) ListCards(ctx context.Context) ([]entity.Card, error) {
+	return nil, nil
+}
+
 func (s *adminStoreStub) RebuildProductAggregates(context.Context) error {
 	return nil
 }

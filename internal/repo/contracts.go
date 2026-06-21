@@ -213,6 +213,7 @@ type (
 		ListSettings(ctx context.Context) ([]entity.Setting, error)
 		StoreSetting(ctx context.Context, setting entity.Setting) error
 		DeleteSetting(ctx context.Context, key string) error
+		ListCards(ctx context.Context) ([]entity.Card, error)
 		ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, ReviewModerationStats, int, error)
 		UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 		BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)

@@ -286,3 +286,32 @@ func valueStringPointer(v string) *string {
 	copied := v
 	return &copied
 }
+
+func CardToEntity(m Card) entity.Card {
+	return entity.Card{
+		ID:              m.ID,
+		ProductID:       m.ProductID,
+		CardKey:         m.CardKey,
+		IsUsed:          m.IsUsed,
+		ReservedOrderID: m.ReservedOrderID,
+		ReservedAt:      m.ReservedAt,
+		ExpiresAt:       m.ExpiresAt,
+		UsedAt:          m.UsedAt,
+		CreatedAt:       m.CreatedAt,
+	}
+}
+
+func EntityToCard(e entity.Card) Card {
+	return Card{
+		ID:              e.ID,
+		ProductID:       e.ProductID,
+		CardKey:         e.CardKey,
+		IsUsed:          e.IsUsed,
+		ReservedOrderID: e.ReservedOrderID,
+		ReservedAt:      e.ReservedAt,
+		ExpiresAt:       e.ExpiresAt,
+		UsedAt:          e.UsedAt,
+		CreatedAt:       e.CreatedAt,
+	}
+}
+

@@ -75,6 +75,9 @@ func (s *adminReviewsUseCaseStub) GetRefund(context.Context, entity.Actor, int64
 func (s *adminReviewsUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
 	return entity.RefundRequest{}, nil
 }
+func (s *adminReviewsUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
+	return nil, nil
+}
 func (s *adminReviewsUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
 	return nil, nil
 }

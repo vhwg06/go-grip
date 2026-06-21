@@ -92,6 +92,10 @@ func (s *adminSettingsUseCaseStub) GetOrderRefundStatus(context.Context, entity.
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminSettingsUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
+	return nil, nil
+}
+
 func (s *adminSettingsUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
 	return nil, repo.ReviewModerationStats{}, 0, nil
 }

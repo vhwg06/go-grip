@@ -104,6 +104,10 @@ func (s *adminContractAdminStub) GetOrderRefundStatus(ctx context.Context, actor
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminContractAdminStub) ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error) {
+	return nil, nil
+}
+
 func (s *adminContractAdminStub) RepairAggregates(context.Context, entity.Actor) error {
 	return nil
 }

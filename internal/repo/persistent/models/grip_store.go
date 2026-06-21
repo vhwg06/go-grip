@@ -244,3 +244,18 @@ type MediaAsset struct {
 }
 
 func (MediaAsset) TableName() string { return "media_assets" }
+
+type Card struct {
+	ID              int64      `gorm:"primaryKey;autoIncrement"`
+	ProductID       string     `gorm:"type:text;not null"`
+	CardKey         string     `gorm:"type:text;not null"`
+	IsUsed          bool       `gorm:"not null;default:false"`
+	ReservedOrderID string     `gorm:"type:text;not null;default:''"`
+	ReservedAt      *time.Time `gorm:"type:timestamptz"`
+	ExpiresAt       *time.Time `gorm:"type:timestamptz"`
+	UsedAt          *time.Time `gorm:"type:timestamptz"`
+	CreatedAt       time.Time  `gorm:"type:timestamptz;not null;default:now()"`
+}
+
+func (Card) TableName() string { return "cards" }
+
