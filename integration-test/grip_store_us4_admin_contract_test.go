@@ -96,6 +96,14 @@ func (s *adminContractAdminStub) DecideRefund(ctx context.Context, actor entity.
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminContractAdminStub) GetRefund(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminContractAdminStub) GetOrderRefundStatus(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
 func (s *adminContractAdminStub) RepairAggregates(context.Context, entity.Actor) error {
 	return nil
 }

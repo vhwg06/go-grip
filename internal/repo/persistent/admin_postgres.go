@@ -57,7 +57,25 @@ func NewAdminRepo(pg *postgres.Postgres) *AdminRepo {
 var _ repo.AdminRepository = (*AdminRepo)(nil)
 
 func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error) {
+	var q string
+	if val := ctx.Value("query"); val != nil {
+		if s, ok := val.(string); ok {
+			q = s
+		}
+	}
+
 	query := r.Gorm.WithContext(ctx).Model(&models.User{})
+
+	// Exclude admins if q is empty or does not contain "admin"
+	if q == "" || !strings.Contains(strings.ToLower(q), "admin") {
+		query = query.Where("is_admin = ?", false).Where("role != ? OR role IS NULL", "Administrator")
+	}
+
+	if trimmed := strings.TrimSpace(q); trimmed != "" {
+		like := "%" + strings.ToLower(trimmed) + "%"
+		query = query.Where("LOWER(username) LIKE ? OR LOWER(email) LIKE ? OR LOWER(display_name) LIKE ? OR id = ?", like, like, like, trimmed)
+	}
+
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("AdminRepo.ListUsers(count): %w", err)
@@ -71,7 +89,26 @@ func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]en
 
 	users := make([]entity.User, 0, len(rows))
 	for _, row := range rows {
-		users = append(users, models.UserToEntity(row))
+		u := models.UserToEntity(row)
+		u.CustomerID = &u.ID
+		if q != "" {
+			var oCount int64
+			var refCount int64
+			var revCount int64
+
+			r.Gorm.WithContext(ctx).Model(&models.Order{}).Where("user_id = ?", u.ID).Count(&oCount)
+			r.Gorm.WithContext(ctx).Model(&models.RefundRequest{}).Where("user_id = ?", u.ID).Count(&refCount)
+			r.Gorm.WithContext(ctx).Model(&models.Review{}).Where("user_id = ?", u.ID).Count(&revCount)
+
+			oVal := int(oCount)
+			refVal := int(refCount)
+			revVal := int(revCount)
+
+			u.OrderCount = &oVal
+			u.RefundCount = &refVal
+			u.ReviewCount = &revVal
+		}
+		users = append(users, u)
 	}
 	return users, int(total), nil
 }
@@ -100,8 +137,8 @@ func (r *AdminRepo) ListOrders(ctx context.Context, page entity.Pagination, quer
 	if trimmed := strings.TrimSpace(query); trimmed != "" {
 		like := "%" + strings.ToLower(trimmed) + "%"
 		db = db.Where(
-			"LOWER(order_id) LIKE ? OR LOWER(email) LIKE ? OR LOWER(username) LIKE ? OR LOWER(product_name) LIKE ?",
-			like, like, like, like,
+			"LOWER(order_id) LIKE ? OR LOWER(email) LIKE ? OR LOWER(username) LIKE ? OR LOWER(product_name) LIKE ? OR user_id = ?",
+			like, like, like, like, trimmed,
 		)
 	}
 	if trimmedStatus := strings.TrimSpace(strings.ToLower(status)); trimmedStatus != "" && trimmedStatus != "all" {
@@ -259,6 +296,70 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 		items = append(items, item)
 	}
 	return items, nil
+}
+
+func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error) {
+	type refundRow struct {
+		models.RefundRequest
+		ProductName string `gorm:"column:product_name"`
+		Amount      int64  `gorm:"column:amount"`
+		PointsUsed  int    `gorm:"column:points_used"`
+		TradeNo     string `gorm:"column:trade_no"`
+		OrderStatus string `gorm:"column:order_status"`
+	}
+
+	var row refundRow
+	if err := r.Gorm.WithContext(ctx).Table("refund_requests").
+		Select("refund_requests.*, orders.product_name, orders.amount, orders.points_used, orders.trade_no, orders.status AS order_status").
+		Joins("LEFT JOIN orders ON orders.order_id = refund_requests.order_id").
+		Where("refund_requests.id = ?", refundID).
+		First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.RefundRequest{}, entity.ErrNotFound
+		}
+		return entity.RefundRequest{}, fmt.Errorf("AdminRepo.GetRefundRequest: %w", err)
+	}
+
+	item := entity.RefundRequest{
+		ID:            row.ID,
+		OrderID:       row.OrderID,
+		UserID:        row.UserID,
+		Username:      row.Username,
+		Reason:        row.Reason,
+		Status:        entity.RefundStatus(row.Status),
+		AdminUsername: row.AdminUsername,
+		AdminNote:     row.AdminNote,
+		ProductName:   row.ProductName,
+		Amount:        entity.Amount(row.Amount),
+		PointsUsed:    row.PointsUsed,
+		TradeNo:       row.TradeNo,
+		OrderStatus:   row.OrderStatus,
+		CreatedAt:     row.CreatedAt,
+		UpdatedAt:     row.UpdatedAt,
+	}
+	if !row.ProcessedAt.IsZero() {
+		processedAt := row.ProcessedAt
+		item.ProcessedAt = &processedAt
+	}
+	return item, nil
+}
+
+func (r *AdminRepo) GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error) {
+	var row models.RefundRequest
+	if err := r.Gorm.WithContext(ctx).Model(&models.RefundRequest{}).
+		Where("order_id = ? AND status = ?", orderID, "pending").
+		First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.RefundRequest{}, entity.ErrNotFound
+		}
+		return entity.RefundRequest{}, fmt.Errorf("AdminRepo.GetOrderRefundStatus: %w", err)
+	}
+
+	return entity.RefundRequest{
+		ID:      row.ID,
+		OrderID: row.OrderID,
+		Status:  entity.RefundStatus(row.Status),
+	}, nil
 }
 
 func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error) {
@@ -438,11 +539,8 @@ func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, statu
 			}
 			updates["paid_at"] = now
 		case entity.OrderStatusDelivered:
-			if current != entity.OrderStatusPending && current != entity.OrderStatusPaid {
+			if current != entity.OrderStatusPaid {
 				return entity.ErrOrderStateConflict
-			}
-			if order.PaidAt.IsZero() {
-				updates["paid_at"] = now
 			}
 			updates["delivered_at"] = now
 		case entity.OrderStatusCancelled:

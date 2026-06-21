@@ -25,6 +25,7 @@ func UserToEntity(m User) entity.User {
 		LastLoginAt:                 nullableTime(m.LastLoginAt),
 		LastCheckinAt:               nullableTime(m.LastCheckinAt),
 		ConsecutiveDays:             m.ConsecutiveDays,
+		IsBlocked:                   m.Status == string(entity.UserStatusLocked),
 		CreatedAt:                   m.CreatedAt,
 		UpdatedAt:                   m.UpdatedAt,
 	}

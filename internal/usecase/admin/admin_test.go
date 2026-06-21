@@ -120,6 +120,14 @@ func (s *adminStoreStub) DeleteSetting(ctx context.Context, key string) error {
 	return nil
 }
 
+func (s *adminStoreStub) GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminStoreStub) GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
 func (s *adminStoreStub) RebuildProductAggregates(context.Context) error {
 	return nil
 }

@@ -34,14 +34,21 @@ type storeSettingsStatBucket struct {
 	Revenue int64 `json:"revenue"`
 }
 
+type storeSettingsPresence struct {
+	Enabled bool `json:"enabled"`
+	Present bool `json:"present"`
+}
+
 type storeSettingsConfig struct {
-	Brand        storeSettingsBrand            `json:"brand"`
-	Contact      storeSettingsContact          `json:"contact"`
-	Homepage     storeSettingsHomepage         `json:"homepage"`
-	Footer       storeSettingsFooter           `json:"footer"`
-	FloatSupport []storeSettingsFloatingAction `json:"floatingSupport"`
-	Visibility   storeSettingsVisibility       `json:"visibility"`
-	Registry     storeSettingsRegistry         `json:"registry"`
+	Brand          storeSettingsBrand            `json:"brand"`
+	Contact        storeSettingsContact          `json:"contact"`
+	Homepage       storeSettingsHomepage         `json:"homepage"`
+	Footer         storeSettingsFooter           `json:"footer"`
+	FloatSupport   []storeSettingsFloatingAction `json:"floatingSupport"`
+	Visibility     storeSettingsVisibility       `json:"visibility"`
+	Registry       storeSettingsRegistry         `json:"registry"`
+	BannerPresence storeSettingsPresence         `json:"bannerPresence"`
+	AboutPresence  storeSettingsPresence         `json:"aboutPresence"`
 }
 
 type storeSettingsBrand struct {
@@ -117,6 +124,8 @@ type storeSettingsSiteConfigResponse struct {
 	FloatingSupport []storeSettingsFloatingAction `json:"floatingSupport"`
 	Visibility      storeSettingsVisibility       `json:"visibility"`
 	Registry        storeSettingsRegistry         `json:"registry"`
+	BannerPresence  storeSettingsPresence         `json:"bannerPresence"`
+	AboutPresence   storeSettingsPresence         `json:"aboutPresence"`
 }
 
 func (r *V1) gripAdminGetStoreSettings(ctx *fiber.Ctx) error {
@@ -132,6 +141,21 @@ func (r *V1) gripAdminGetStoreSettings(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(apiSuccessEnvelope(buildStoreSettingsAdminResponse(settings)))
+}
+
+func (r *V1) gripAdminPutStoreSettingsPresence(ctx *fiber.Ctx) error {
+	var body struct {
+		BannerPresenceEnabled bool `json:"bannerPresenceEnabled"`
+		AboutPresenceEnabled  bool `json:"aboutPresenceEnabled"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	return r.persistStoreSettings(ctx, map[string]string{
+		"bannerPresenceEnabled": strconv.FormatBool(body.BannerPresenceEnabled),
+		"aboutPresenceEnabled":  strconv.FormatBool(body.AboutPresenceEnabled),
+	})
 }
 
 func (r *V1) gripAdminPutStoreSettingsBrand(ctx *fiber.Ctx) error {
@@ -308,6 +332,8 @@ func buildStoreSettingsSiteConfig(settings []entity.Setting) storeSettingsSiteCo
 		FloatingSupport: config.FloatSupport,
 		Visibility:      config.Visibility,
 		Registry:        config.Registry,
+		BannerPresence:  config.BannerPresence,
+		AboutPresence:   config.AboutPresence,
 	}
 }
 
@@ -327,6 +353,8 @@ func buildCatalogSettingsProjection(settings []entity.Setting) fiber.Map {
 		"site_name":         config.Brand.ShopName,
 		"site_description":  config.Brand.ShopDescription,
 		"currency":          "VND",
+		"bannerPresence":    config.BannerPresence,
+		"aboutPresence":     config.AboutPresence,
 	}
 }
 
@@ -378,6 +406,14 @@ func buildStoreSettingsConfig(settings []entity.Setting) storeSettingsConfig {
 			Enabled: true,
 			Joined:  parseBoolSetting(values["registryOptIn"], false),
 			HideNav: parseBoolSetting(values["registryHideNav"], false),
+		},
+		BannerPresence: storeSettingsPresence{
+			Enabled: parseBoolSetting(values["bannerPresenceEnabled"], true),
+			Present: true,
+		},
+		AboutPresence: storeSettingsPresence{
+			Enabled: parseBoolSetting(values["aboutPresenceEnabled"], true),
+			Present: true,
 		},
 	}
 

@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,6 +26,8 @@ type adminExtendedUseCase interface {
 	UpdateOrderStatus(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error
 	DeleteOrder(ctx context.Context, actor entity.Actor, orderID string) error
 	ListRefunds(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
+	GetRefund(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error)
+	GetOrderRefundStatus(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error)
 	DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
 	ListReviews(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
 	UpdateReviewStatus(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
@@ -202,6 +205,255 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 // @Failure     500 {object} envelope
 // @Security    BearerAuth
 // @Router      /admin/products/{id} [patch]
+func mergeProductPatch(existing *entity.Product, bodyMap map[string]any, ctx *fiber.Ctx, isMultipart bool) {
+	if isMultipart {
+		if value := strings.TrimSpace(ctx.FormValue("name")); value != "" {
+			existing.Title = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("title")); value != "" {
+			existing.Title = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("description")); value != "" {
+			existing.Description = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("category")); value != "" {
+			existing.CategoryID = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("categoryId")); value != "" {
+			existing.CategoryID = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("category_id")); value != "" {
+			existing.CategoryID = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("image")); value != "" {
+			existing.ImageURL = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("image_url")); value != "" {
+			existing.ImageURL = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("sku")); value != "" {
+			existing.SKU = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("brand")); value != "" {
+			existing.Brand = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("price")); value != "" {
+			if parsed, err := strconv.ParseFloat(value, 64); err == nil {
+				existing.Price = int64(parsed)
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("compareAtPrice")); value != "" {
+			if parsed, err := strconv.ParseFloat(value, 64); err == nil {
+				val := int64(parsed)
+				existing.ComparePrice = &val
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("compare_price")); value != "" {
+			if parsed, err := strconv.ParseFloat(value, 64); err == nil {
+				val := int64(parsed)
+				existing.ComparePrice = &val
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("isHot")); value != "" {
+			existing.IsHot = parseBoolForm(value)
+		}
+		if value := strings.TrimSpace(ctx.FormValue("is_hot")); value != "" {
+			existing.IsHot = parseBoolForm(value)
+		}
+		if value := strings.TrimSpace(ctx.FormValue("isActive")); value != "" {
+			existing.IsActive = parseBoolForm(value)
+		}
+		if value := strings.TrimSpace(ctx.FormValue("is_active")); value != "" {
+			existing.IsActive = parseBoolForm(value)
+		}
+		if value := strings.TrimSpace(ctx.FormValue("purchaseLimit")); value != "" {
+			if parsed, err := strconv.Atoi(value); err == nil {
+				existing.PurchaseLimit = parsed
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("purchase_limit")); value != "" {
+			if parsed, err := strconv.Atoi(value); err == nil {
+				existing.PurchaseLimit = parsed
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("purchaseWarning")); value != "" {
+			existing.PurchaseWarning = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("purchase_warning")); value != "" {
+			existing.PurchaseWarning = value
+		}
+		if value := strings.TrimSpace(ctx.FormValue("visibilityLevel")); value != "" {
+			if parsed, err := strconv.Atoi(value); err == nil {
+				existing.VisibilityLevel = parsed
+			}
+		}
+		if value := strings.TrimSpace(ctx.FormValue("visibility_level")); value != "" {
+			if parsed, err := strconv.Atoi(value); err == nil {
+				existing.VisibilityLevel = parsed
+			}
+		}
+		return
+	}
+
+	if bodyMap == nil {
+		return
+	}
+
+	if _, ok := bodyMap["name"]; ok {
+		if val, ok := bodyMap["name"].(string); ok {
+			existing.Title = val
+		}
+	}
+	if _, ok := bodyMap["title"]; ok {
+		if val, ok := bodyMap["title"].(string); ok {
+			existing.Title = val
+		}
+	}
+	if _, ok := bodyMap["description"]; ok {
+		if val, ok := bodyMap["description"].(string); ok {
+			existing.Description = val
+		}
+	}
+	if _, ok := bodyMap["price"]; ok {
+		if val, ok := bodyMap["price"].(float64); ok {
+			existing.Price = int64(val)
+		}
+	}
+	if _, ok := bodyMap["compareAtPrice"]; ok {
+		if val, ok := bodyMap["compareAtPrice"].(float64); ok {
+			comp := int64(val)
+			existing.ComparePrice = &comp
+		} else if bodyMap["compareAtPrice"] == nil {
+			existing.ComparePrice = nil
+		}
+	}
+	if _, ok := bodyMap["compare_price"]; ok {
+		if val, ok := bodyMap["compare_price"].(float64); ok {
+			comp := int64(val)
+			existing.ComparePrice = &comp
+		} else if bodyMap["compare_price"] == nil {
+			existing.ComparePrice = nil
+		}
+	}
+	if _, ok := bodyMap["categoryId"]; ok {
+		if val, ok := bodyMap["categoryId"].(string); ok {
+			existing.CategoryID = val
+		} else if val, ok := bodyMap["categoryId"].(float64); ok {
+			existing.CategoryID = strconv.Itoa(int(val))
+		}
+	}
+	if _, ok := bodyMap["category_id"]; ok {
+		if val, ok := bodyMap["category_id"].(string); ok {
+			existing.CategoryID = val
+		} else if val, ok := bodyMap["category_id"].(float64); ok {
+			existing.CategoryID = strconv.Itoa(int(val))
+		}
+	}
+	if _, ok := bodyMap["image"]; ok {
+		if val, ok := bodyMap["image"].(string); ok {
+			existing.ImageURL = val
+		}
+	}
+	if _, ok := bodyMap["image_url"]; ok {
+		if val, ok := bodyMap["image_url"].(string); ok {
+			existing.ImageURL = val
+		}
+	}
+	if _, ok := bodyMap["images"]; ok {
+		if arr, ok := bodyMap["images"].([]any); ok {
+			imgs := make([]string, 0, len(arr))
+			for _, item := range arr {
+				if s, ok := item.(string); ok {
+					imgs = append(imgs, s)
+				}
+			}
+			existing.Images = imgs
+		}
+	}
+	if _, ok := bodyMap["sku"]; ok {
+		if val, ok := bodyMap["sku"].(string); ok {
+			existing.SKU = val
+		}
+	}
+	if _, ok := bodyMap["brand"]; ok {
+		if val, ok := bodyMap["brand"].(string); ok {
+			existing.Brand = val
+		}
+	}
+	if _, ok := bodyMap["isHot"]; ok {
+		if val, ok := bodyMap["isHot"].(bool); ok {
+			existing.IsHot = val
+		}
+	}
+	if _, ok := bodyMap["is_hot"]; ok {
+		if val, ok := bodyMap["is_hot"].(bool); ok {
+			existing.IsHot = val
+		}
+	}
+	if _, ok := bodyMap["isActive"]; ok {
+		if val, ok := bodyMap["isActive"].(bool); ok {
+			existing.IsActive = val
+		}
+	}
+	if _, ok := bodyMap["is_active"]; ok {
+		if val, ok := bodyMap["is_active"].(bool); ok {
+			existing.IsActive = val
+		}
+	}
+	if _, ok := bodyMap["purchaseLimit"]; ok {
+		if val, ok := bodyMap["purchaseLimit"].(float64); ok {
+			existing.PurchaseLimit = int(val)
+		}
+	}
+	if _, ok := bodyMap["purchase_limit"]; ok {
+		if val, ok := bodyMap["purchase_limit"].(float64); ok {
+			existing.PurchaseLimit = int(val)
+		}
+	}
+	if _, ok := bodyMap["purchaseWarning"]; ok {
+		if val, ok := bodyMap["purchaseWarning"].(string); ok {
+			existing.PurchaseWarning = val
+		}
+	}
+	if _, ok := bodyMap["purchase_warning"]; ok {
+		if val, ok := bodyMap["purchase_warning"].(string); ok {
+			existing.PurchaseWarning = val
+		}
+	}
+	if _, ok := bodyMap["visibilityLevel"]; ok {
+		if val, ok := bodyMap["visibilityLevel"].(float64); ok {
+			existing.VisibilityLevel = int(val)
+		}
+	}
+	if _, ok := bodyMap["visibility_level"]; ok {
+		if val, ok := bodyMap["visibility_level"].(float64); ok {
+			existing.VisibilityLevel = int(val)
+		}
+	}
+	if _, ok := bodyMap["specs"]; ok {
+		if arr, ok := bodyMap["specs"].([]any); ok {
+			jsBytes, _ := json.Marshal(arr)
+			var specs []entity.ProductSpecItem
+			if err := json.Unmarshal(jsBytes, &specs); err == nil {
+				existing.Specs = specs
+			}
+		}
+	}
+}
+
+// @Summary     Update admin product
+// @Description Updates a product by ID
+// @ID          grip_admin_update_product
+// @Tags        admin
+// @Accept      json
+// @Produce     json
+// @Param       id path string true "Product ID"
+// @Success     200 {object} envelope
+// @Failure     400 {object} envelope
+// @Failure     403 {object} envelope
+// @Failure     500 {object} envelope
+// @Security    BearerAuth
+// @Router      /admin/products/{id} [patch]
 func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 	if r.adminUC == nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_usecase_not_configured"})
@@ -211,24 +463,31 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_products_not_available"})
 	}
 
-	var product entity.Product
-	contentType := strings.ToLower(ctx.Get("Content-Type"))
-	isMultipart := strings.HasPrefix(contentType, "multipart/form-data")
-	if err := ctx.BodyParser(&product); err != nil && !isMultipart {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
+	productID := ctx.Params("id")
+	existing, err := ext.GetProduct(ctx.UserContext(), r.gripActor(ctx), productID)
+	if err != nil {
+		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
-	patchProductFromForm(&product, ctx)
-	product.ID = ctx.Params("id")
+
+	contentType := strings.ToLower(ctx.Get("Content-Type"))
+	isMultipart := strings.HasPrefix(contentType, "multipart/form-data")
+
+	var bodyMap map[string]any
+	if !isMultipart && len(ctx.Body()) > 0 {
+		_ = json.Unmarshal(ctx.Body(), &bodyMap)
+	}
+
+	mergeProductPatch(&existing, bodyMap, ctx, isMultipart)
 
 	if specsStr := ctx.FormValue("specs"); specsStr != "" {
 		var specs []entity.ProductSpecItem
 		if err := json.Unmarshal([]byte(specsStr), &specs); err == nil {
-			product.Specs = specs
+			existing.Specs = specs
 		}
 	}
 
-	updated, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), product)
+	updated, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), existing)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
@@ -622,7 +881,11 @@ func (r *V1) gripAdminDeleteSetting(ctx *fiber.Ctx) error {
 // @Router      /admin/users [get]
 func (r *V1) gripAdminUsersList(ctx *fiber.Ctx) error {
 	page := gripPage(ctx)
-	users, total, err := r.adminUC.ListUsers(ctx.UserContext(), r.gripActor(ctx), page)
+	uctx := ctx.UserContext()
+	if q := ctx.Query("q"); q != "" {
+		uctx = context.WithValue(uctx, "query", q)
+	}
+	users, total, err := r.adminUC.ListUsers(uctx, r.gripActor(ctx), page)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
@@ -669,6 +932,42 @@ func (r *V1) gripAdminUsersUpdate(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (r *V1) gripAdminUsersUpdatePoints(ctx *fiber.Ctx) error {
+	var body struct {
+		Points int `json:"points"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	actor := r.gripActor(ctx)
+	if err := r.adminUC.UpdateUserPoints(ctx.UserContext(), actor, ctx.Params("id"), body.Points); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+	return ctx.SendStatus(http.StatusOK)
+}
+
+func (r *V1) gripAdminUsersUpdateBlock(ctx *fiber.Ctx) error {
+	var body struct {
+		IsBlocked bool `json:"isBlocked"`
+	}
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	actor := r.gripActor(ctx)
+	status := entity.UserStatusActive
+	if body.IsBlocked {
+		status = entity.UserStatusLocked
+	}
+	if err := r.adminUC.UpdateUserStatus(ctx.UserContext(), actor, ctx.Params("id"), status); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+	return ctx.SendStatus(http.StatusOK)
 }
 
 // @Summary     Repair aggregates
@@ -838,4 +1137,61 @@ func (r *V1) gripAdminPutCollect(ctx *fiber.Ctx) error {
 		"payLink": body.PayLink,
 	}))
 }
+
+func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_refunds_not_available"})
+	}
+
+	refundID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	refund, err := ext.GetRefund(ctx.UserContext(), r.gripActor(ctx), refundID)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(apiSuccessEnvelope(refund))
+}
+
+func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_refunds_not_available"})
+	}
+
+	orderID := ctx.Params("id")
+	if strings.TrimSpace(orderID) == "" {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	refund, err := ext.GetOrderRefundStatus(ctx.UserContext(), r.gripActor(ctx), orderID)
+	if err != nil {
+		if errors.Is(err, entity.ErrNotFound) {
+			return ctx.JSON(fiber.Map{
+				"success":          true,
+				"hasPendingRefund": false,
+				"status":           1,
+				"msg":              "No pending refund request",
+			})
+		}
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	return ctx.JSON(fiber.Map{
+		"success":          true,
+		"hasPendingRefund": true,
+		"refundId":         refund.ID,
+		"status":           1,
+		"msg":              "Pending refund request exists",
+	})
+}
+
 

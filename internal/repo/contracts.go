@@ -205,6 +205,8 @@ type (
 		ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
 		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
 		ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
+		GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error)
+		GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error)
 		ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
 		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
 		DeleteOrder(ctx context.Context, orderID string) error

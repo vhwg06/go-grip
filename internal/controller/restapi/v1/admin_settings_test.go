@@ -84,6 +84,14 @@ func (s *adminSettingsUseCaseStub) DecideRefund(context.Context, entity.Actor, i
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminSettingsUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminSettingsUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
 func (s *adminSettingsUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
 	return nil, repo.ReviewModerationStats{}, 0, nil
 }

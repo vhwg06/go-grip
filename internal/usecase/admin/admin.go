@@ -113,6 +113,20 @@ func (uc *UseCase) ListRefunds(ctx context.Context, actor entity.Actor, status s
 	return uc.repo.ListRefundRequests(ctx, status)
 }
 
+func (uc *UseCase) GetRefund(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.RefundRequest{}, err
+	}
+	return uc.repo.GetRefundRequest(ctx, refundID)
+}
+
+func (uc *UseCase) GetOrderRefundStatus(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return entity.RefundRequest{}, err
+	}
+	return uc.repo.GetOrderRefundStatus(ctx, orderID)
+}
+
 func (uc *UseCase) DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return entity.RefundRequest{}, err

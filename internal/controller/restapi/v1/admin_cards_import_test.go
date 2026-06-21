@@ -53,6 +53,14 @@ func (s *adminCardsImportUseCaseStub) DecideRefund(context.Context, entity.Actor
 	return entity.RefundRequest{}, nil
 }
 
+func (s *adminCardsImportUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminCardsImportUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+
 func (s *adminCardsImportUseCaseStub) ListReviews(context.Context, entity.Actor, entity.Pagination, string, string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
 	return nil, repo.ReviewModerationStats{}, 0, nil
 }

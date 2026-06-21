@@ -15,10 +15,12 @@ import (
 )
 
 type adminOrderRefundUseCaseStub struct {
-	updateOrderFunc  func(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error
-	deleteOrderFunc  func(ctx context.Context, actor entity.Actor, orderID string) error
-	listRefundsFunc  func(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
-	decideRefundFunc func(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
+	updateOrderFunc          func(ctx context.Context, actor entity.Actor, orderID string, status entity.OrderStatus) error
+	deleteOrderFunc          func(ctx context.Context, actor entity.Actor, orderID string) error
+	listRefundsFunc          func(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
+	decideRefundFunc         func(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
+	getRefundFunc            func(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error)
+	getOrderRefundStatusFunc func(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error)
 }
 
 func (s *adminOrderRefundUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
@@ -65,6 +67,20 @@ func (s *adminOrderRefundUseCaseStub) ListRefunds(ctx context.Context, actor ent
 func (s *adminOrderRefundUseCaseStub) DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error) {
 	if s.decideRefundFunc != nil {
 		return s.decideRefundFunc(ctx, actor, refundID, approve, note)
+	}
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminOrderRefundUseCaseStub) GetRefund(ctx context.Context, actor entity.Actor, refundID int64) (entity.RefundRequest, error) {
+	if s.getRefundFunc != nil {
+		return s.getRefundFunc(ctx, actor, refundID)
+	}
+	return entity.RefundRequest{}, nil
+}
+
+func (s *adminOrderRefundUseCaseStub) GetOrderRefundStatus(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error) {
+	if s.getOrderRefundStatusFunc != nil {
+		return s.getOrderRefundStatusFunc(ctx, actor, orderID)
 	}
 	return entity.RefundRequest{}, nil
 }

@@ -21,6 +21,11 @@ type User struct {
 	LastLoginAt                 *time.Time `json:"last_login_at,omitempty"`
 	LastCheckinAt               *time.Time `json:"last_checkin_at,omitempty"`
 	ConsecutiveDays             int        `json:"consecutive_days"`
+	CustomerID                  *string    `json:"customerId,omitempty"`
+	OrderCount                  *int       `json:"orderCount,omitempty"`
+	RefundCount                 *int       `json:"refundCount,omitempty"`
+	ReviewCount                 *int       `json:"reviewCount,omitempty"`
+	IsBlocked                   bool       `json:"is_blocked"`
 	CreatedAt                   time.Time  `json:"created_at"  example:"2026-01-01T00:00:00Z"`
 	UpdatedAt                   time.Time  `json:"updated_at"  example:"2026-01-01T00:00:00Z"`
 } // @name entity.User

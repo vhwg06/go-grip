@@ -1598,7 +1598,7 @@ func (mr *MockOrderRepositoryMockRecorder) ListOrdersByOwner(ctx, userID, email,
 }
 
 // SubmitRefundRequest mocks base method.
-func (m *MockOrderRepository) SubmitRefundRequest(ctx context.Context, refund entity.RefundRequest) error {
+func (m *MockOrderRepository) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitRefundRequest", ctx, refund)
 	ret0, _ := ret[0].(error)
@@ -2000,6 +2000,36 @@ func (m *MockAdminRepository) GetOrderByID(ctx context.Context, orderID string) 
 func (mr *MockAdminRepositoryMockRecorder) GetOrderByID(ctx, orderID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByID", reflect.TypeOf((*MockAdminRepository)(nil).GetOrderByID), ctx, orderID)
+}
+
+// GetOrderRefundStatus mocks base method.
+func (m *MockAdminRepository) GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderRefundStatus", ctx, orderID)
+	ret0, _ := ret[0].(entity.RefundRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderRefundStatus indicates an expected call of GetOrderRefundStatus.
+func (mr *MockAdminRepositoryMockRecorder) GetOrderRefundStatus(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderRefundStatus", reflect.TypeOf((*MockAdminRepository)(nil).GetOrderRefundStatus), ctx, orderID)
+}
+
+// GetRefundRequest mocks base method.
+func (m *MockAdminRepository) GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefundRequest", ctx, refundID)
+	ret0, _ := ret[0].(entity.RefundRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefundRequest indicates an expected call of GetRefundRequest.
+func (mr *MockAdminRepositoryMockRecorder) GetRefundRequest(ctx, refundID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefundRequest", reflect.TypeOf((*MockAdminRepository)(nil).GetRefundRequest), ctx, refundID)
 }
 
 // ListOrders mocks base method.

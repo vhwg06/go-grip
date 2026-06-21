@@ -69,6 +69,12 @@ func (s *adminReviewsUseCaseStub) ListRefunds(context.Context, entity.Actor, str
 func (s *adminReviewsUseCaseStub) DecideRefund(context.Context, entity.Actor, int64, bool, string) (entity.RefundRequest, error) {
 	return entity.RefundRequest{}, nil
 }
+func (s *adminReviewsUseCaseStub) GetRefund(context.Context, entity.Actor, int64) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
+func (s *adminReviewsUseCaseStub) GetOrderRefundStatus(context.Context, entity.Actor, string) (entity.RefundRequest, error) {
+	return entity.RefundRequest{}, nil
+}
 func (s *adminReviewsUseCaseStub) ListSettings(context.Context, entity.Actor) ([]entity.Setting, error) {
 	return nil, nil
 }
