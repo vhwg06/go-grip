@@ -99,9 +99,9 @@ VALUES
     ),
     (
         'test-order-0002', 'b2222222-2222-2222-2222-222222222222', 'Test Unique Card 50K', 50000,
-        'test_buyer@example.com', 'pending', '', '', '900001',
+        'test_buyer@example.com', 'cancelled', '', '', '900001',
         NULL, NULL, '22222222-2222-2222-2222-222222222222', 'test_buyer',
-        'test_payee', 0, 1, '', 'Cho thanh toan', '#f59e0b', '', NOW(), NOW()
+        'test_payee', 0, 1, '', 'Da huy', '#ef4444', '', NOW(), NOW()
     )
 ON CONFLICT DO NOTHING;
 
