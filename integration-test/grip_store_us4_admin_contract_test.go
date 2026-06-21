@@ -108,6 +108,10 @@ func (s *adminContractAdminStub) ListCards(ctx context.Context, actor entity.Act
 	return nil, nil
 }
 
+func (s *adminContractAdminStub) ListAdminMessages(ctx context.Context, actor entity.Actor) ([]entity.AdminMessage, error) {
+	return nil, nil
+}
+
 func (s *adminContractAdminStub) RepairAggregates(context.Context, entity.Actor) error {
 	return nil
 }

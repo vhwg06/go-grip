@@ -98,7 +98,7 @@ func (uc *UseCase) UpdateOrderStatus(ctx context.Context, actor entity.Actor, or
 			return err
 		}
 		if status == entity.OrderStatusDelivered && order.Status == entity.OrderStatusPending {
-			return entity.ErrInvalidInput
+			return entity.ErrInvalidTransition
 		}
 		return uc.repo.UpdateOrderStatus(ctx, orderID, status)
 	default:

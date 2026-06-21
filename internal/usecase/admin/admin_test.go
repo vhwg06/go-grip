@@ -21,6 +21,7 @@ type adminStoreStub struct {
 	updateReviewFunc  func(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 	bulkReviewsFunc   func(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
 	deleteReviewFunc  func(ctx context.Context, reviewID int64) error
+	getOrderFunc      func(ctx context.Context, orderID string) (entity.Order, error)
 }
 
 func (s *adminStoreStub) ListUsers(context.Context, entity.Pagination) ([]entity.User, int, error) {
@@ -39,7 +40,10 @@ func (s *adminStoreStub) ListOrders(context.Context, entity.Pagination, string, 
 	return nil, 0, nil
 }
 
-func (s *adminStoreStub) GetOrderByID(context.Context, string) (entity.Order, error) {
+func (s *adminStoreStub) GetOrderByID(ctx context.Context, id string) (entity.Order, error) {
+	if s.getOrderFunc != nil {
+		return s.getOrderFunc(ctx, id)
+	}
 	return entity.Order{}, nil
 }
 
@@ -242,10 +246,14 @@ func TestUseCase_OrderAndRefundAdminActions(t *testing.T) {
 				gotStatus = status
 				return nil
 			},
+			getOrderFunc: func(_ context.Context, orderID string) (entity.Order, error) {
+				return entity.Order{ID: orderID, Status: entity.OrderStatusPending}, nil
+			},
 		}, nil, "")
 
 		require.ErrorIs(t, uc.UpdateOrderStatus(ctx, userActor, "o1", entity.OrderStatusPaid), entity.ErrForbidden)
 		require.ErrorIs(t, uc.UpdateOrderStatus(ctx, adminActor, "o1", entity.OrderStatusRefunded), entity.ErrInvalidInput)
+		require.ErrorIs(t, uc.UpdateOrderStatus(ctx, adminActor, "o1", entity.OrderStatusDelivered), entity.ErrInvalidTransition)
 		require.NoError(t, uc.UpdateOrderStatus(ctx, adminActor, "o1", entity.OrderStatusCancelled))
 		require.Equal(t, "o1", gotOrderID)
 		require.Equal(t, entity.OrderStatusCancelled, gotStatus)
