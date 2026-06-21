@@ -149,6 +149,13 @@ func (r *AuthRepo) StoreRefreshSession(ctx context.Context, session entity.Refre
 	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
 		return fmt.Errorf("AuthRepo.StoreRefreshSession: %w", err)
 	}
+
+	// Also update last_login_at for the user
+	if err := r.Gorm.WithContext(ctx).Model(&models.User{}).Where("id = ?", session.UserID).Update("last_login_at", time.Now().UTC()).Error; err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("AuthRepo.StoreRefreshSession: failed to update last_login_at: %v\n", err)
+	}
+
 	return nil
 }
 

@@ -25,7 +25,7 @@ type Product struct {
 	ComparePrice            *int64            `json:"compare_price,omitempty"`
 	Status                  ProductStatus     `json:"status"`
 	Brand                   string            `json:"brand,omitempty"`
-	CategoryID              string            `json:"category_id,omitempty"`
+	CategoryID              string            `json:"category_id"`
 	ImageURL                string            `json:"image_url,omitempty"`
 	Images                  []string          `json:"images"`
 	IsHot                   bool              `json:"is_hot"`

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -48,5 +49,6 @@ func mapDomainError(err error) (int, envelope) {
 		return http.StatusConflict, envelope{Error: "conflict"}
 	}
 
+	fmt.Printf("DEBUG mapDomainError: %+v\n", err)
 	return http.StatusInternalServerError, envelope{Error: "internal_error"}
 }

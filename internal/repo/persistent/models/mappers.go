@@ -315,3 +315,27 @@ func EntityToCard(e entity.Card) Card {
 	}
 }
 
+func AdminMessageToEntity(m AdminMessage) entity.AdminMessage {
+	return entity.AdminMessage{
+		ID:          m.ID,
+		TargetType:  m.TargetType,
+		TargetValue: m.TargetValue,
+		Title:       m.Title,
+		Body:        m.Body,
+		Sender:      m.Sender,
+		CreatedAt:   m.CreatedAt,
+	}
+}
+
+func EntityToAdminMessage(e entity.AdminMessage) AdminMessage {
+	return AdminMessage{
+		ID:          e.ID,
+		TargetType:  e.TargetType,
+		TargetValue: e.TargetValue,
+		Title:       e.Title,
+		Body:        e.Body,
+		Sender:      e.Sender,
+		CreatedAt:   e.CreatedAt,
+	}
+}
+

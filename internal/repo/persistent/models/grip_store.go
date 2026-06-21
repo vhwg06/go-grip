@@ -259,3 +259,15 @@ type Card struct {
 
 func (Card) TableName() string { return "cards" }
 
+type AdminMessage struct {
+	ID          int64     `gorm:"primaryKey;autoIncrement"`
+	TargetType  string    `gorm:"not null"`
+	TargetValue string    `gorm:"column:target_value"`
+	Title       string    `gorm:"not null"`
+	Body        string    `gorm:"not null"`
+	Sender      string    `gorm:"not null"`
+	CreatedAt   time.Time `gorm:"not null;default:now()"`
+}
+
+func (AdminMessage) TableName() string { return "admin_messages" }
+

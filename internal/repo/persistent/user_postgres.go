@@ -44,6 +44,16 @@ func (r *UserRepo) Store(ctx context.Context, user *entity.User) error {
 		return fmt.Errorf("UserRepo - Store - r.Pool.Exec: %w", err)
 	}
 
+	// Also insert into login_users to keep them in sync
+	loginSql, loginArgs, err := r.Builder.
+		Insert("login_users").
+		Columns("id, username, email, password_hash, created_at, updated_at, role_id, role, status, points, trust_level, is_admin, desktop_notifications_enabled").
+		Values(user.ID, user.Username, user.Email, user.PasswordHash, user.CreatedAt, user.UpdatedAt, "00000000-0000-0000-0000-000000000005", "Subscriber", "active", 0, 0, false, false).
+		ToSql()
+	if err == nil {
+		_, _ = r.Pool.Exec(ctx, loginSql, loginArgs...)
+	}
+
 	return nil
 }
 
@@ -119,6 +129,18 @@ func (r *UserRepo) Update(ctx context.Context, user *entity.User) error {
 		return entity.ErrUserNotFound
 	}
 
+	// Also update login_users
+	loginSql, loginArgs, err := r.Builder.
+		Update("login_users").
+		Set("username", user.Username).
+		Set("email", user.Email).
+		Set("updated_at", user.UpdatedAt).
+		Where(sq.Eq{"id": user.ID}).
+		ToSql()
+	if err == nil {
+		_, _ = r.Pool.Exec(ctx, loginSql, loginArgs...)
+	}
+
 	return nil
 }
 
@@ -136,6 +158,12 @@ func (r *UserRepo) SetStatus(ctx context.Context, id string, status entity.UserS
 	}
 	if result.RowsAffected() == 0 {
 		return entity.ErrUserNotFound
+	}
+
+	// Also update login_users status
+	loginSql, loginArgs, err := r.Builder.Update("login_users").Set("status", status).Where(sq.Eq{"id": id}).ToSql()
+	if err == nil {
+		_, _ = r.Pool.Exec(ctx, loginSql, loginArgs...)
 	}
 
 	return nil

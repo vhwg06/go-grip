@@ -815,4 +815,28 @@ func (r *AdminRepo) ListCards(ctx context.Context) ([]entity.Card, error) {
 	return cards, nil
 }
 
+func (r *AdminRepo) StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error) {
+	model := models.EntityToAdminMessage(msg)
+	if model.CreatedAt.IsZero() {
+		model.CreatedAt = time.Now().UTC()
+	}
+	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
+		return entity.AdminMessage{}, fmt.Errorf("AdminRepo.StoreAdminMessage: %w", err)
+	}
+	return models.AdminMessageToEntity(model), nil
+}
+
+func (r *AdminRepo) ListAdminMessages(ctx context.Context) ([]entity.AdminMessage, error) {
+	var rows []models.AdminMessage
+	if err := r.Gorm.WithContext(ctx).Order("created_at DESC").Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("AdminRepo.ListAdminMessages: %w", err)
+	}
+
+	msgs := make([]entity.AdminMessage, 0, len(rows))
+	for _, row := range rows {
+		msgs = append(msgs, models.AdminMessageToEntity(row))
+	}
+	return msgs, nil
+}
+
 

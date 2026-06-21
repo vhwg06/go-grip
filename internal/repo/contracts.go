@@ -218,6 +218,8 @@ type (
 		UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 		BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
 		DeleteReview(ctx context.Context, reviewID int64) error
+		StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error)
+		ListAdminMessages(ctx context.Context) ([]entity.AdminMessage, error)
 		RebuildProductAggregates(ctx context.Context) error
 	}
 
