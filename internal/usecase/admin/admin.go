@@ -93,6 +93,13 @@ func (uc *UseCase) UpdateOrderStatus(ctx context.Context, actor entity.Actor, or
 	}
 	switch status {
 	case entity.OrderStatusPaid, entity.OrderStatusDelivered, entity.OrderStatusCancelled:
+		order, err := uc.repo.GetOrderByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
+		if status == entity.OrderStatusDelivered && order.Status == entity.OrderStatusPending {
+			return entity.ErrInvalidInput
+		}
 		return uc.repo.UpdateOrderStatus(ctx, orderID, status)
 	default:
 		return entity.ErrInvalidInput

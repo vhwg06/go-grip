@@ -63,11 +63,17 @@ func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]en
 			q = s
 		}
 	}
+	var role string
+	if val := ctx.Value("role"); val != nil {
+		if s, ok := val.(string); ok {
+			role = s
+		}
+	}
 
 	query := r.Gorm.WithContext(ctx).Model(&models.User{})
 
-	// Exclude admins if q is empty or does not contain "admin"
-	if q == "" || !strings.Contains(strings.ToLower(q), "admin") {
+	// Exclude admins if role is customer, OR if role is not user/admin and q does not contain "admin"
+	if role == "customer" || (role != "user" && role != "admin" && (q == "" || !strings.Contains(strings.ToLower(q), "admin"))) {
 		query = query.Where("is_admin = ?", false).Where("role != ? OR role IS NULL", "Administrator")
 	}
 
@@ -91,7 +97,7 @@ func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]en
 	for _, row := range rows {
 		u := models.UserToEntity(row)
 		u.CustomerID = &u.ID
-		if q != "" {
+		if role == "customer" || (role != "user" && q != "" && !strings.Contains(strings.ToLower(q), "admin")) {
 			var oCount int64
 			var refCount int64
 			var revCount int64

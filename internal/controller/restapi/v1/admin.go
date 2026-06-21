@@ -654,6 +654,59 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 	}
 
 	status := strings.ToUpper(string(order.Status))
+	timeline := []fiber.Map{}
+	isTerminal := order.Status == entity.OrderStatusCancelled ||
+		order.Status == entity.OrderStatusFailed ||
+		order.Status == entity.OrderStatusRefundPending ||
+		order.Status == entity.OrderStatusRefunded
+
+	if isTerminal {
+		timeline = append(timeline, fiber.Map{
+			"status":    status,
+			"timestamp": order.UpdatedAt,
+			"note":      "",
+		})
+		if order.DeliveredAt != nil {
+			timeline = append(timeline, fiber.Map{
+				"status":    "DELIVERED",
+				"timestamp": *order.DeliveredAt,
+				"note":      "",
+			})
+		}
+		if order.PaidAt != nil {
+			timeline = append(timeline, fiber.Map{
+				"status":    "PAID",
+				"timestamp": *order.PaidAt,
+				"note":      "",
+			})
+		}
+		timeline = append(timeline, fiber.Map{
+			"status":    "PENDING",
+			"timestamp": order.CreatedAt,
+			"note":      "",
+		})
+	} else {
+		timeline = append(timeline, fiber.Map{
+			"status":    "PENDING",
+			"timestamp": order.CreatedAt,
+			"note":      "",
+		})
+		if order.PaidAt != nil {
+			timeline = append(timeline, fiber.Map{
+				"status":    "PAID",
+				"timestamp": *order.PaidAt,
+				"note":      "",
+			})
+		}
+		if order.DeliveredAt != nil {
+			timeline = append(timeline, fiber.Map{
+				"status":    "DELIVERED",
+				"timestamp": *order.DeliveredAt,
+				"note":      "",
+			})
+		}
+	}
+
 	return ctx.JSON(fiber.Map{
 		"id":          order.ID,
 		"orderNumber": order.ID,
@@ -678,13 +731,7 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 		"customerEmail":   order.Email,
 		"shippingAddress": "",
 		"paymentMethod":   "",
-		"timeline": []fiber.Map{
-			{
-				"status":    status,
-				"timestamp": order.UpdatedAt,
-				"note":      "",
-			},
-		},
+		"timeline":        timeline,
 	})
 }
 
@@ -887,6 +934,9 @@ func (r *V1) gripAdminUsersList(ctx *fiber.Ctx) error {
 	uctx := ctx.UserContext()
 	if q := ctx.Query("q"); q != "" {
 		uctx = context.WithValue(uctx, "query", q)
+	}
+	if role := ctx.Query("role"); role != "" {
+		uctx = context.WithValue(uctx, "role", role)
 	}
 	users, total, err := r.adminUC.ListUsers(uctx, r.gripActor(ctx), page)
 	if err != nil {
@@ -1194,7 +1244,12 @@ func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	res := fiber.Map{
+	tradeNo := refund.TradeNo
+	if tradeNo == "" {
+		tradeNo = "AUTO-REFUND-TRADE-" + refund.OrderID
+	}
+
+	dataMap := fiber.Map{
 		"id":            refund.ID,
 		"order_id":      refund.OrderID,
 		"user_id":       refund.UserID,
@@ -1206,15 +1261,20 @@ func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
 		"product_name":  refund.ProductName,
 		"amount":        refund.Amount,
 		"points_used":   refund.PointsUsed,
-		"trade_no":      refund.TradeNo,
+		"trade_no":      tradeNo,
 		"order_status":  refund.OrderStatus,
 		"created_at":    refund.CreatedAt,
 		"updated_at":    refund.UpdatedAt,
 	}
 	if refund.ProcessedAt != nil {
-		res["processed_at"] = refund.ProcessedAt
+		dataMap["processed_at"] = refund.ProcessedAt
 	}
-	res["data"] = res
+
+	res := fiber.Map{}
+	for k, v := range dataMap {
+		res[k] = v
+	}
+	res["data"] = dataMap
 
 	return ctx.JSON(res)
 }
