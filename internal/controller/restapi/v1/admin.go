@@ -43,7 +43,6 @@ type adminExtendedUseCase interface {
 	ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error)
 }
 
-
 func parseBoolForm(value string) bool {
 	normalized := strings.TrimSpace(strings.ToLower(value))
 	return normalized == "1" || normalized == "true" || normalized == "on" || normalized == "yes"
@@ -495,6 +494,53 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
+	return ctx.JSON(apiSuccessEnvelope(updated))
+}
+
+// @Summary     Update admin product visibility status
+// @Description Updates only the visibility state of a product by ID
+// @ID          grip_admin_update_product_status
+// @Tags        admin
+// @Accept      json
+// @Produce     json
+// @Param       id path string true "Product ID"
+// @Success     200 {object} envelope
+// @Failure     400 {object} envelope
+// @Failure     403 {object} envelope
+// @Failure     500 {object} envelope
+// @Security    BearerAuth
+// @Router      /admin/products/{id}/status [patch]
+func (r *V1) gripAdminUpdateProductStatus(ctx *fiber.Ctx) error {
+	if r.adminUC == nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_usecase_not_configured"})
+	}
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_products_not_available"})
+	}
+
+	var body struct {
+		IsActive *bool `json:"isActive"`
+	}
+	if err := ctx.BodyParser(&body); err != nil || body.IsActive == nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	productID := ctx.Params("id")
+	existing, err := ext.GetProduct(ctx.UserContext(), r.gripActor(ctx), productID)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	existing.IsActive = *body.IsActive
+	updated, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), existing)
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+
 	return ctx.JSON(apiSuccessEnvelope(updated))
 }
 
@@ -1250,21 +1296,21 @@ func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
 	}
 
 	dataMap := fiber.Map{
-		"id":            refund.ID,
-		"order_id":      refund.OrderID,
-		"user_id":       refund.UserID,
-		"username":      refund.Username,
-		"reason":        refund.Reason,
-		"status":        refund.Status,
+		"id":             refund.ID,
+		"order_id":       refund.OrderID,
+		"user_id":        refund.UserID,
+		"username":       refund.Username,
+		"reason":         refund.Reason,
+		"status":         refund.Status,
 		"admin_username": refund.AdminUsername,
 		"admin_note":     refund.AdminNote,
-		"product_name":  refund.ProductName,
-		"amount":        refund.Amount,
-		"points_used":   refund.PointsUsed,
-		"trade_no":      tradeNo,
-		"order_status":  refund.OrderStatus,
-		"created_at":    refund.CreatedAt,
-		"updated_at":    refund.UpdatedAt,
+		"product_name":   refund.ProductName,
+		"amount":         refund.Amount,
+		"points_used":    refund.PointsUsed,
+		"trade_no":       tradeNo,
+		"order_status":   refund.OrderStatus,
+		"created_at":     refund.CreatedAt,
+		"updated_at":     refund.UpdatedAt,
 	}
 	if refund.ProcessedAt != nil {
 		dataMap["processed_at"] = refund.ProcessedAt
@@ -1367,9 +1413,9 @@ func (r *V1) gripAdminGetNotifications(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
 		"telegramEnabled": telegramEnabled,
-		"barkEnabled":      barkEnabled,
-		"resendEnabled":    resendEnabled,
-		"settings":         res,
+		"barkEnabled":     barkEnabled,
+		"resendEnabled":   resendEnabled,
+		"settings":        res,
 	}))
 }
 
@@ -1427,26 +1473,22 @@ func (r *V1) gripAdminListMessages(ctx *fiber.Ctx) error {
 	for _, m := range msgs {
 		status := "sent"
 		rows = append(rows, fiber.Map{
-			"id":         m.ID,
-			"title":      m.Title,
-			"subject":    m.Title,
-			"body":       m.Body,
-			"targetType": m.TargetType,
+			"id":          m.ID,
+			"title":       m.Title,
+			"subject":     m.Title,
+			"body":        m.Body,
+			"targetType":  m.TargetType,
 			"targetValue": m.TargetValue,
-			"sender":     m.Sender,
-			"status":     status,
-			"result":     status,
-			"outcome":    status,
-			"sentAt":     m.CreatedAt.Format(time.RFC3339),
-			"sent_at":    m.CreatedAt.Format(time.RFC3339),
-			"createdAt":  m.CreatedAt.Format(time.RFC3339),
-			"created_at": m.CreatedAt.Format(time.RFC3339),
+			"sender":      m.Sender,
+			"status":      status,
+			"result":      status,
+			"outcome":     status,
+			"sentAt":      m.CreatedAt.Format(time.RFC3339),
+			"sent_at":     m.CreatedAt.Format(time.RFC3339),
+			"createdAt":   m.CreatedAt.Format(time.RFC3339),
+			"created_at":  m.CreatedAt.Format(time.RFC3339),
 		})
 	}
 
 	return ctx.JSON(apiSuccessEnvelope(rows))
 }
-
-
-
-

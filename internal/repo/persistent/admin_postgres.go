@@ -620,7 +620,6 @@ func (r *AdminRepo) StoreSetting(ctx context.Context, setting entity.Setting) er
 	return nil
 }
 
-
 func (r *AdminRepo) ListSettings(ctx context.Context) ([]entity.Setting, error) {
 	var rows []models.Setting
 	if err := r.Gorm.WithContext(ctx).Order("\"key\" ASC").Find(&rows).Error; err != nil {
@@ -709,10 +708,11 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 
 	var existing models.Product
 	err := r.Gorm.WithContext(ctx).Where("id = ?", product.ID).First(&existing).Error
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(find existing): %w", err)
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		product.IsActive = true
-	} else {
-		product.IsActive = existing.IsActive
 	}
 
 	model := models.EntityToProduct(product)
@@ -844,5 +844,3 @@ func (r *AdminRepo) ListAdminMessages(ctx context.Context) ([]entity.AdminMessag
 	}
 	return msgs, nil
 }
-
-

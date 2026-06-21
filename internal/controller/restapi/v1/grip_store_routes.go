@@ -73,6 +73,7 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Get("/products", r.gripAdminListProducts)
 	adminGroup.Post("/products", r.gripAdminCreateProduct)
 	adminGroup.Patch("/products/:id", r.gripAdminUpdateProduct)
+	adminGroup.Patch("/products/:id/status", r.gripAdminUpdateProductStatus)
 	adminGroup.Delete("/products/:id", r.gripAdminDeleteProduct)
 	adminGroup.Get("/cards", r.gripAdminListCards)
 	adminGroup.Get("/categories", r.gripAdminListCategories)
