@@ -145,16 +145,37 @@ func (r *V1) gripAdminGetStoreSettings(ctx *fiber.Ctx) error {
 
 func (r *V1) gripAdminPutStoreSettingsPresence(ctx *fiber.Ctx) error {
 	var body struct {
-		BannerPresenceEnabled bool `json:"bannerPresenceEnabled"`
-		AboutPresenceEnabled  bool `json:"aboutPresenceEnabled"`
+		BannerPresenceEnabled *bool `json:"bannerPresenceEnabled"`
+		AboutPresenceEnabled  *bool `json:"aboutPresenceEnabled"`
+		BannerPresence        *struct {
+			Enabled bool `json:"enabled"`
+		} `json:"bannerPresence"`
+		AboutPresence         *struct {
+			Enabled bool `json:"enabled"`
+		} `json:"aboutPresence"`
 	}
 	if err := ctx.BodyParser(&body); err != nil {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
+
+	bannerEnabled := false
+	if body.BannerPresenceEnabled != nil {
+		bannerEnabled = *body.BannerPresenceEnabled
+	} else if body.BannerPresence != nil {
+		bannerEnabled = body.BannerPresence.Enabled
+	}
+
+	aboutEnabled := false
+	if body.AboutPresenceEnabled != nil {
+		aboutEnabled = *body.AboutPresenceEnabled
+	} else if body.AboutPresence != nil {
+		aboutEnabled = body.AboutPresence.Enabled
+	}
+
 	return r.persistStoreSettings(ctx, map[string]string{
-		"bannerPresenceEnabled": strconv.FormatBool(body.BannerPresenceEnabled),
-		"aboutPresenceEnabled":  strconv.FormatBool(body.AboutPresenceEnabled),
+		"bannerPresenceEnabled": strconv.FormatBool(bannerEnabled),
+		"aboutPresenceEnabled":  strconv.FormatBool(aboutEnabled),
 	})
 }
 
