@@ -722,16 +722,7 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 	}
 	model.UpdatedAt = now
 
-	if err := r.Gorm.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "id"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"title", "sku", "description", "price", "compare_price", "category", "image", "is_hot", "is_active",
-				"sort_order", "purchase_limit", "purchase_warning", "visibility_level",
-				"stock_count", "locked_count", "sold_count", "rating", "review_count", "updated_at",
-			}),
-		}).
-		Create(&model).Error; err != nil {
+	if err := r.Gorm.WithContext(ctx).Save(&model).Error; err != nil {
 		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct: %w", err)
 	}
 
