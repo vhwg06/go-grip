@@ -1,0 +1,6 @@
+ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS tags TEXT[];
+ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS topic TEXT;
+ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0;
+
+ALTER TABLE static_pages ADD COLUMN IF NOT EXISTS gallery TEXT[];

@@ -2,33 +2,67 @@ package persistent
 
 import (
 	"context"
-	"slices"
-	"sort"
-	"strings"
-	"sync"
+	"errors"
+	"fmt"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/pkg/postgres"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type ContentRepo struct {
 	*postgres.Postgres
-	mu       sync.RWMutex
-	articles map[string]entity.ContentArticle
-	pages    map[string]entity.StaticPage
 }
 
 func NewContentRepo(pg *postgres.Postgres) *ContentRepo {
-	return &ContentRepo{Postgres: pg, articles: map[string]entity.ContentArticle{}, pages: map[string]entity.StaticPage{}}
+	return &ContentRepo{pg}
+}
+
+func uuidOrNil(id string) *string {
+	if id == "" {
+		return nil
+	}
+	if len(id) != 36 {
+		return nil
+	}
+	return &id
 }
 
 func (r *ContentRepo) StoreArticle(ctx context.Context, article *entity.ContentArticle) error {
-	_ = ctx
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	cloned := cloneContentArticle(*article)
-	r.articles[cloned.ID] = cloned
+	sql, args, err := r.Builder.
+		Insert("content_articles").
+		Columns("id, title, slug, body, status, scheduled_at, published_at, author_id, image_url, tags, topic, priority, created_at, updated_at").
+		Values(
+			article.ID, article.Title, article.Slug, article.Body, string(article.Status),
+			article.ScheduledAt, article.PublishedAt, uuidOrNil(article.AuthorID),
+			article.ImageURL, article.Tags, article.Topic, article.Priority,
+			article.CreatedAt, article.UpdatedAt,
+		).
+		Suffix(`ON CONFLICT (id) DO UPDATE SET 
+			title = EXCLUDED.title, 
+			slug = EXCLUDED.slug, 
+			body = EXCLUDED.body, 
+			status = EXCLUDED.status, 
+			scheduled_at = EXCLUDED.scheduled_at, 
+			published_at = EXCLUDED.published_at, 
+			author_id = EXCLUDED.author_id, 
+			image_url = EXCLUDED.image_url, 
+			tags = EXCLUDED.tags, 
+			topic = EXCLUDED.topic, 
+			priority = EXCLUDED.priority, 
+			updated_at = EXCLUDED.updated_at`).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("ContentRepo - StoreArticle - r.Builder: %w", err)
+	}
+
+	_, err = r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("ContentRepo - StoreArticle - r.Pool.Exec: %w", err)
+	}
 	return nil
 }
 
@@ -37,149 +71,240 @@ func (r *ContentRepo) UpdateArticle(ctx context.Context, article *entity.Content
 }
 
 func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFilter) ([]entity.ContentArticle, int, error) {
-	_ = ctx
 	page := filter.Pagination.Normalize()
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	items := make([]entity.ContentArticle, 0, len(r.articles))
-	for _, article := range r.articles {
-		if filter.PublicOnly && article.Status != entity.ContentStatusPublished {
-			continue
-		}
-		if filter.Topic != "" && article.Topic != filter.Topic {
-			continue
-		}
-		if filter.Tag != "" && !slices.Contains(article.Tags, filter.Tag) {
-			continue
-		}
-		items = append(items, cloneContentArticle(article))
+
+	countBuilder := r.Builder.Select("COUNT(*)").From("content_articles")
+	if filter.PublicOnly {
+		countBuilder = countBuilder.Where(sq.Eq{"status": string(entity.ContentStatusPublished)})
+	}
+	if filter.Topic != "" {
+		countBuilder = countBuilder.Where(sq.Eq{"topic": filter.Topic})
+	}
+	if filter.Tag != "" {
+		countBuilder = countBuilder.Where("? = ANY(tags)", filter.Tag)
 	}
 
-	sort.Slice(items, func(i, j int) bool {
-		if items[i].Priority != items[j].Priority {
-			return items[i].Priority > items[j].Priority
-		}
-		timeI := items[i].CreatedAt
-		if items[i].PublishedAt != nil {
-			timeI = *items[i].PublishedAt
-		}
-		timeJ := items[j].CreatedAt
-		if items[j].PublishedAt != nil {
-			timeJ = *items[j].PublishedAt
-		}
-		return timeI.After(timeJ)
-	})
-
-	total := len(items)
-	if page.Offset > total {
-		return []entity.ContentArticle{}, total, nil
+	countSQL, countArgs, err := countBuilder.ToSql()
+	if err != nil {
+		return nil, 0, fmt.Errorf("ContentRepo - ListArticles - count builder: %w", err)
 	}
-	end := min(page.Offset+page.Limit, total)
-	return items[page.Offset:end], total, nil
+
+	var total int
+	if err = r.Pool.QueryRow(ctx, countSQL, countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("ContentRepo - ListArticles - count query: %w", err)
+	}
+
+	dataBuilder := r.Builder.
+		Select("id, title, slug, body, status, scheduled_at, published_at, author_id, image_url, tags, topic, priority, created_at, updated_at").
+		From("content_articles")
+
+	if filter.PublicOnly {
+		dataBuilder = dataBuilder.Where(sq.Eq{"status": string(entity.ContentStatusPublished)})
+	}
+	if filter.Topic != "" {
+		dataBuilder = dataBuilder.Where(sq.Eq{"topic": filter.Topic})
+	}
+	if filter.Tag != "" {
+		dataBuilder = dataBuilder.Where("? = ANY(tags)", filter.Tag)
+	}
+
+	dataBuilder = dataBuilder.OrderBy("priority DESC, COALESCE(published_at, created_at) DESC").
+		Limit(uint64(page.Limit)).
+		Offset(uint64(page.Offset))
+
+	dataSQL, dataArgs, err := dataBuilder.ToSql()
+	if err != nil {
+		return nil, 0, fmt.Errorf("ContentRepo - ListArticles - data builder: %w", err)
+	}
+
+	rows, err := r.Pool.Query(ctx, dataSQL, dataArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ContentRepo - ListArticles - r.Pool.Query: %w", err)
+	}
+	defer rows.Close()
+
+	articles := make([]entity.ContentArticle, 0, page.Limit)
+	for rows.Next() {
+		var art entity.ContentArticle
+		var authorPtr *string
+		var statusStr string
+		var imagePtr *string
+		var topicPtr *string
+		var tags []string
+
+		err = rows.Scan(
+			&art.ID, &art.Title, &art.Slug, &art.Body, &statusStr,
+			&art.ScheduledAt, &art.PublishedAt, &authorPtr, &imagePtr,
+			&tags, &topicPtr, &art.Priority, &art.CreatedAt, &art.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("ContentRepo - ListArticles - rows.Scan: %w", err)
+		}
+
+		art.Status = entity.ContentStatus(statusStr)
+		if authorPtr != nil {
+			art.AuthorID = *authorPtr
+		}
+		if imagePtr != nil {
+			art.ImageURL = *imagePtr
+		}
+		if topicPtr != nil {
+			art.Topic = *topicPtr
+		}
+		art.Tags = tags
+
+		articles = append(articles, art)
+	}
+
+	return articles, total, nil
 }
 
 func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.ContentArticle, error) {
-	_ = ctx
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	for _, article := range r.articles {
-		if article.ID == idOrSlug || article.Slug == idOrSlug {
-			return cloneContentArticle(article), nil
-		}
+	sql, args, err := r.Builder.
+		Select("id, title, slug, body, status, scheduled_at, published_at, author_id, image_url, tags, topic, priority, created_at, updated_at").
+		From("content_articles").
+		Where("id = ? OR slug = ?", idOrSlug, idOrSlug).
+		ToSql()
+	if err != nil {
+		return entity.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Builder: %w", err)
 	}
-	return entity.ContentArticle{}, entity.ErrNotFound
+
+	var art entity.ContentArticle
+	var authorPtr *string
+	var statusStr string
+	var imagePtr *string
+	var topicPtr *string
+	var tags []string
+
+	err = r.Pool.QueryRow(ctx, sql, args...).Scan(
+		&art.ID, &art.Title, &art.Slug, &art.Body, &statusStr,
+		&art.ScheduledAt, &art.PublishedAt, &authorPtr, &imagePtr,
+		&tags, &topicPtr, &art.Priority, &art.CreatedAt, &art.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.ContentArticle{}, entity.ErrNotFound
+		}
+		return entity.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Pool.QueryRow: %w", err)
+	}
+
+	art.Status = entity.ContentStatus(statusStr)
+	if authorPtr != nil {
+		art.AuthorID = *authorPtr
+	}
+	if imagePtr != nil {
+		art.ImageURL = *imagePtr
+	}
+	if topicPtr != nil {
+		art.Topic = *topicPtr
+	}
+	art.Tags = tags
+
+	return art, nil
 }
 
 func (r *ContentRepo) DeleteArticle(ctx context.Context, id string) error {
-	_ = ctx
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if _, ok := r.articles[id]; !ok {
+	sql, args, err := r.Builder.
+		Delete("content_articles").
+		Where("id = ?", id).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("ContentRepo - DeleteArticle - r.Builder: %w", err)
+	}
+
+	result, err := r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("ContentRepo - DeleteArticle - r.Pool.Exec: %w", err)
+	}
+	if result.RowsAffected() == 0 {
 		return entity.ErrNotFound
 	}
-	delete(r.articles, id)
 	return nil
 }
 
 func (r *ContentRepo) StorePage(ctx context.Context, page *entity.StaticPage) error {
-	_ = ctx
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	cloned := cloneStaticPage(*page)
-	r.pages[cloned.Slug] = cloned
+	if page.ID == "" {
+		page.ID = uuid.New().String()
+	}
+
+	sql, args, err := r.Builder.
+		Insert("static_pages").
+		Columns("id, title, slug, body, template_key, status, gallery, updated_at").
+		Values(page.ID, page.Title, page.Slug, page.Body, page.TemplateKey, string(page.Status), page.Gallery, page.UpdatedAt).
+		Suffix(`ON CONFLICT (slug) DO UPDATE SET 
+			title = EXCLUDED.title, 
+			body = EXCLUDED.body, 
+			template_key = EXCLUDED.template_key, 
+			status = EXCLUDED.status, 
+			gallery = EXCLUDED.gallery, 
+			updated_at = EXCLUDED.updated_at`).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("ContentRepo - StorePage - r.Builder: %w", err)
+	}
+
+	_, err = r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("ContentRepo - StorePage - r.Pool.Exec: %w", err)
+	}
 	return nil
 }
 
 func (r *ContentRepo) UpdatePage(ctx context.Context, page *entity.StaticPage) error {
+	existing, err := r.GetPageBySlug(ctx, page.Slug)
+	if err == nil {
+		page.ID = existing.ID
+	}
 	return r.StorePage(ctx, page)
 }
 
 func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.StaticPage, error) {
-	_ = ctx
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	page, ok := r.pages[slug]
-	if !ok {
-		return entity.StaticPage{}, entity.ErrNotFound
+	sql, args, err := r.Builder.
+		Select("id, title, slug, body, template_key, status, gallery, updated_at").
+		From("static_pages").
+		Where("slug = ?", slug).
+		ToSql()
+	if err != nil {
+		return entity.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Builder: %w", err)
 	}
-	return cloneStaticPage(page), nil
+
+	var pg entity.StaticPage
+	var statusStr string
+	var gallery []string
+
+	err = r.Pool.QueryRow(ctx, sql, args...).Scan(
+		&pg.ID, &pg.Title, &pg.Slug, &pg.Body, &pg.TemplateKey, &statusStr, &gallery, &pg.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.StaticPage{}, entity.ErrNotFound
+		}
+		return entity.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Pool.QueryRow: %w", err)
+	}
+
+	pg.Status = entity.ContentStatus(statusStr)
+	pg.Gallery = gallery
+
+	return pg, nil
 }
 
 func (r *ContentRepo) PublishDue(ctx context.Context) (int, error) {
-	_ = ctx
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	now := time.Now().UTC()
-	count := 0
-	for id, article := range r.articles {
-		if article.Status == entity.ContentStatusScheduled && article.ScheduledAt != nil && !article.ScheduledAt.After(now) {
-			article.Status = entity.ContentStatusPublished
-			article.PublishedAt = &now
-			r.articles[id] = article
-			count++
-		}
-	}
-	return count, nil
-}
 
-func cloneContentArticle(article entity.ContentArticle) entity.ContentArticle {
-	cloned := article
-	cloned.ID = strings.Clone(article.ID)
-	cloned.Title = strings.Clone(article.Title)
-	cloned.Slug = strings.Clone(article.Slug)
-	cloned.Body = strings.Clone(article.Body)
-	cloned.AuthorID = strings.Clone(article.AuthorID)
-	cloned.ImageURL = strings.Clone(article.ImageURL)
-	cloned.Topic = strings.Clone(article.Topic)
-	if article.ScheduledAt != nil {
-		scheduledAt := *article.ScheduledAt
-		cloned.ScheduledAt = &scheduledAt
+	sql, args, err := r.Builder.
+		Update("content_articles").
+		Set("status", string(entity.ContentStatusPublished)).
+		Set("published_at", now).
+		Where("status = ? AND scheduled_at <= ?", string(entity.ContentStatusScheduled), now).
+		ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("ContentRepo - PublishDue - r.Builder: %w", err)
 	}
-	if article.PublishedAt != nil {
-		publishedAt := *article.PublishedAt
-		cloned.PublishedAt = &publishedAt
-	}
-	if len(article.Tags) > 0 {
-		cloned.Tags = make([]string, len(article.Tags))
-		for i, tag := range article.Tags {
-			cloned.Tags[i] = strings.Clone(tag)
-		}
-	}
-	return cloned
-}
 
-func cloneStaticPage(page entity.StaticPage) entity.StaticPage {
-	cloned := page
-	cloned.ID = strings.Clone(page.ID)
-	cloned.Title = strings.Clone(page.Title)
-	cloned.Slug = strings.Clone(page.Slug)
-	cloned.Body = strings.Clone(page.Body)
-	cloned.TemplateKey = strings.Clone(page.TemplateKey)
-	if len(page.Gallery) > 0 {
-		cloned.Gallery = make([]string, len(page.Gallery))
-		for i, item := range page.Gallery {
-			cloned.Gallery[i] = strings.Clone(item)
-		}
+	result, err := r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return 0, fmt.Errorf("ContentRepo - PublishDue - r.Pool.Exec: %w", err)
 	}
-	return cloned
+
+	return int(result.RowsAffected()), nil
 }
