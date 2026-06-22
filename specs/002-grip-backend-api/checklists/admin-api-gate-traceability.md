@@ -6,7 +6,7 @@ Status: revised for the no-cards/no-points/no-checkin contract.
 
 | Requirement group | Endpoint / contract area | Expected verification |
 |---|---|---|
-| Product list/create/edit/media editor | `/v1/admin/products`, `/v1/admin/products/{id}`, `/v1/admin/products/{id}/form`, `/v1/admin/products/{id}/status` | Admin product API/UI suites prove editor readback and persisted product state |
+| Product list/create/edit Product Editor | `/v1/admin/products`, `/v1/admin/products/{id}`, `/v1/admin/products/{id}/form`, `/v1/admin/products/{id}/status` | Admin product API/UI suites prove the single Product Editor readback plus persisted commercial, media, specs, and intro-article state |
 | Category structure | `/v1/admin/categories` | Admin product API/UI suites prove create, hierarchy, and reorder behavior |
 | User account read/block | `/v1/admin/users`, `/v1/admin/users/{id}/block` | Admin user API/UI suites prove account summary, block/unblock, and customer handoff semantics |
 | Admin orders | `/v1/admin/orders`, `/v1/admin/orders/{id}`, `/v1/admin/orders/{id}/status` | Admin order suites prove list/detail/transition behavior |

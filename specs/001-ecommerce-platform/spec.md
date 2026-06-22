@@ -38,7 +38,7 @@ System administrators and support staff log in to the backoffice to perform thei
 
 ### User Story 2 - Product Catalog Management (Priority: P1)
 
-Store managers use the backend to define product structures, upload media, and manage catalog data.
+Store managers use the backend to define product structures, upload media, manage catalog data, and attach product-owned intro articles.
 
 **Why this priority**: The storefront cannot function without products, categories, prices, and media.
 
@@ -123,6 +123,7 @@ Content managers write blog posts, schedule them, and manage static pages like "
 - **FR-001**: System MUST manage user accounts with create, update, lock, and self-profile update capabilities.
 - **FR-002**: System MUST enforce five role levels (Administrator, Editor, Author, Contributor, Subscriber) with Administrator-only role changes and lock/unlock actions.
 - **FR-003**: System MUST manage products with required fields (title, description, price, SKU, media) and enforce SKU uniqueness.
+- **FR-003a**: System MUST allow a product to own an optional intro article used as editorial content on the product detail page.
 - **FR-004**: System MUST manage a category tree and allow products to belong to multiple categories and tags.
 - **FR-005**: System MUST store and expose product attributes (brand, variants, specs) for filtering and display.
 - **FR-006**: System MUST provide storefront browsing data including keyword search, price and brand filters, sorting (name, price, date), and pagination.
@@ -143,7 +144,7 @@ Content managers write blog posts, schedule them, and manage static pages like "
 
 - **User**: Admin or staff account with profile data, role, and status (active or locked).
 - **Role**: Permission grouping defining allowed operations for admin and management actions.
-- **Product**: Sellable item with title, SKU, pricing, description, status, attributes, and media references.
+- **Product**: Sellable item with title, SKU, pricing, description, status, attributes, media references, and an optional linked intro article.
 - **Category**: Hierarchical grouping for products with parent-child relationships.
 - **Tag**: Label used to group products or content across categories.
 - **Media Asset**: Uploaded image with type, size, alt text, and linkage to products or content.

@@ -49,13 +49,13 @@ The store prevents invalid order transitions, processes payment notifications sa
 
 ### User Story 4 - Admin Operates Catalog, Users, Orders, and Settings (Priority: P2)
 
-Admins manage products, categories, orders, refunds, users, settings, reviews, and messages from privileged REST and UI flows. Product editorial/media stays on `/admin/products`; there is no `/admin/cards` surface.
+Admins manage products, categories, orders, refunds, users, settings, reviews, and messages from privileged REST and UI flows. Product editorial/media stays on `/admin/products`; there is no `/admin/cards` surface, and the product row opens the single Product Editor for commercial, media, detail/specs, and intro-article editing.
 
-**Independent Test**: Sign in as admin, exercise product edit/media save, block/unblock users, manage settings, process refunds, and confirm removed admin cards/user-points routes stay absent.
+**Independent Test**: Sign in as admin, exercise product editor readback/save for commercial fields, media, specs, and linked intro article, block/unblock users, manage settings, process refunds, and confirm removed admin cards/user-points routes stay absent.
 
 **Acceptance Scenarios**:
 
-1. **Given** an admin, **When** they create or edit a product, **Then** commercial and editorial changes persist through `/v1/admin/products` and its form/readback routes.
+1. **Given** an admin, **When** they create or edit a product from the product row, **Then** the single Product Editor persists commercial data, product images, detail/spec content, and linked intro-article state through `/v1/admin/products` and `/v1/admin/products/{id}/form`.
 2. **Given** an admin, **When** they manage user state, **Then** block/unblock and account read-model behavior work without points mutation fields or endpoints.
 3. **Given** an admin, **When** they manage store settings, **Then** the structured settings contract persists without check-in or refund-reclaim flags.
 4. **Given** a removed admin route such as `/v1/admin/cards`, **When** it is requested, **Then** the backend does not expose that route.
@@ -69,7 +69,7 @@ Admins manage products, categories, orders, refunds, users, settings, reviews, a
 - **FR-003**: System MUST identify admin users by configured usernames and surface admin eligibility in the current-user profile.
 - **FR-004**: System MUST expose buyer profile information needed by the current client without points or check-in fields.
 - **FR-005**: System MUST list and search visible products for anonymous and signed-in users.
-- **FR-006**: System MUST expose product detail data including price, visibility, stock, and review summary.
+- **FR-006**: System MUST expose product detail data including price, visibility, stock, review summary, and a linked published intro article when one is attached to the product.
 - **FR-007**: System MUST provide public settings and announcement data required by the client.
 - **FR-008**: System MUST calculate checkout previews without points deduction fields.
 - **FR-009**: System MUST create orders only when product availability, visibility, purchase rules, and buyer permissions pass.
@@ -78,7 +78,7 @@ Admins manage products, categories, orders, refunds, users, settings, reviews, a
 - **FR-012**: System MUST allow eligible users to cancel pending orders.
 - **FR-013**: System MUST allow buyers to request refunds and admins to approve or reject them.
 - **FR-014**: System MUST allow admins to create, update, reorder, enable, disable, and delete products and categories.
-- **FR-015**: System MUST keep product editorial/media save flows on `/v1/admin/products` and related form routes.
+- **FR-015**: System MUST keep the single Product Editor flow on `/v1/admin/products` and related form routes, including product-owned images, detail/spec content, and linked intro-article association.
 - **FR-016**: System MUST allow admins to list users, read account state, and block or unblock users.
 - **FR-017**: System MUST provide structured admin/public store-settings read and write contracts without check-in or refund-reclaim fields.
 - **FR-018**: System MUST reject removed routes including `/v1/admin/cards`, `/v1/admin/users/:id/points`, `/v1/profile/checkin`, and `/v1/user/profile/checkin-status`.
@@ -88,7 +88,7 @@ Admins manage products, categories, orders, refunds, users, settings, reviews, a
 ### Key Entities
 
 - **User**: Buyer or admin identity with username, email, trust/access state, notification preference, admin eligibility, and blocked status.
-- **Product**: Sellable catalog entity with pricing, visibility, stock summary, media/editorial data, and category membership.
+- **Product**: Sellable catalog entity with pricing, visibility, stock summary, media/editorial data, category membership, and an optional linked intro article owned in product context.
 - **Order**: Purchase record containing product snapshot, buyer identity or email, quantity, amount, payment reference, and lifecycle status.
 - **Payment Confirmation**: Gateway result tied to an order and processed idempotently.
 - **Refund Request**: Support request tied to an order with reason, status, and admin decision metadata.
@@ -102,7 +102,7 @@ Admins manage products, categories, orders, refunds, users, settings, reviews, a
 
 - **SC-001**: Published REST and Swagger contracts contain no `/v1/admin/cards`, no user-points mutation route, and no check-in routes.
 - **SC-002**: Profile and user/admin read models contain no `points`, `pointsUsed`, `pointsToUse`, `checkinEnabled`, or `checkinReward` fields.
-- **SC-003**: Product create/edit/media flows are fully represented by `/v1/admin/products` and product form readback routes.
+- **SC-003**: Product create/edit/media/detail/spec/intro-article flows are fully represented by `/v1/admin/products` and product form readback routes without any `/v1/admin/cards` dependency.
 - **SC-004**: `go test ./... -run '^$'` completes successfully after the removal pass.
 - **SC-005**: Focused checkout/orders/profile/admin suites pass against the no-cards/no-points contract.
 - **SC-006**: Frontend Playwright product/user/customer/profile/admin-product/admin-user slices pass against the same contract.

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"sync"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -15,10 +17,21 @@ import (
 
 type ContentRepo struct {
 	*postgres.Postgres
+	mu       sync.RWMutex
+	articles map[string]entity.ContentArticle
+	pages    map[string]entity.StaticPage
 }
 
 func NewContentRepo(pg *postgres.Postgres) *ContentRepo {
-	return &ContentRepo{pg}
+	return &ContentRepo{
+		Postgres: pg,
+		articles: map[string]entity.ContentArticle{},
+		pages:    map[string]entity.StaticPage{},
+	}
+}
+
+func (r *ContentRepo) useMemory() bool {
+	return r == nil || r.Postgres == nil || r.Pool == nil
 }
 
 func uuidOrNil(id string) *string {
@@ -32,6 +45,14 @@ func uuidOrNil(id string) *string {
 }
 
 func (r *ContentRepo) StoreArticle(ctx context.Context, article *entity.ContentArticle) error {
+	if r.useMemory() {
+		_ = ctx
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.articles[article.ID] = *article
+		return nil
+	}
+
 	sql, args, err := r.Builder.
 		Insert("content_articles").
 		Columns("id, title, slug, body, status, scheduled_at, published_at, author_id, image_url, tags, topic, priority, created_at, updated_at").
@@ -71,6 +92,65 @@ func (r *ContentRepo) UpdateArticle(ctx context.Context, article *entity.Content
 }
 
 func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFilter) ([]entity.ContentArticle, int, error) {
+	if r.useMemory() {
+		_ = ctx
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+
+		items := make([]entity.ContentArticle, 0, len(r.articles))
+		for _, article := range r.articles {
+			if filter.PublicOnly && article.Status != entity.ContentStatusPublished {
+				continue
+			}
+			if filter.Topic != "" && article.Topic != filter.Topic {
+				continue
+			}
+			if filter.Tag != "" {
+				found := false
+				for _, tag := range article.Tags {
+					if tag == filter.Tag {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+			}
+			items = append(items, article)
+		}
+
+		sort.Slice(items, func(i, j int) bool {
+			if items[i].Priority != items[j].Priority {
+				return items[i].Priority > items[j].Priority
+			}
+
+			leftTime := items[i].CreatedAt
+			if items[i].PublishedAt != nil {
+				leftTime = *items[i].PublishedAt
+			}
+			rightTime := items[j].CreatedAt
+			if items[j].PublishedAt != nil {
+				rightTime = *items[j].PublishedAt
+			}
+
+			return leftTime.After(rightTime)
+		})
+
+		total := len(items)
+		page := filter.Pagination.Normalize()
+		if page.Offset >= total {
+			return []entity.ContentArticle{}, total, nil
+		}
+
+		end := page.Offset + page.Limit
+		if end > total {
+			end = total
+		}
+
+		return append([]entity.ContentArticle(nil), items[page.Offset:end]...), total, nil
+	}
+
 	page := filter.Pagination.Normalize()
 
 	countBuilder := r.Builder.Select("COUNT(*)").From("content_articles")
@@ -160,6 +240,18 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 }
 
 func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.ContentArticle, error) {
+	if r.useMemory() {
+		_ = ctx
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		for _, article := range r.articles {
+			if article.ID == idOrSlug || article.Slug == idOrSlug {
+				return article, nil
+			}
+		}
+		return entity.ContentArticle{}, entity.ErrNotFound
+	}
+
 	sql, args, err := r.Builder.
 		Select("id, title, slug, body, status, scheduled_at, published_at, author_id, image_url, tags, topic, priority, created_at, updated_at").
 		From("content_articles").
@@ -204,6 +296,17 @@ func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.C
 }
 
 func (r *ContentRepo) DeleteArticle(ctx context.Context, id string) error {
+	if r.useMemory() {
+		_ = ctx
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		if _, ok := r.articles[id]; !ok {
+			return entity.ErrNotFound
+		}
+		delete(r.articles, id)
+		return nil
+	}
+
 	sql, args, err := r.Builder.
 		Delete("content_articles").
 		Where("id = ?", id).
@@ -223,6 +326,17 @@ func (r *ContentRepo) DeleteArticle(ctx context.Context, id string) error {
 }
 
 func (r *ContentRepo) StorePage(ctx context.Context, page *entity.StaticPage) error {
+	if r.useMemory() {
+		_ = ctx
+		if page.ID == "" {
+			page.ID = uuid.New().String()
+		}
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.pages[page.Slug] = *page
+		return nil
+	}
+
 	if page.ID == "" {
 		page.ID = uuid.New().String()
 	}
@@ -259,6 +373,17 @@ func (r *ContentRepo) UpdatePage(ctx context.Context, page *entity.StaticPage) e
 }
 
 func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.StaticPage, error) {
+	if r.useMemory() {
+		_ = ctx
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		page, ok := r.pages[slug]
+		if !ok {
+			return entity.StaticPage{}, entity.ErrNotFound
+		}
+		return page, nil
+	}
+
 	sql, args, err := r.Builder.
 		Select("id, title, slug, body, template_key, status, gallery, updated_at").
 		From("static_pages").
@@ -289,6 +414,24 @@ func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.St
 }
 
 func (r *ContentRepo) PublishDue(ctx context.Context) (int, error) {
+	if r.useMemory() {
+		_ = ctx
+		now := time.Now().UTC()
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		published := 0
+		for id, article := range r.articles {
+			if article.Status == entity.ContentStatusScheduled && article.ScheduledAt != nil && !article.ScheduledAt.After(now) {
+				article.Status = entity.ContentStatusPublished
+				article.PublishedAt = &now
+				r.articles[id] = article
+				published++
+			}
+		}
+		return published, nil
+	}
+
 	now := time.Now().UTC()
 
 	sql, args, err := r.Builder.

@@ -2,6 +2,7 @@ package persistent
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 func newTestAdminRepo(t *testing.T) *AdminRepo {
 	t.Helper()
 
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=private", t.Name())), &gorm.Config{})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&models.Product{}, &models.ProductDetail{}))
 

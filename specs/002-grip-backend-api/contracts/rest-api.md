@@ -22,7 +22,7 @@
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/v1/catalog/products` | List visible products |
-| GET | `/v1/catalog/products/{id}` | Product detail |
+| GET | `/v1/catalog/products/{id}` | Product detail with optional linked intro article |
 | GET | `/v1/catalog/products/{id}/buy-meta` | Product purchase/review metadata |
 | GET | `/v1/catalog/search` | Search visible products |
 | GET | `/v1/catalog/categories` | List categories |
@@ -72,13 +72,15 @@ Removed from this contract:
 | POST | `/v1/admin/products` | Create product |
 | PATCH | `/v1/admin/products/{id}` | Update product |
 | PATCH | `/v1/admin/products/{id}/status` | Toggle active state |
-| GET | `/v1/admin/products/{id}/form` | Read full product editor model |
+| GET | `/v1/admin/products/{id}/form` | Read full Product Editor model including linked intro article metadata |
 | GET | `/v1/admin/categories` | List categories |
 | POST | `/v1/admin/categories` | Create/update/reorder category |
 
 Contract rule:
 
 - Product media/editorial flow remains inside `/v1/admin/products` and `{id}/form`.
+- Product row `Edit` / `Quick edit` both target the same Product Editor contract.
+- Product Editor scope includes commercial fields, product images, detail/spec content, and linked intro article attach/replace/clear state.
 - There is no `/v1/admin/cards` contract.
 
 ## Admin Users, Orders, Refunds, Settings

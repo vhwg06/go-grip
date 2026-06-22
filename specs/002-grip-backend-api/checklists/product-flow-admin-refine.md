@@ -17,7 +17,7 @@ Context: Playwright is treated as source of truth for current business checks. C
    - slug uniqueness + normalization behavior
    - price format/rounding consistency from UI -> backend
 2. Admin update product UI contract
-   - persist + reload consistency for title/price/category/visibility/specs/images
+   - persist + reload consistency for title/price/category/visibility/specs/images/intro article
    - optimistic/stale write behavior (if any) not defined
 3. Admin product list behavior
    - search/filter/sort/pagination semantics not defined as product-flow requirements
@@ -33,6 +33,7 @@ Context: Playwright is treated as source of truth for current business checks. C
 - `PF-ADMIN-UI-001` create product with mandatory fields + validation errors
 - `PF-ADMIN-UI-002` create product with specs + image and verify storefront detail rendering
 - `PF-ADMIN-UI-003` update product and verify replaced specs + updated media
+- `PF-ADMIN-UI-008` attach, replace, and clear a product-owned intro article without leaving product context
 - `PF-ADMIN-UI-004` toggle visibility and verify catalog visibility boundary
 - `PF-ADMIN-UI-005` delete product and verify not reachable on catalog/detail
 - `PF-ADMIN-UI-006` admin list query/sort/pagination consistency

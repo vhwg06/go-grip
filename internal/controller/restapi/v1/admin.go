@@ -156,7 +156,10 @@ func (r *V1) validateIntroArticleLink(ctx *fiber.Ctx, product entity.Product) er
 }
 
 func (r *V1) hydrateProductIntroArticle(ctx *fiber.Ctx, product *entity.Product, publicOnly bool) {
-	if product == nil || strings.TrimSpace(product.IntroArticleID) == "" || r.content == nil {
+	if product == nil {
+		return
+	}
+	if strings.TrimSpace(product.IntroArticleID) == "" || r.content == nil {
 		product.IntroArticle = nil
 		return
 	}

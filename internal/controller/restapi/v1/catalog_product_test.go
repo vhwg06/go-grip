@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/usecase/catalog"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"

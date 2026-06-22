@@ -2127,6 +2127,69 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_evrone_go-clean-template_internal_entity.ContentArticle": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.ContentStatus"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_evrone_go-clean-template_internal_entity.ContentStatus": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "scheduled",
+                "published"
+            ],
+            "x-enum-varnames": [
+                "ContentStatusDraft",
+                "ContentStatusScheduled",
+                "ContentStatusPublished"
+            ]
+        },
         "github_com_evrone_go-clean-template_internal_entity.Page": {
             "type": "object",
             "properties": {
@@ -2174,6 +2237,12 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "intro_article": {
+                    "$ref": "#/definitions/github_com_evrone_go-clean-template_internal_entity.ContentArticle"
+                },
+                "intro_article_id": {
+                    "type": "string"
                 },
                 "is_active": {
                     "type": "boolean"
