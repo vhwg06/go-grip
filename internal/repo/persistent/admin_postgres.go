@@ -263,13 +263,12 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 		models.RefundRequest
 		ProductName string `gorm:"column:product_name"`
 		Amount      int64  `gorm:"column:amount"`
-		PointsUsed  int    `gorm:"column:points_used"`
 		TradeNo     string `gorm:"column:trade_no"`
 		OrderStatus string `gorm:"column:order_status"`
 	}
 
 	var rows []refundRow
-	if err := db.Select("refund_requests.*, orders.product_name, orders.amount, orders.points_used, orders.trade_no, orders.status AS order_status").
+	if err := db.Select("refund_requests.*, orders.product_name, orders.amount, orders.trade_no, orders.status AS order_status").
 		Joins("LEFT JOIN orders ON orders.order_id = refund_requests.order_id").
 		Order("refund_requests.created_at DESC, refund_requests.id DESC").
 		Find(&rows).Error; err != nil {
@@ -289,7 +288,6 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 			AdminNote:     row.AdminNote,
 			ProductName:   row.ProductName,
 			Amount:        entity.Amount(row.Amount),
-			PointsUsed:    row.PointsUsed,
 			TradeNo:       row.TradeNo,
 			OrderStatus:   row.OrderStatus,
 			CreatedAt:     row.CreatedAt,
@@ -309,14 +307,13 @@ func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entit
 		models.RefundRequest
 		ProductName string `gorm:"column:product_name"`
 		Amount      int64  `gorm:"column:amount"`
-		PointsUsed  int    `gorm:"column:points_used"`
 		TradeNo     string `gorm:"column:trade_no"`
 		OrderStatus string `gorm:"column:order_status"`
 	}
 
 	var row refundRow
 	if err := r.Gorm.WithContext(ctx).Table("refund_requests").
-		Select("refund_requests.*, orders.product_name, orders.amount, orders.points_used, orders.trade_no, orders.status AS order_status").
+		Select("refund_requests.*, orders.product_name, orders.amount, orders.trade_no, orders.status AS order_status").
 		Joins("LEFT JOIN orders ON orders.order_id = refund_requests.order_id").
 		Where("refund_requests.id = ?", refundID).
 		First(&row).Error; err != nil {
@@ -337,7 +334,6 @@ func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entit
 		AdminNote:     row.AdminNote,
 		ProductName:   row.ProductName,
 		Amount:        entity.Amount(row.Amount),
-		PointsUsed:    row.PointsUsed,
 		TradeNo:       row.TradeNo,
 		OrderStatus:   row.OrderStatus,
 		CreatedAt:     row.CreatedAt,
@@ -415,9 +411,6 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 			"status":     string(nextOrderStatus),
 			"updated_at": now,
 		}
-		if approve {
-			orderUpdates["card_key"] = ""
-		}
 		if err := tx.Model(&models.Order{}).
 			Where("order_id = ?", order.OrderID).
 			Updates(orderUpdates).Error; err != nil {
@@ -425,14 +418,6 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 		}
 
 		if approve {
-			if order.UserID != "" && order.PointsUsed > 0 {
-				if err := tx.Model(&models.User{}).
-					Where("id = ?", order.UserID).
-					Update("points", gorm.Expr("points + ?", order.PointsUsed)).Error; err != nil {
-					return fmt.Errorf("AdminRepo.ProcessRefund(refund points): %w", err)
-				}
-			}
-
 			if err := tx.Model(&models.Product{}).
 				Where("id = ?", order.ProductID).
 				Updates(map[string]any{
@@ -455,7 +440,6 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 			AdminNote:     note,
 			ProductName:   order.ProductName,
 			Amount:        entity.Amount(order.Amount),
-			PointsUsed:    order.PointsUsed,
 			TradeNo:       order.TradeNo,
 			OrderStatus:   string(nextOrderStatus),
 			ProcessedAt:   &now,
@@ -562,14 +546,6 @@ func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, statu
 		}
 
 		if status == entity.OrderStatusCancelled {
-			if order.UserID != "" && order.PointsUsed > 0 {
-				if err := tx.Model(&models.User{}).
-					Where("id = ?", order.UserID).
-					Update("points", gorm.Expr("points + ?", order.PointsUsed)).Error; err != nil {
-					return fmt.Errorf("AdminRepo.UpdateOrderStatus(refund points): %w", err)
-				}
-			}
-
 			if current == entity.OrderStatusPending {
 				if err := tx.Model(&models.Product{}).
 					Where("id = ?", order.ProductID).
@@ -797,19 +773,6 @@ func (r *AdminRepo) DeleteCategory(ctx context.Context, categoryID string) error
 		return fmt.Errorf("AdminRepo.DeleteCategory: %w", err)
 	}
 	return nil
-}
-
-func (r *AdminRepo) ListCards(ctx context.Context) ([]entity.Card, error) {
-	var rows []models.Card
-	if err := r.Gorm.WithContext(ctx).Order("id ASC").Find(&rows).Error; err != nil {
-		return nil, fmt.Errorf("AdminRepo.ListCards: %w", err)
-	}
-
-	cards := make([]entity.Card, 0, len(rows))
-	for _, row := range rows {
-		cards = append(cards, models.CardToEntity(row))
-	}
-	return cards, nil
 }
 
 func (r *AdminRepo) StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error) {

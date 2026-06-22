@@ -1650,20 +1650,6 @@ func (mr *MockProfileRepositoryMockRecorder) GetProfile(ctx, userID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockProfileRepository)(nil).GetProfile), ctx, userID)
 }
 
-// RecordDailyCheckin mocks base method.
-func (m *MockProfileRepository) RecordDailyCheckin(ctx context.Context, checkin entity.DailyCheckin) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordDailyCheckin", ctx, checkin)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecordDailyCheckin indicates an expected call of RecordDailyCheckin.
-func (mr *MockProfileRepositoryMockRecorder) RecordDailyCheckin(ctx, checkin any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDailyCheckin", reflect.TypeOf((*MockProfileRepository)(nil).RecordDailyCheckin), ctx, checkin)
-}
-
 // UpdateProfile mocks base method.
 func (m *MockProfileRepository) UpdateProfile(ctx context.Context, user entity.User) (entity.User, error) {
 	m.ctrl.T.Helper()

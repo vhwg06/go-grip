@@ -16,7 +16,6 @@ type Order struct {
 	StatusText       string      `json:"status_text,omitempty"`
 	StatusColor      string      `json:"status_color,omitempty"`
 	TradeNo          string      `json:"trade_no,omitempty"`
-	PointsUsed       int         `json:"points_used"`
 	CurrentPaymentID string      `json:"current_payment_id,omitempty"`
 	PaidAt           *time.Time  `json:"paid_at,omitempty"`
 	DeliveredAt      *time.Time  `json:"delivered_at,omitempty"`
@@ -57,7 +56,6 @@ type RefundRequest struct {
 	AdminNote     string       `json:"admin_note,omitempty"`
 	ProductName   string       `json:"product_name,omitempty"`
 	Amount        Amount       `json:"amount,omitempty"`
-	PointsUsed    int          `json:"points_used,omitempty"`
 	TradeNo       string       `json:"trade_no,omitempty"`
 	OrderStatus   string       `json:"order_status,omitempty"`
 	ProcessedAt   *time.Time   `json:"processed_at,omitempty"`

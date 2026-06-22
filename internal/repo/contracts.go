@@ -163,7 +163,6 @@ type (
 		CreateOrderWithReservation(ctx context.Context, actor entity.Actor, order entity.Order) (entity.Order, error)
 		AttachPayment(ctx context.Context, payment entity.Payment) error
 		UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
-		DeductPoints(ctx context.Context, userID string, points int) error
 		ReleaseReservation(ctx context.Context, orderID string) error
 	}
 
@@ -177,7 +176,6 @@ type (
 	ProfileRepository interface {
 		GetProfile(ctx context.Context, userID string) (entity.User, error)
 		UpdateProfile(ctx context.Context, user entity.User) (entity.User, error)
-		RecordDailyCheckin(ctx context.Context, checkin entity.DailyCheckin) error
 	}
 
 	WishlistRepository interface {
@@ -201,7 +199,6 @@ type (
 	AdminRepository interface {
 		ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error)
 		UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error
-		UpdateUserPoints(ctx context.Context, userID string, points int) error
 		ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
 		GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
 		ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
@@ -213,7 +210,6 @@ type (
 		ListSettings(ctx context.Context) ([]entity.Setting, error)
 		StoreSetting(ctx context.Context, setting entity.Setting) error
 		DeleteSetting(ctx context.Context, key string) error
-		ListCards(ctx context.Context) ([]entity.Card, error)
 		ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, ReviewModerationStats, int, error)
 		UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 		BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)

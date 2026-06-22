@@ -28,23 +28,17 @@ func (uc *UseCase) SetPaymentVerifier(verifier webapi.PaymentVerifier) {
 
 var _ usecase.Checkout = (*UseCase)(nil)
 
-func (uc *UseCase) Preview(_ context.Context, _ entity.Actor, _ string, quantity int, usePoints bool) (usecase.AmountBreakdown, error) {
+func (uc *UseCase) Preview(_ context.Context, _ entity.Actor, _ string, quantity int) (usecase.AmountBreakdown, error) {
 	subtotal := entity.Amount(quantity * 10000)
-	points := 0
-	if usePoints {
-		points = quantity * 100
-	}
-	final := max(subtotal-entity.Amount(points), 0)
 
 	return usecase.AmountBreakdown{
-		Subtotal:    subtotal,
-		PointsToUse: points,
-		FinalPrice:  final,
+		Subtotal:   subtotal,
+		FinalPrice: subtotal,
 	}, nil
 }
 
-func (uc *UseCase) CreateOrder(ctx context.Context, actor entity.Actor, productID string, quantity int, email string, usePoints bool) (entity.Order, error) {
-	preview, err := uc.Preview(ctx, actor, productID, quantity, usePoints)
+func (uc *UseCase) CreateOrder(ctx context.Context, actor entity.Actor, productID string, quantity int, email string) (entity.Order, error) {
+	preview, err := uc.Preview(ctx, actor, productID, quantity)
 	if err != nil {
 		return entity.Order{}, err
 	}
@@ -58,20 +52,12 @@ func (uc *UseCase) CreateOrder(ctx context.Context, actor entity.Actor, productI
 		UserID:     actor.UserID,
 		Username:   actor.Username,
 		Status:     entity.OrderStatusPending,
-		PointsUsed: preview.PointsToUse,
 		CreatedAt:  time.Now().UTC(),
 		UpdatedAt:  time.Now().UTC(),
 	}
 	created, err := uc.checkoutRepo.CreateOrderWithReservation(ctx, actor, order)
 	if err != nil {
 		return entity.Order{}, fmt.Errorf("CheckoutUseCase - CreateOrder - checkoutRepo.CreateOrderWithReservation: %w", err)
-	}
-
-	if preview.FinalPrice == 0 {
-		if err := uc.checkoutRepo.UpdateOrderStatus(ctx, created.ID, entity.OrderStatusDelivered); err != nil {
-			return entity.Order{}, fmt.Errorf("CheckoutUseCase - CreateOrder - checkoutRepo.UpdateOrderStatus: %w", err)
-		}
-		created.Status = entity.OrderStatusDelivered
 	}
 
 	return created, nil

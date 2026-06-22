@@ -238,6 +238,38 @@
 
 ---
 
+## Phase 9: Remove Cards And Points Domain
+
+**Purpose**: Remove digital card fulfillment and points/reward behavior end-to-end, including destructive schema cleanup and contract rewrites.
+
+### Tracking Rules
+
+- `[x]` done
+- `[~]` in progress
+- `[ ]` not started
+- `[-]` removed or not applicable
+
+### 9A. Documentation and contract lock
+
+- [~] T115 Update specs, quickstart, and contract docs to remove cards/points behavior and lock the new no-cards/no-points scope
+- [ ] T116 Mark prior card/points compatibility assumptions and historical-data reads as stale across backend planning docs
+
+### 9B. Domain, persistence, and route removal
+
+- [ ] T117 Remove `Card`, `DailyCheckin`, `PointsUsed`, and related points/card fields from entities, repo contracts, and usecase contracts
+- [ ] T118 Remove admin cards and admin user-points routes plus profile/check-in/points routes and request/response shapes
+- [ ] T119 Remove checkout/order/refund logic that reserves cards, delivers card keys, deducts points, or restores points/cards
+- [ ] T120 Remove maintenance jobs and repository methods that exist only for cards/points lifecycle management
+- [ ] T121 Add destructive migrations that drop cards tables, points columns, and related indexes/relations
+
+### 9C. Verification
+
+- [ ] T122 Rewrite or remove backend tests that depend on cards/points and add verification for removed routes/fields
+- [ ] T123 Run focused `go test` coverage for checkout/orders/profile/admin after the no-cards/no-points rewrite
+- [ ] T124 Regenerate/update swagger artifacts so removed fields and routes are absent from published contracts
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

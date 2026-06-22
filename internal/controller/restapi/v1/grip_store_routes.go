@@ -43,7 +43,6 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	profileGroup := apiV1Group.Group("/profile", middleware.Auth(r.jwtManager))
 	profileGroup.Get("/", r.gripProfileGet)
 	profileGroup.Patch("/", r.gripProfileUpdate)
-	profileGroup.Post("/check-in", r.gripProfileCheckin)
 	profileGroup.Get("/security", r.gripProfileGetSecurity)
 	profileGroup.Get("/sessions", r.gripProfileGetSessions)
 
@@ -75,7 +74,6 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Patch("/products/:id", r.gripAdminUpdateProduct)
 	adminGroup.Patch("/products/:id/status", r.gripAdminUpdateProductStatus)
 	adminGroup.Delete("/products/:id", r.gripAdminDeleteProduct)
-	adminGroup.Get("/cards", r.gripAdminListCards)
 	adminGroup.Get("/categories", r.gripAdminListCategories)
 	adminGroup.Post("/categories", r.gripAdminCreateCategory)
 	adminGroup.Patch("/categories/:id", r.gripAdminUpdateCategory)
@@ -91,7 +89,6 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Post("/refunds/:id/reject", r.gripAdminRejectRefund)
 	adminGroup.Get("/users", r.gripAdminUsersList)
 	adminGroup.Patch("/users/:id", r.gripAdminUsersUpdate)
-	adminGroup.Patch("/users/:id/points", r.gripAdminUsersUpdatePoints)
 	adminGroup.Patch("/users/:id/block", r.gripAdminUsersUpdateBlock)
 	adminGroup.Get("/reviews", r.gripAdminListReviews)
 	adminGroup.Put("/reviews/:id/approve", r.gripAdminApproveReview)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
@@ -39,10 +38,6 @@ func (r *ProfileRepo) UpdateProfile(ctx context.Context, user entity.User) (enti
 		"email":                         user.Email,
 		"display_name":                  user.DisplayName,
 		"desktop_notifications_enabled": user.DesktopNotificationsEnabled,
-		"points":                        user.Points,
-		"last_checkin_at":               profileTimeOrZero(user.LastCheckinAt),
-		"consecutive_days":              user.ConsecutiveDays,
-		"updated_at":                    time.Now().UTC(),
 	}
 
 	if err := r.Gorm.WithContext(ctx).
@@ -55,28 +50,6 @@ func (r *ProfileRepo) UpdateProfile(ctx context.Context, user entity.User) (enti
 	return r.GetProfile(ctx, user.ID)
 }
 
-func (r *ProfileRepo) RecordDailyCheckin(ctx context.Context, checkin entity.DailyCheckin) error {
-	model := models.DailyCheckin{
-		UserID:      checkin.UserID,
-		CheckinDate: checkin.CheckinDate,
-		Reward:      checkin.RewardAmount,
-		StreakAfter: checkin.StreakAfter,
-		CreatedAt:   checkin.CreatedAt,
-	}
-	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
-		return fmt.Errorf("ProfileRepo.RecordDailyCheckin: %w", err)
-	}
-	return nil
-}
-
-func profileTimeOrZero(t *time.Time) time.Time {
-	if t == nil {
-		return time.Time{}
-	}
-	return *t
-}
-
 func (r *ProfileRepo) GetGorm() *gorm.DB {
 	return r.Gorm
 }
-

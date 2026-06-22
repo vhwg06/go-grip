@@ -113,8 +113,8 @@ type (
 	}
 
 	Checkout interface {
-		Preview(ctx context.Context, actor entity.Actor, productID string, quantity int, usePoints bool) (AmountBreakdown, error)
-		CreateOrder(ctx context.Context, actor entity.Actor, productID string, quantity int, email string, usePoints bool) (entity.Order, error)
+		Preview(ctx context.Context, actor entity.Actor, productID string, quantity int) (AmountBreakdown, error)
+		CreateOrder(ctx context.Context, actor entity.Actor, productID string, quantity int, email string) (entity.Order, error)
 		PaymentParams(ctx context.Context, actor entity.Actor, orderID string) (PaymentParams, error)
 		PaymentNotify(ctx context.Context, payload map[string]string) error
 		PaymentStatus(ctx context.Context, orderID string) (entity.Order, error)
@@ -130,7 +130,6 @@ type (
 	Profile interface {
 		Get(ctx context.Context, actor entity.Actor) (entity.User, error)
 		Update(ctx context.Context, actor entity.Actor, email string, displayName string, desktopNotificationsEnabled bool) (entity.User, error)
-		Checkin(ctx context.Context, actor entity.Actor) (entity.DailyCheckin, error)
 	}
 
 	Wishlist interface {
@@ -154,7 +153,6 @@ type (
 	Admin interface {
 		ListUsers(ctx context.Context, actor entity.Actor, page entity.Pagination) ([]entity.User, int, error)
 		UpdateUserStatus(ctx context.Context, actor entity.Actor, userID string, status entity.UserStatus) error
-		UpdateUserPoints(ctx context.Context, actor entity.Actor, userID string, points int) error
 		ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error)
 		GetOrder(ctx context.Context, actor entity.Actor, orderID string) (entity.Order, error)
 		RepairAggregates(ctx context.Context, actor entity.Actor) error
@@ -167,9 +165,8 @@ type (
 )
 
 type AmountBreakdown struct {
-	Subtotal    entity.Amount `json:"subtotal"`
-	PointsToUse int           `json:"points_to_use"`
-	FinalPrice  entity.Amount `json:"final_price"`
+	Subtotal   entity.Amount `json:"subtotal"`
+	FinalPrice entity.Amount `json:"final_price"`
 }
 
 type PaymentParams struct {

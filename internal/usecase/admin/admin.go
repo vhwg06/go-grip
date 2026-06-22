@@ -66,13 +66,6 @@ func (uc *UseCase) UpdateUserStatus(ctx context.Context, actor entity.Actor, use
 	return uc.repo.UpdateUserStatus(ctx, userID, status)
 }
 
-func (uc *UseCase) UpdateUserPoints(ctx context.Context, actor entity.Actor, userID string, points int) error {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return err
-	}
-	return uc.repo.UpdateUserPoints(ctx, userID, points)
-}
-
 func (uc *UseCase) ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, 0, err
@@ -132,13 +125,6 @@ func (uc *UseCase) GetOrderRefundStatus(ctx context.Context, actor entity.Actor,
 		return entity.RefundRequest{}, err
 	}
 	return uc.repo.GetOrderRefundStatus(ctx, orderID)
-}
-
-func (uc *UseCase) ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error) {
-	if err := uc.ensureAdmin(actor); err != nil {
-		return nil, err
-	}
-	return uc.repo.ListCards(ctx)
 }
 
 func (uc *UseCase) DecideRefund(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error) {

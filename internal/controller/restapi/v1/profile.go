@@ -52,20 +52,6 @@ func (r *V1) gripProfileUpdate(ctx *fiber.Ctx) error {
 	return ctx.JSON(apiSuccessEnvelope(user))
 }
 
-func (r *V1) gripProfileCheckin(ctx *fiber.Ctx) error {
-	if r.profileUC == nil {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "profile_usecase_not_configured"})
-	}
-
-	checkin, err := r.profileUC.Checkin(ctx.UserContext(), r.gripActor(ctx))
-	if err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	return ctx.JSON(apiSuccessEnvelope(checkin))
-}
-
 func (r *V1) gripProfileGetSecurity(ctx *fiber.Ctx) error {
 	ext, ok := r.profileUC.(interface {
 		GetSecurityPosture(ctx context.Context, actor entity.Actor) (any, error)
@@ -99,4 +85,3 @@ func (r *V1) gripProfileGetSessions(ctx *fiber.Ctx) error {
 
 	return ctx.JSON(apiSuccessEnvelope(data))
 }
-

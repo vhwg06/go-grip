@@ -64,18 +64,6 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: update product stock: %w", err)
 		}
 
-		if actor.UserID != "" && order.PointsUsed > 0 {
-			pointsResult := tx.Model(&models.User{}).
-				Where("id = ? AND points >= ?", actor.UserID, order.PointsUsed).
-				Update("points", gorm.Expr("points - ?", order.PointsUsed))
-			if pointsResult.Error != nil {
-				return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: deduct points: %w", pointsResult.Error)
-			}
-			if pointsResult.RowsAffected == 0 {
-				return entity.ErrPointsInsufficient
-			}
-		}
-
 		if err := tx.Create(&orderModel).Error; err != nil {
 			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: create order: %w", err)
 		}
@@ -97,18 +85,6 @@ func currentLockedCount(tx *gorm.DB, productID string) (int, error) {
 		return 0, err
 	}
 
-	var reservedCards int64
-	if err := tx.Model(&models.Card{}).
-		Where("product_id = ?", productID).
-		Where("is_used = ?", false).
-		Where("reserved_order_id <> ''").
-		Count(&reservedCards).Error; err != nil {
-		return 0, err
-	}
-
-	if int(reservedCards) > pendingOrders {
-		return int(reservedCards), nil
-	}
 	return pendingOrders, nil
 }
 
@@ -193,21 +169,6 @@ func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, st
 
 		return nil
 	})
-}
-
-func (r *CheckoutRepo) DeductPoints(ctx context.Context, userID string, points int) error {
-	result := r.Gorm.WithContext(ctx).
-		Model(&models.User{}).
-		Where("id = ? AND points >= ?", userID, points).
-		UpdateColumn("points", gorm.Expr("points - ?", points))
-
-	if result.Error != nil {
-		return fmt.Errorf("CheckoutRepo.DeductPoints: %w", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return entity.ErrPointsInsufficient
-	}
-	return nil
 }
 
 func (r *CheckoutRepo) ReleaseReservation(ctx context.Context, orderID string) error {

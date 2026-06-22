@@ -14,13 +14,10 @@ type User struct {
 	Status                      UserStatus `json:"status,omitempty" example:"active"`
 	Provider                    string     `json:"provider,omitempty"`
 	ProviderID                  string     `json:"provider_id,omitempty"`
-	Points                      int        `json:"points"`
 	TrustLevel                  int        `json:"trust_level"`
 	IsAdmin                     bool       `json:"is_admin"`
 	DesktopNotificationsEnabled bool       `json:"desktop_notifications_enabled"`
 	LastLoginAt                 *time.Time `json:"last_login_at,omitempty"`
-	LastCheckinAt               *time.Time `json:"last_checkin_at,omitempty"`
-	ConsecutiveDays             int        `json:"consecutive_days"`
 	CustomerID                  *string    `json:"customerId,omitempty"`
 	OrderCount                  *int       `json:"orderCount,omitempty"`
 	RefundCount                 *int       `json:"refundCount,omitempty"`
@@ -45,13 +42,4 @@ type RefreshSession struct {
 	ExpiresAt time.Time `json:"expires_at"`
 	RevokedAt time.Time `json:"revoked_at"`
 	CreatedAt time.Time `json:"created_at"`
-}
-
-type DailyCheckin struct {
-	ID           int64     `json:"id"`
-	UserID       string    `json:"user_id"`
-	CheckinDate  time.Time `json:"checkin_date"`
-	RewardAmount int       `json:"reward_amount"`
-	StreakAfter  int       `json:"streak_after"`
-	CreatedAt    time.Time `json:"created_at"`
 }

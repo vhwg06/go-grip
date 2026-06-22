@@ -40,7 +40,6 @@ type adminExtendedUseCase interface {
 	SendBroadcast(ctx context.Context, actor entity.Actor, title, body string) error
 	SendTargeted(ctx context.Context, actor entity.Actor, userID, title, body string) error
 	ListAdminMessages(ctx context.Context, actor entity.Actor) ([]entity.AdminMessage, error)
-	ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error)
 }
 
 func parseBoolForm(value string) bool {
@@ -762,7 +761,6 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 		"deliveredAt": order.DeliveredAt,
 		"updatedAt":   order.UpdatedAt,
 		"tradeNo":     order.TradeNo,
-		"pointsUsed":  order.PointsUsed,
 		"items": []fiber.Map{
 			{
 				"productName": order.ProductName,
@@ -994,7 +992,7 @@ func (r *V1) gripAdminUsersList(ctx *fiber.Ctx) error {
 }
 
 // @Summary     Update admin user state
-// @Description Updates user status or points from admin panel
+// @Description Updates user status from admin panel
 // @ID          grip_admin_update_user
 // @Tags        admin
 // @Accept      json
@@ -1009,7 +1007,6 @@ func (r *V1) gripAdminUsersList(ctx *fiber.Ctx) error {
 func (r *V1) gripAdminUsersUpdate(ctx *fiber.Ctx) error {
 	var body struct {
 		Status *entity.UserStatus `json:"status"`
-		Points *int               `json:"points"`
 	}
 	if err := ctx.BodyParser(&body); err != nil {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
@@ -1023,30 +1020,7 @@ func (r *V1) gripAdminUsersUpdate(ctx *fiber.Ctx) error {
 			return ctx.Status(status).JSON(payload)
 		}
 	}
-	if body.Points != nil {
-		if err := r.adminUC.UpdateUserPoints(ctx.UserContext(), actor, ctx.Params("id"), *body.Points); err != nil {
-			status, payload := mapDomainError(err)
-			return ctx.Status(status).JSON(payload)
-		}
-	}
-
 	return ctx.SendStatus(http.StatusNoContent)
-}
-
-func (r *V1) gripAdminUsersUpdatePoints(ctx *fiber.Ctx) error {
-	var body struct {
-		Points int `json:"points"`
-	}
-	if err := ctx.BodyParser(&body); err != nil {
-		status, payload := mapDomainError(entity.ErrInvalidInput)
-		return ctx.Status(status).JSON(payload)
-	}
-	actor := r.gripActor(ctx)
-	if err := r.adminUC.UpdateUserPoints(ctx.UserContext(), actor, ctx.Params("id"), body.Points); err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-	return ctx.SendStatus(http.StatusOK)
 }
 
 func (r *V1) gripAdminUsersUpdateBlock(ctx *fiber.Ctx) error {
@@ -1306,7 +1280,6 @@ func (r *V1) gripAdminGetRefund(ctx *fiber.Ctx) error {
 		"admin_note":     refund.AdminNote,
 		"product_name":   refund.ProductName,
 		"amount":         refund.Amount,
-		"points_used":    refund.PointsUsed,
 		"trade_no":       tradeNo,
 		"order_status":   refund.OrderStatus,
 		"created_at":     refund.CreatedAt,
@@ -1358,21 +1331,6 @@ func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
 		"status":           1,
 		"msg":              "Pending refund request exists",
 	})
-}
-
-func (r *V1) gripAdminListCards(ctx *fiber.Ctx) error {
-	ext, ok := r.adminUC.(adminExtendedUseCase)
-	if !ok {
-		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_products_not_available"})
-	}
-
-	cards, err := ext.ListCards(ctx.UserContext(), r.gripActor(ctx))
-	if err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
-	}
-
-	return ctx.JSON(apiSuccessEnvelope(cards))
 }
 
 func (r *V1) gripAdminGetNotifications(ctx *fiber.Ctx) error {

@@ -18,13 +18,10 @@ func UserToEntity(m User) entity.User {
 		Status:                      entity.UserStatus(m.Status),
 		Provider:                    m.Provider,
 		ProviderID:                  m.ProviderID,
-		Points:                      m.Points,
 		TrustLevel:                  m.TrustLevel,
 		IsAdmin:                     m.IsAdmin,
 		DesktopNotificationsEnabled: m.DesktopNotificationsEnabled,
 		LastLoginAt:                 nullableTime(m.LastLoginAt),
-		LastCheckinAt:               nullableTime(m.LastCheckinAt),
-		ConsecutiveDays:             m.ConsecutiveDays,
 		IsBlocked:                   m.Status == string(entity.UserStatusLocked),
 		CreatedAt:                   m.CreatedAt,
 		UpdatedAt:                   m.UpdatedAt,
@@ -43,13 +40,10 @@ func EntityToUser(e entity.User) User {
 		Status:                      string(e.Status),
 		Provider:                    e.Provider,
 		ProviderID:                  e.ProviderID,
-		Points:                      e.Points,
 		TrustLevel:                  e.TrustLevel,
 		IsAdmin:                     e.IsAdmin,
 		DesktopNotificationsEnabled: e.DesktopNotificationsEnabled,
 		LastLoginAt:                 denullTime(e.LastLoginAt),
-		LastCheckinAt:               denullTime(e.LastCheckinAt),
-		ConsecutiveDays:             e.ConsecutiveDays,
 		CreatedAt:                   e.CreatedAt,
 		UpdatedAt:                   e.UpdatedAt,
 	}
@@ -174,7 +168,6 @@ func OrderToEntity(m Order) entity.Order {
 		UserID:           m.UserID,
 		Username:         m.Username,
 		Payee:            m.Payee,
-		PointsUsed:       m.PointsUsed,
 		Quantity:         m.Quantity,
 		CurrentPaymentID: m.CurrentPaymentID,
 		StatusText:       m.StatusText,
@@ -198,7 +191,6 @@ func EntityToOrder(e entity.Order) Order {
 		UserID:           e.UserID,
 		Username:         e.Username,
 		Payee:            e.Payee,
-		PointsUsed:       e.PointsUsed,
 		Quantity:         e.Quantity,
 		CurrentPaymentID: e.CurrentPaymentID,
 		StatusText:       e.StatusText,
@@ -287,34 +279,6 @@ func valueStringPointer(v string) *string {
 	return &copied
 }
 
-func CardToEntity(m Card) entity.Card {
-	return entity.Card{
-		ID:              m.ID,
-		ProductID:       m.ProductID,
-		CardKey:         m.CardKey,
-		IsUsed:          m.IsUsed,
-		ReservedOrderID: m.ReservedOrderID,
-		ReservedAt:      m.ReservedAt,
-		ExpiresAt:       m.ExpiresAt,
-		UsedAt:          m.UsedAt,
-		CreatedAt:       m.CreatedAt,
-	}
-}
-
-func EntityToCard(e entity.Card) Card {
-	return Card{
-		ID:              e.ID,
-		ProductID:       e.ProductID,
-		CardKey:         e.CardKey,
-		IsUsed:          e.IsUsed,
-		ReservedOrderID: e.ReservedOrderID,
-		ReservedAt:      e.ReservedAt,
-		ExpiresAt:       e.ExpiresAt,
-		UsedAt:          e.UsedAt,
-		CreatedAt:       e.CreatedAt,
-	}
-}
-
 func AdminMessageToEntity(m AdminMessage) entity.AdminMessage {
 	return entity.AdminMessage{
 		ID:          m.ID,
@@ -338,4 +302,3 @@ func EntityToAdminMessage(e entity.AdminMessage) AdminMessage {
 		CreatedAt:   e.CreatedAt,
 	}
 }
-

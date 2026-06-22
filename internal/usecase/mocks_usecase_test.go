@@ -1438,21 +1438,6 @@ func (m *MockProfile) EXPECT() *MockProfileMockRecorder {
 	return m.recorder
 }
 
-// Checkin mocks base method.
-func (m *MockProfile) Checkin(ctx context.Context, actor entity.Actor) (entity.DailyCheckin, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checkin", ctx, actor)
-	ret0, _ := ret[0].(entity.DailyCheckin)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Checkin indicates an expected call of Checkin.
-func (mr *MockProfileMockRecorder) Checkin(ctx, actor any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkin", reflect.TypeOf((*MockProfile)(nil).Checkin), ctx, actor)
-}
-
 // Get mocks base method.
 func (m *MockProfile) Get(ctx context.Context, actor entity.Actor) (entity.User, error) {
 	m.ctrl.T.Helper()

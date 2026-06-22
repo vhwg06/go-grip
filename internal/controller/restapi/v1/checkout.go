@@ -9,18 +9,16 @@ import (
 )
 
 type gripCheckoutPreviewResponse struct {
-	ProductID   string        `json:"productId"`
-	Quantity    int           `json:"quantity"`
-	Subtotal    entity.Amount `json:"subtotal"`
-	PointsToUse int           `json:"pointsToUse"`
-	FinalPrice  entity.Amount `json:"finalPrice"`
+	ProductID  string        `json:"productId"`
+	Quantity   int           `json:"quantity"`
+	Subtotal   entity.Amount `json:"subtotal"`
+	FinalPrice entity.Amount `json:"finalPrice"`
 }
 
 type gripCreateOrderRequest struct {
 	ProductID string `json:"productId"`
 	Quantity  int    `json:"quantity"`
 	Email     string `json:"email"`
-	UsePoints bool   `json:"usePoints"`
 }
 
 type gripRefundRequest struct {
@@ -32,13 +30,12 @@ func (r *V1) gripCheckoutUC() (usecase.Checkout, bool) {
 }
 
 // @Summary     Preview checkout
-// @Description Calculates subtotal, points usage, and final payable amount
+// @Description Calculates subtotal and final payable amount
 // @ID          grip_checkout_preview
 // @Tags        checkout
 // @Produce     json
 // @Param       product_id query string true "Product ID"
 // @Param       quantity query int true "Quantity"
-// @Param       use_points query bool false "Apply user points"
 // @Success     200 {object} envelope
 // @Failure     400 {object} envelope
 // @Failure     401 {object} envelope
@@ -59,24 +56,22 @@ func (r *V1) gripCheckoutPreview(ctx *fiber.Ctx) error {
 
 	productID := ctx.Query("product_id")
 	quantity := ctx.QueryInt("quantity", 1)
-	usePoints := ctx.QueryBool("use_points", false)
 	if productID == "" || quantity <= 0 {
 		status, body := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(body)
 	}
 
-	breakdown, err := uc.Preview(ctx.UserContext(), actor, productID, quantity, usePoints)
+	breakdown, err := uc.Preview(ctx.UserContext(), actor, productID, quantity)
 	if err != nil {
 		status, body := mapDomainError(err)
 		return ctx.Status(status).JSON(body)
 	}
 
 	return ctx.JSON(apiSuccessEnvelope(gripCheckoutPreviewResponse{
-		ProductID:   productID,
-		Quantity:    quantity,
-		Subtotal:    breakdown.Subtotal,
-		PointsToUse: breakdown.PointsToUse,
-		FinalPrice:  breakdown.FinalPrice,
+		ProductID:  productID,
+		Quantity:   quantity,
+		Subtotal:   breakdown.Subtotal,
+		FinalPrice: breakdown.FinalPrice,
 	}))
 }
 
@@ -115,7 +110,7 @@ func (r *V1) gripCreateOrder(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	order, err := uc.CreateOrder(ctx.UserContext(), actor, body.ProductID, body.Quantity, body.Email, body.UsePoints)
+	order, err := uc.CreateOrder(ctx.UserContext(), actor, body.ProductID, body.Quantity, body.Email)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
