@@ -1,5 +1,5 @@
 ALTER TABLE products
-ADD COLUMN IF NOT EXISTS intro_article_id TEXT;
+ADD COLUMN IF NOT EXISTS intro_article_id UUID;
 
 CREATE INDEX IF NOT EXISTS idx_products_intro_article_id
 ON products(intro_article_id);

@@ -46,7 +46,7 @@ type Product struct {
 	SortOrder       int       `gorm:"not null;default:0"`
 	PurchaseLimit   int       `gorm:"not null;default:0"`
 	PurchaseWarning string    `gorm:"type:text"`
-	IntroArticleID  *string   `gorm:"column:intro_article_id;type:text;index"`
+	IntroArticleID  *string   `gorm:"column:intro_article_id;type:uuid;index"`
 	VisibilityLevel int       `gorm:"not null;default:-1"`
 	StockCount      int       `gorm:"not null;default:0"`
 	LockedCount     int       `gorm:"not null;default:0"`
