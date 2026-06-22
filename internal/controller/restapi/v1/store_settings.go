@@ -103,9 +103,8 @@ type storeSettingsFloatingAction struct {
 }
 
 type storeSettingsVisibility struct {
-	NoIndexEnabled     bool `json:"noIndexEnabled"`
-	WishlistEnabled    bool `json:"wishlistEnabled"`
-	RefundReclaimCards bool `json:"refundReclaimCards"`
+	NoIndexEnabled  bool `json:"noIndexEnabled"`
+	WishlistEnabled bool `json:"wishlistEnabled"`
 }
 
 type storeSettingsRegistry struct {
@@ -148,7 +147,7 @@ func (r *V1) gripAdminPutStoreSettingsPresence(ctx *fiber.Ctx) error {
 		BannerPresence        *struct {
 			Enabled bool `json:"enabled"`
 		} `json:"bannerPresence"`
-		AboutPresence         *struct {
+		AboutPresence *struct {
 			Enabled bool `json:"enabled"`
 		} `json:"aboutPresence"`
 	}
@@ -281,9 +280,8 @@ func (r *V1) gripAdminPutStoreSettingsVisibility(ctx *fiber.Ctx) error {
 	}
 
 	return r.persistStoreSettings(ctx, map[string]string{
-		"noIndexEnabled":     strconv.FormatBool(body.NoIndexEnabled),
-		"wishlistEnabled":    strconv.FormatBool(body.WishlistEnabled),
-		"refundReclaimCards": strconv.FormatBool(body.RefundReclaimCards),
+		"noIndexEnabled":  strconv.FormatBool(body.NoIndexEnabled),
+		"wishlistEnabled": strconv.FormatBool(body.WishlistEnabled),
 	})
 }
 
@@ -411,9 +409,8 @@ func buildStoreSettingsConfig(settings []entity.Setting) storeSettingsConfig {
 			{Key: "scroll_to_top", Enabled: true, Target: nil},
 		}),
 		Visibility: storeSettingsVisibility{
-			NoIndexEnabled:     parseBoolSetting(values["noIndexEnabled"], false),
-			WishlistEnabled:    parseBoolSetting(values["wishlistEnabled"], true),
-			RefundReclaimCards: parseBoolSetting(values["refundReclaimCards"], false),
+			NoIndexEnabled:  parseBoolSetting(values["noIndexEnabled"], false),
+			WishlistEnabled: parseBoolSetting(values["wishlistEnabled"], true),
 		},
 		Registry: storeSettingsRegistry{
 			Enabled: true,

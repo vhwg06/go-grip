@@ -252,7 +252,7 @@
 ### 9A. Documentation and contract lock
 
 - [~] T115 Update specs, quickstart, and contract docs to remove cards/points behavior and lock the new no-cards/no-points scope
-- [ ] T116 Mark prior card/points compatibility assumptions and historical-data reads as stale across backend planning docs
+- [~] T116 Mark prior card/points compatibility assumptions and historical-data reads as stale across backend planning docs
 
 ### 9B. Domain, persistence, and route removal
 
@@ -286,7 +286,7 @@
 ### User Story Dependencies
 
 - **US1 Browse and Buy Digital Goods**: Foundation only; recommended MVP.
-- **US2 Authenticate and Manage Account Benefits**: Foundation only for auth/profile; points-spend validation integrates with US1.
+- **US2 Authenticate and Manage Account Benefits**: Foundation only for auth/profile after the loyalty/check-in removal.
 - **US3 Protect Stock, Payments, and Order Lifecycle**: Foundation plus US1 checkout/order primitives.
 - **US4 Admin Operates the Store**: Foundation plus product/order/user entities; can be developed alongside US3 with interface coordination.
 - **US5 Engage Users with Wishlist, Reviews, and Notifications**: Foundation plus delivered-order behavior for reviews.

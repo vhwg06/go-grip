@@ -28,7 +28,7 @@ func (s *importerStub) Import(ctx context.Context, items []entity.ImportItem) (e
 	return entity.ImportResult{}, nil
 }
 
-func TestAdminCardsAndImportEndpoints(t *testing.T) {
+func TestAdminOperationalUtilityEndpoints(t *testing.T) {
 	t.Parallel()
 
 	jwtManager := jwt.New("secret", time.Hour)

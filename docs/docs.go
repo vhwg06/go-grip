@@ -183,7 +183,7 @@ const docTemplate = `{
                 ]
             },
             "patch": {
-                "description": "Updates existing product fields",
+                "description": "Updates a product by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -195,6 +195,62 @@ const docTemplate = `{
                 ],
                 "summary": "Update admin product",
                 "operationId": "grip_admin_update_product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller_restapi_v1.envelope"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/products/{id}/status": {
+            "patch": {
+                "description": "Updates only the visibility state of a product by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update admin product visibility status",
+                "operationId": "grip_admin_update_product_status",
                 "parameters": [
                     {
                         "type": "string",
@@ -277,7 +333,7 @@ const docTemplate = `{
         },
         "/admin/users/{id}": {
             "patch": {
-                "description": "Updates user status or points from admin panel",
+                "description": "Updates user status from admin panel",
                 "consumes": [
                     "application/json"
                 ],
@@ -1230,7 +1286,7 @@ const docTemplate = `{
         },
         "/checkout/preview": {
             "get": {
-                "description": "Calculates subtotal, points usage, and final payable amount",
+                "description": "Calculates subtotal and final payable amount",
                 "produces": [
                     "application/json"
                 ],
@@ -1253,12 +1309,6 @@ const docTemplate = `{
                         "name": "quantity",
                         "in": "query",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Apply user points",
-                        "name": "use_points",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1999,12 +2049,12 @@ const docTemplate = `{
         "entity.User": {
             "type": "object",
             "properties": {
-                "consecutive_days": {
-                    "type": "integer"
-                },
                 "created_at": {
                     "type": "string",
                     "example": "2026-01-01T00:00:00Z"
+                },
+                "customerId": {
+                    "type": "string"
                 },
                 "desktop_notifications_enabled": {
                     "type": "boolean"
@@ -2024,13 +2074,13 @@ const docTemplate = `{
                 "is_admin": {
                     "type": "boolean"
                 },
-                "last_checkin_at": {
-                    "type": "string"
+                "is_blocked": {
+                    "type": "boolean"
                 },
                 "last_login_at": {
                     "type": "string"
                 },
-                "points": {
+                "orderCount": {
                     "type": "integer"
                 },
                 "provider": {
@@ -2038,6 +2088,12 @@ const docTemplate = `{
                 },
                 "provider_id": {
                     "type": "string"
+                },
+                "refundCount": {
+                    "type": "integer"
+                },
+                "reviewCount": {
+                    "type": "integer"
                 },
                 "role": {
                     "allOf": [
@@ -2370,9 +2426,6 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "integer"
-                },
-                "usePoints": {
-                    "type": "boolean"
                 }
             }
         },

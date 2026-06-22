@@ -59,10 +59,10 @@ definitions:
     type: object
   entity.User:
     properties:
-      consecutive_days:
-        type: integer
       created_at:
         example: "2026-01-01T00:00:00Z"
+        type: string
+      customerId:
         type: string
       desktop_notifications_enabled:
         type: boolean
@@ -77,16 +77,20 @@ definitions:
         type: string
       is_admin:
         type: boolean
-      last_checkin_at:
-        type: string
+      is_blocked:
+        type: boolean
       last_login_at:
         type: string
-      points:
+      orderCount:
         type: integer
       provider:
         type: string
       provider_id:
         type: string
+      refundCount:
+        type: integer
+      reviewCount:
+        type: integer
       role:
         allOf:
         - $ref: '#/definitions/github_com_evrone_go-clean-template_internal_entity.RoleName'
@@ -312,8 +316,6 @@ definitions:
         type: string
       quantity:
         type: integer
-      usePoints:
-        type: boolean
     type: object
   internal_controller_restapi_v1.gripListResponse:
     properties:
@@ -548,7 +550,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Updates existing product fields
+      description: Updates a product by ID
       operationId: grip_admin_update_product
       parameters:
       - description: Product ID
@@ -580,6 +582,42 @@ paths:
       summary: Update admin product
       tags:
       - admin
+  /admin/products/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates only the visibility state of a product by ID
+      operationId: grip_admin_update_product_status
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_controller_restapi_v1.envelope'
+      security:
+      - BearerAuth: []
+      summary: Update admin product visibility status
+      tags:
+      - admin
   /admin/users:
     get:
       description: Lists users with pagination
@@ -608,7 +646,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Updates user status or points from admin panel
+      description: Updates user status from admin panel
       operationId: grip_admin_update_user
       parameters:
       - description: User ID
@@ -1228,7 +1266,7 @@ paths:
       - checkout
   /checkout/preview:
     get:
-      description: Calculates subtotal, points usage, and final payable amount
+      description: Calculates subtotal and final payable amount
       operationId: grip_checkout_preview
       parameters:
       - description: Product ID
@@ -1241,10 +1279,6 @@ paths:
         name: quantity
         required: true
         type: integer
-      - description: Apply user points
-        in: query
-        name: use_points
-        type: boolean
       produces:
       - application/json
       responses:

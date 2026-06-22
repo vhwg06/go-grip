@@ -3,159 +3,121 @@
 ## Common Rules
 
 - Base path: `/v1`
-- Request and response body format: JSON unless noted for external payment callback compatibility.
-- Authentication: `Authorization: Bearer <access_token>` for protected routes.
-- Actor context is resolved by REST middleware and passed to controllers/usecases.
-- Admin routes require both valid authentication and admin middleware approval.
-- Mutating routes reject blocked users unless an admin is performing an allowed admin action.
-- Error responses use a consistent shape:
-
-```json
-{
-  "error": "machine.readable.code",
-  "message": "Human readable message"
-}
-```
+- Protected routes use `Authorization: Bearer <access_token>`.
+- Admin routes require authenticated admin context.
+- Success responses may use envelope-style payloads, but removed routes/fields listed below must stay absent from the published contract.
 
 ## Auth
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| POST | `/v1/auth/register` | Public | Register a local account |
-| POST | `/v1/auth/login` | Public | Authenticate with local credentials |
-| POST | `/v1/auth/refresh` | Refresh credential | Rotate access and refresh credentials |
-| POST | `/v1/auth/logout` | Bearer | Revoke current session |
-| GET | `/v1/auth/me` | Bearer | Return current profile and admin flag |
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/v1/auth/register` | Register local account |
+| POST | `/v1/auth/login` | Authenticate |
+| POST | `/v1/auth/refresh` | Rotate access and refresh tokens |
+| POST | `/v1/auth/logout` | Revoke current session |
+| GET | `/v1/auth/me` | Return current actor/profile summary |
 
 ## Catalog
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/catalog/products` | Public | List visible active products |
-| GET | `/v1/catalog/products/{id}` | Public | Product detail with stock and purchase limit |
-| GET | `/v1/catalog/products/{id}/buy-meta` | Public | Reviews and buyer review eligibility |
-| GET | `/v1/catalog/search` | Public | Search/filter/sort visible products |
-| GET | `/v1/catalog/categories` | Public | List categories |
-| GET | `/v1/catalog/settings` | Public | Read public store settings |
-| GET | `/v1/catalog/announcement` | Public | Read active announcement |
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/catalog/products` | List visible products |
+| GET | `/v1/catalog/products/{id}` | Product detail |
+| GET | `/v1/catalog/products/{id}/buy-meta` | Product purchase/review metadata |
+| GET | `/v1/catalog/search` | Search visible products |
+| GET | `/v1/catalog/categories` | List categories |
+| GET | `/v1/catalog/settings` | Read public store settings |
+| GET | `/v1/catalog/announcement` | Read public announcement |
 
-Product detail responses include:
+## Checkout and Orders
 
-```json
-{
-  "id": "prod_123",
-  "name": "Example card",
-  "price": 10000,
-  "displayStock": 12,
-  "maxPurchaseableQuantity": 2,
-  "rating": 4.8,
-  "reviewCount": 20
-}
-```
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/checkout/preview` | Calculate subtotal/final payable amount |
+| POST | `/v1/checkout/orders` | Create order |
+| GET | `/v1/checkout/orders/{id}/status` | Read checkout-owned order status |
+| POST | `/v1/checkout/orders/{id}/cancel` | Cancel pending order |
+| POST | `/v1/checkout/payment/notify` | Payment callback |
+| GET | `/v1/orders` | Owner order list |
+| GET | `/v1/orders/{id}` | Owner order detail |
+| POST | `/v1/orders/{id}/refund-request` | Create refund request |
 
-## Checkout and Payment
+Removed from this contract:
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/checkout/preview` | Bearer | Calculate price, points, and final payable amount |
-| POST | `/v1/checkout/orders` | Bearer | Create order and reserve stock |
-| POST | `/v1/checkout/payment-orders` | Bearer | Create direct payment order |
-| GET | `/v1/checkout/orders/{id}/payment-params` | Bearer | Recreate payment instructions |
-| GET | `/v1/checkout/orders/{id}/status` | Bearer | Poll order status |
-| POST | `/v1/checkout/orders/{id}/cancel` | Bearer | Cancel pending order |
-| POST | `/v1/checkout/notify` | Provider signature | Process payment confirmation |
-| GET | `/v1/checkout/callback/{id}` | Public | Payment return redirect handler |
-
-Checkout preview response:
-
-```json
-{
-  "productId": "prod_123",
-  "quantity": 2,
-  "subtotal": 20000,
-  "pointsToUse": 5000,
-  "finalPrice": 15000
-}
-```
-
-Order status responses include `statusText` and `statusColor` for client rendering.
-
-## Cart
-
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| POST | `/v1/cart` | Bearer | Create current user cart |
-| GET | `/v1/cart/{session_id}` | Bearer | Read current user cart |
-| POST | `/v1/cart/{session_id}/items` | Bearer | Add item to current user cart |
-| PATCH | `/v1/cart/{session_id}/items/{item_id}` | Bearer | Update current user cart item quantity |
-| DELETE | `/v1/cart/{session_id}/items/{item_id}` | Bearer | Remove item from current user cart |
-| POST | `/v1/order-requests` | Bearer | Submit order request from current user cart |
-
-The `session_id` path field is retained for compatibility; cart ownership is resolved from the authenticated actor.
-
-## Orders
-
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/orders` | Bearer | List owner orders |
-| GET | `/v1/orders/{id}` | Owner/admin | Read order detail |
-| POST | `/v1/orders/{id}/refund-request` | Bearer owner | Request refund for delivered order |
-
-Card key fields are omitted or masked unless the order is delivered and the requester is authorized.
+- `pointsToUse`
+- `pointsUsed`
+- zero-price points-only checkout semantics
+- card delivery and card-key payload sections
 
 ## Profile
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/profile` | Bearer | Profile dashboard |
-| PATCH | `/v1/profile` | Bearer | Update email and notification preference |
-| POST | `/v1/profile/check-in` | Bearer | Daily check-in |
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/profile` | Current profile |
+| PUT | `/v1/profile/email` | Update profile email |
+| PUT | `/v1/profile/notifications` | Update notification preference |
+| GET | `/v1/user/profile` | Legacy-compatible profile read model without points/check-in |
 
-## Wishlist and Reviews
+Removed from this contract:
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/wishlist` | Public | List wishlist items |
-| POST | `/v1/wishlist` | Bearer | Create wishlist item |
-| PATCH | `/v1/wishlist/{id}` | Owner/admin | Update wishlist item |
-| DELETE | `/v1/wishlist/{id}` | Owner/admin | Delete wishlist item |
-| POST | `/v1/wishlist/{id}/vote` | Bearer | Toggle vote |
-| POST | `/v1/reviews` | Bearer | Create review for delivered order |
+- `POST /v1/profile/checkin`
+- `GET /v1/user/profile/checkin-status`
+- points/check-in payloads or read models
 
-## Notifications
+## Admin Catalog
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/v1/notifications` | Bearer | Unified inbox |
-| GET | `/v1/notifications/unread-count` | Bearer | Personal plus broadcast unread count |
-| POST | `/v1/notifications/{id}/read` | Bearer | Mark one notification read |
-| POST | `/v1/notifications/read-all` | Bearer | Mark all current messages read |
-| DELETE | `/v1/notifications` | Bearer | Clear inbox |
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/admin/products` | List products for admin |
+| POST | `/v1/admin/products` | Create product |
+| PATCH | `/v1/admin/products/{id}` | Update product |
+| PATCH | `/v1/admin/products/{id}/status` | Toggle active state |
+| GET | `/v1/admin/products/{id}/form` | Read full product editor model |
+| GET | `/v1/admin/categories` | List categories |
+| POST | `/v1/admin/categories` | Create/update/reorder category |
 
-## Admin
+Contract rule:
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET/POST/PATCH/DELETE | `/v1/admin/products` | Admin | Product management |
-| GET/POST/PATCH/DELETE | `/v1/admin/categories` | Admin | Category management |
-| GET/POST/DELETE | `/v1/admin/cards` | Admin | Card inventory management |
-| POST | `/v1/admin/cards/import` | Admin | Bulk card import |
-| POST | `/v1/admin/cards/replenish` | Admin | Pull cards from configured supplier |
-| GET/PATCH/DELETE | `/v1/admin/orders` | Admin | Order management |
-| GET | `/v1/admin/refunds` | Admin | List pending refunds |
-| POST | `/v1/admin/refunds/{id}/approve` | Admin | Approve refund |
-| POST | `/v1/admin/refunds/{id}/reject` | Admin | Reject refund |
-| GET/PATCH | `/v1/admin/users` | Admin | User list, points, block/unblock |
-| GET/PUT/DELETE | `/v1/admin/settings` | Admin | Setting management |
-| POST | `/v1/admin/messages/broadcast` | Admin | Send broadcast message |
-| POST | `/v1/admin/messages/targeted` | Admin | Send targeted message |
-| POST | `/v1/admin/notifications/test` | Admin | Test notification integrations |
-| POST | `/v1/admin/data/import` | Admin | Import existing data backup |
-| POST | `/v1/admin/data/repair-aggregates` | Admin | Recalculate stock aggregates |
+- Product media/editorial flow remains inside `/v1/admin/products` and `{id}/form`.
+- There is no `/v1/admin/cards` contract.
 
-## Health and Operations
+## Admin Users, Orders, Refunds, Settings
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/healthz` | Public | Liveness probe |
-| GET | `/metrics` | Configured | Metrics endpoint when enabled |
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/admin/users` | List/search account rows |
+| PATCH | `/v1/admin/users/{id}/block` | Block/unblock account |
+| GET | `/v1/admin/orders` | Admin order list |
+| GET | `/v1/admin/orders/{id}` | Admin order detail |
+| PATCH | `/v1/admin/orders/{id}/status` | Update order status |
+| DELETE | `/v1/admin/orders/{id}` | Delete order |
+| GET | `/v1/admin/refunds` | Refund queue/history |
+| GET | `/v1/admin/refunds/{id}` | Refund detail |
+| POST | `/v1/admin/refunds/{id}/approve` | Approve refund |
+| POST | `/v1/admin/refunds/{id}/reject` | Reject refund |
+| GET | `/v1/admin/store-settings` | Structured admin settings read model |
+| PUT | `/v1/admin/store-settings/brand` | Update brand section |
+| PUT | `/v1/admin/store-settings/contact` | Update contact section |
+| PUT | `/v1/admin/store-settings/homepage` | Update homepage section |
+| PUT | `/v1/admin/store-settings/footer` | Update footer section |
+| PUT | `/v1/admin/store-settings/floating-support` | Update floating support section |
+| PUT | `/v1/admin/store-settings/visibility` | Update visibility section |
+| PUT | `/v1/admin/store-settings/presence` | Update banner/about presence |
+| PUT | `/v1/admin/store-settings/registry` | Update registry section |
+
+Removed from this contract:
+
+- `PATCH /v1/admin/users/{id}/points`
+- store-settings fields `checkinEnabled`, `checkinReward`, `refundReclaimCards`
+
+## Explicit Absence Verification
+
+The published contract must not expose:
+
+- `/v1/admin/cards`
+- `/v1/admin/cards/import`
+- `/v1/admin/cards/replenish`
+- `/v1/admin/users/{id}/points`
+- `/v1/profile/checkin`
+- `/v1/user/profile/checkin-status`
+- response fields `points`, `pointsUsed`, `pointsToUse`, `checkinEnabled`, `checkinReward`
