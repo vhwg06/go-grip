@@ -13,13 +13,10 @@ type User struct {
 	RoleID                      string `gorm:"type:text"`
 	Role                        string `gorm:"type:text"`
 	Status                      string `gorm:"type:text"`
-	Points                      int    `gorm:"not null;default:0"`
 	TrustLevel                  int    `gorm:"not null;default:0"`
 	IsAdmin                     bool   `gorm:"not null;default:false"`
 	DesktopNotificationsEnabled bool   `gorm:"not null;default:false"`
 	LastLoginAt                 time.Time
-	LastCheckinAt               time.Time
-	ConsecutiveDays             int       `gorm:"not null;default:0"`
 	CreatedAt                   time.Time `gorm:"not null"`
 	UpdatedAt                   time.Time `gorm:"not null"`
 }
@@ -98,7 +95,6 @@ type Order struct {
 	UserID            string    `gorm:"type:text;index"`
 	Username          string    `gorm:"type:text"`
 	Payee             string    `gorm:"type:text"`
-	PointsUsed        int       `gorm:"not null;default:0"`
 	Quantity          int       `gorm:"not null;default:1"`
 	CurrentPaymentID  string    `gorm:"type:text"`
 	StatusText        string    `gorm:"type:text"`
@@ -141,17 +137,6 @@ type RefundRequest struct {
 }
 
 func (RefundRequest) TableName() string { return "refund_requests" }
-
-type DailyCheckin struct {
-	ID          int64     `gorm:"primaryKey;autoIncrement"`
-	UserID      string    `gorm:"type:text;index"`
-	CheckinDate time.Time `gorm:"not null"`
-	Reward      int       `gorm:"not null;default:0"`
-	StreakAfter int       `gorm:"not null;default:0"`
-	CreatedAt   time.Time `gorm:"not null"`
-}
-
-func (DailyCheckin) TableName() string { return "daily_checkins_v2" }
 
 type Review struct {
 	ID        int64     `gorm:"primaryKey;autoIncrement"`
@@ -245,20 +230,6 @@ type MediaAsset struct {
 
 func (MediaAsset) TableName() string { return "media_assets" }
 
-type Card struct {
-	ID              int64      `gorm:"primaryKey;autoIncrement"`
-	ProductID       string     `gorm:"type:text;not null"`
-	CardKey         string     `gorm:"type:text;not null"`
-	IsUsed          bool       `gorm:"not null;default:false"`
-	ReservedOrderID string     `gorm:"type:text;not null;default:''"`
-	ReservedAt      *time.Time `gorm:"type:timestamptz"`
-	ExpiresAt       *time.Time `gorm:"type:timestamptz"`
-	UsedAt          *time.Time `gorm:"type:timestamptz"`
-	CreatedAt       time.Time  `gorm:"type:timestamptz;not null;default:now()"`
-}
-
-func (Card) TableName() string { return "cards" }
-
 type AdminMessage struct {
 	ID          int64     `gorm:"primaryKey;autoIncrement"`
 	TargetType  string    `gorm:"not null"`
@@ -270,4 +241,3 @@ type AdminMessage struct {
 }
 
 func (AdminMessage) TableName() string { return "admin_messages" }
-

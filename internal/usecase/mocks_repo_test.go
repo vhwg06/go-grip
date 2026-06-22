@@ -2018,21 +2018,6 @@ func (mr *MockAdminRepositoryMockRecorder) GetRefundRequest(ctx, refundID any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefundRequest", reflect.TypeOf((*MockAdminRepository)(nil).GetRefundRequest), ctx, refundID)
 }
 
-// ListCards mocks base method.
-func (m *MockAdminRepository) ListCards(ctx context.Context) ([]entity.Card, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListCards", ctx)
-	ret0, _ := ret[0].([]entity.Card)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListCards indicates an expected call of ListCards.
-func (mr *MockAdminRepositoryMockRecorder) ListCards(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCards", reflect.TypeOf((*MockAdminRepository)(nil).ListCards), ctx)
-}
-
 // ListOrders mocks base method.
 func (m *MockAdminRepository) ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
 	m.ctrl.T.Helper()

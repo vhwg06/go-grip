@@ -97,8 +97,6 @@ func TestStoreSettingsContractEndpoints(t *testing.T) {
 		{Key: "floatingSupport", Value: `[{"key":"zalo","enabled":true,"target":"https://zalo.me/gripqa"},{"key":"scroll_to_top","enabled":true,"target":null}]`},
 		{Key: "noIndexEnabled", Value: "true"},
 		{Key: "wishlistEnabled", Value: "false"},
-		{Key: "checkinEnabled", Value: "true"},
-		{Key: "checkinReward", Value: "10"},
 		{Key: "registryOptIn", Value: "true"},
 		{Key: "registryHideNav", Value: "true"},
 	}
@@ -161,11 +159,10 @@ func TestStoreSettingsContractEndpoints(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, testRequest(t, app, http.MethodPut, "/v1/admin/store-settings/brand", []byte(`{"shopName":"","shopLogo":"bad-url"}`), "Bearer "+adminToken).StatusCode)
 		require.Equal(t, http.StatusBadRequest, testRequest(t, app, http.MethodPut, "/v1/admin/store-settings/homepage", []byte(`{"blocks":[{"key":"hero","enabled":true,"order":1},{"key":"hero","enabled":true,"order":2}],"newsCount":-1}`), "Bearer "+adminToken).StatusCode)
 
-		resp := testRequest(t, app, http.MethodPut, "/v1/admin/store-settings/visibility", []byte(`{"noIndexEnabled":true,"wishlistEnabled":false,"checkinEnabled":true,"checkinReward":12}`), "Bearer "+adminToken)
+		resp := testRequest(t, app, http.MethodPut, "/v1/admin/store-settings/visibility", []byte(`{"noIndexEnabled":true,"wishlistEnabled":false}`), "Bearer "+adminToken)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		require.Equal(t, "true", saved["noIndexEnabled"])
 		require.Equal(t, "false", saved["wishlistEnabled"])
-		require.Equal(t, "12", saved["checkinReward"])
 	})
 
 	t.Run("reflects same source of truth through public routes", func(t *testing.T) {

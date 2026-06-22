@@ -256,16 +256,16 @@
 
 ### 9B. Domain, persistence, and route removal
 
-- [ ] T117 Remove `Card`, `DailyCheckin`, `PointsUsed`, and related points/card fields from entities, repo contracts, and usecase contracts
-- [ ] T118 Remove admin cards and admin user-points routes plus profile/check-in/points routes and request/response shapes
-- [ ] T119 Remove checkout/order/refund logic that reserves cards, delivers card keys, deducts points, or restores points/cards
-- [ ] T120 Remove maintenance jobs and repository methods that exist only for cards/points lifecycle management
-- [ ] T121 Add destructive migrations that drop cards tables, points columns, and related indexes/relations
+- [~] T117 Remove `Card`, `DailyCheckin`, `PointsUsed`, and related points/card fields from entities, repo contracts, and usecase contracts
+- [~] T118 Remove admin cards and admin user-points routes plus profile/check-in/points routes and request/response shapes
+- [~] T119 Remove checkout/order/refund logic that reserves cards, delivers card keys, deducts points, or restores points/cards
+- [~] T120 Remove maintenance jobs and repository methods that exist only for cards/points lifecycle management
+- [~] T121 Add destructive migrations that drop cards tables, points columns, and related indexes/relations
 
 ### 9C. Verification
 
-- [ ] T122 Rewrite or remove backend tests that depend on cards/points and add verification for removed routes/fields
-- [ ] T123 Run focused `go test` coverage for checkout/orders/profile/admin after the no-cards/no-points rewrite
+- [~] T122 Rewrite or remove backend tests that depend on cards/points and add verification for removed routes/fields
+- [~] T123 Run focused `go test` coverage for checkout/orders/profile/admin after the no-cards/no-points rewrite
 - [ ] T124 Regenerate/update swagger artifacts so removed fields and routes are absent from published contracts
 
 ---

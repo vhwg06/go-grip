@@ -84,16 +84,10 @@ func (BaseAdminUseCaseStub) SendTargeted(context.Context, entity.Actor, string, 
 func (BaseAdminUseCaseStub) ListAdminMessages(context.Context, entity.Actor) ([]entity.AdminMessage, error) {
 	return nil, nil
 }
-func (BaseAdminUseCaseStub) ListCards(context.Context, entity.Actor) ([]entity.Card, error) {
-	return nil, nil
-}
 func (BaseAdminUseCaseStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
 	return nil, 0, nil
 }
 func (BaseAdminUseCaseStub) UpdateUserStatus(context.Context, entity.Actor, string, entity.UserStatus) error {
-	return nil
-}
-func (BaseAdminUseCaseStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
 	return nil
 }
 func (BaseAdminUseCaseStub) RepairAggregates(context.Context, entity.Actor) error {

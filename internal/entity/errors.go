@@ -21,7 +21,6 @@ var (
 	ErrOrderNotFound      = errors.New("order not found")
 	ErrOrderStateConflict = errors.New("order state conflict")
 	ErrOutOfStock         = errors.New("out of stock")
-	ErrPointsInsufficient = errors.New("insufficient points")
 	ErrRefundNotAllowed   = errors.New("refund not allowed")
 	ErrRateLimited        = errors.New("rate limited")
 )

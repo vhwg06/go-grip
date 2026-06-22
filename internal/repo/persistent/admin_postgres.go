@@ -128,15 +128,6 @@ func (r *AdminRepo) UpdateUserStatus(ctx context.Context, userID string, status 
 	return nil
 }
 
-func (r *AdminRepo) UpdateUserPoints(ctx context.Context, userID string, points int) error {
-	if err := r.Gorm.WithContext(ctx).Model(&models.User{}).
-		Where("id = ?", userID).
-		Updates(map[string]any{"points": points, "updated_at": time.Now().UTC()}).Error; err != nil {
-		return fmt.Errorf("AdminRepo.UpdateUserPoints: %w", err)
-	}
-	return nil
-}
-
 func (r *AdminRepo) ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
 	db := r.Gorm.WithContext(ctx).Model(&models.Order{})
 

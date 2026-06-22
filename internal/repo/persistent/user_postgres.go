@@ -47,8 +47,8 @@ func (r *UserRepo) Store(ctx context.Context, user *entity.User) error {
 	// Also insert into login_users to keep them in sync
 	loginSql, loginArgs, err := r.Builder.
 		Insert("login_users").
-		Columns("id, username, email, password_hash, created_at, updated_at, role_id, role, status, points, trust_level, is_admin, desktop_notifications_enabled").
-		Values(user.ID, user.Username, user.Email, user.PasswordHash, user.CreatedAt, user.UpdatedAt, "00000000-0000-0000-0000-000000000005", "Subscriber", "active", 0, 0, false, false).
+		Columns("id, username, email, password_hash, created_at, updated_at, role_id, role, status, trust_level, is_admin, desktop_notifications_enabled").
+		Values(user.ID, user.Username, user.Email, user.PasswordHash, user.CreatedAt, user.UpdatedAt, "00000000-0000-0000-0000-000000000005", "Subscriber", "active", 0, false, false).
 		ToSql()
 	if err == nil {
 		_, _ = r.Pool.Exec(ctx, loginSql, loginArgs...)

@@ -105,8 +105,6 @@ type storeSettingsFloatingAction struct {
 type storeSettingsVisibility struct {
 	NoIndexEnabled     bool `json:"noIndexEnabled"`
 	WishlistEnabled    bool `json:"wishlistEnabled"`
-	CheckinEnabled     bool `json:"checkinEnabled"`
-	CheckinReward      int  `json:"checkinReward"`
 	RefundReclaimCards bool `json:"refundReclaimCards"`
 }
 
@@ -285,8 +283,6 @@ func (r *V1) gripAdminPutStoreSettingsVisibility(ctx *fiber.Ctx) error {
 	return r.persistStoreSettings(ctx, map[string]string{
 		"noIndexEnabled":     strconv.FormatBool(body.NoIndexEnabled),
 		"wishlistEnabled":    strconv.FormatBool(body.WishlistEnabled),
-		"checkinEnabled":     strconv.FormatBool(body.CheckinEnabled),
-		"checkinReward":      strconv.Itoa(body.CheckinReward),
 		"refundReclaimCards": strconv.FormatBool(body.RefundReclaimCards),
 	})
 }
@@ -368,8 +364,6 @@ func buildCatalogSettingsProjection(settings []entity.Setting) fiber.Map {
 		"themeColor":        config.Brand.ThemeColor,
 		"noindexEnabled":    config.Visibility.NoIndexEnabled,
 		"wishlistEnabled":   config.Visibility.WishlistEnabled,
-		"checkinEnabled":    config.Visibility.CheckinEnabled,
-		"checkinReward":     config.Visibility.CheckinReward,
 		"lowStockThreshold": 3,
 		"site_name":         config.Brand.ShopName,
 		"site_description":  config.Brand.ShopDescription,
@@ -419,8 +413,6 @@ func buildStoreSettingsConfig(settings []entity.Setting) storeSettingsConfig {
 		Visibility: storeSettingsVisibility{
 			NoIndexEnabled:     parseBoolSetting(values["noIndexEnabled"], false),
 			WishlistEnabled:    parseBoolSetting(values["wishlistEnabled"], true),
-			CheckinEnabled:     parseBoolSetting(values["checkinEnabled"], true),
-			CheckinReward:      parseIntSetting(values["checkinReward"], 1),
 			RefundReclaimCards: parseBoolSetting(values["refundReclaimCards"], false),
 		},
 		Registry: storeSettingsRegistry{
@@ -547,12 +539,7 @@ func validateStoreSettingsFloatingSupport(actions []storeSettingsFloatingAction)
 	return nil
 }
 
-func validateStoreSettingsVisibility(body storeSettingsVisibility) error {
-	if body.CheckinReward < 0 {
-		return entity.ErrInvalidInput
-	}
-	return nil
-}
+func validateStoreSettingsVisibility(storeSettingsVisibility) error { return nil }
 
 func parseJSONSetting[T any](raw string, fallback T) T {
 	if strings.TrimSpace(raw) == "" {

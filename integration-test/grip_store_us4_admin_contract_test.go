@@ -50,10 +50,6 @@ func (s *adminContractAdminStub) UpdateUserStatus(context.Context, entity.Actor,
 	return nil
 }
 
-func (s *adminContractAdminStub) UpdateUserPoints(context.Context, entity.Actor, string, int) error {
-	return nil
-}
-
 func (s *adminContractAdminStub) ListOrders(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
 	if s.listOrdersFunc != nil {
 		return s.listOrdersFunc(ctx, actor, page, query, status)
@@ -102,10 +98,6 @@ func (s *adminContractAdminStub) GetRefund(ctx context.Context, actor entity.Act
 
 func (s *adminContractAdminStub) GetOrderRefundStatus(ctx context.Context, actor entity.Actor, orderID string) (entity.RefundRequest, error) {
 	return entity.RefundRequest{}, nil
-}
-
-func (s *adminContractAdminStub) ListCards(ctx context.Context, actor entity.Actor) ([]entity.Card, error) {
-	return nil, nil
 }
 
 func (s *adminContractAdminStub) ListAdminMessages(ctx context.Context, actor entity.Actor) ([]entity.AdminMessage, error) {
