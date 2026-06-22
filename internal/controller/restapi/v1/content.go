@@ -24,7 +24,9 @@ func (r *V1) updateArticle(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&article); err != nil {
 		return errorResponse(ctx, http.StatusBadRequest, "invalid request body")
 	}
-	article.ID = ctx.Params("id")
+	if article.ID == "" {
+		article.ID = ctx.Params("id")
+	}
 	article, err := r.content.UpdateArticle(ctx.UserContext(), article)
 	if err != nil {
 		return errorResponse(ctx, http.StatusBadRequest, err.Error())
