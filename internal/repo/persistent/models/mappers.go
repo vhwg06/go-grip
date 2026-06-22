@@ -52,6 +52,7 @@ func EntityToUser(e entity.User) User {
 func ProductToEntity(m Product) entity.Product {
 	var images []string
 	var comparePrice *int64
+	var introArticleID string
 	if m.Image != "" {
 		images = []string{m.Image}
 	} else {
@@ -60,6 +61,9 @@ func ProductToEntity(m Product) entity.Product {
 	if m.CompareAtPrice > 0 {
 		value := m.CompareAtPrice
 		comparePrice = &value
+	}
+	if m.IntroArticleID != nil {
+		introArticleID = *m.IntroArticleID
 	}
 
 	return entity.Product{
@@ -77,6 +81,7 @@ func ProductToEntity(m Product) entity.Product {
 		SortOrder:       m.SortOrder,
 		PurchaseLimit:   m.PurchaseLimit,
 		PurchaseWarning: m.PurchaseWarning,
+		IntroArticleID:  introArticleID,
 		VisibilityLevel: m.VisibilityLevel,
 		StockCount:      m.StockCount,
 		LockedCount:     m.LockedCount,
@@ -90,8 +95,12 @@ func ProductToEntity(m Product) entity.Product {
 
 func EntityToProduct(e entity.Product) Product {
 	var compareAtPrice int64
+	var introArticleID *string
 	if e.ComparePrice != nil {
 		compareAtPrice = *e.ComparePrice
+	}
+	if e.IntroArticleID != "" {
+		introArticleID = &e.IntroArticleID
 	}
 
 	return Product{
@@ -108,6 +117,7 @@ func EntityToProduct(e entity.Product) Product {
 		SortOrder:       e.SortOrder,
 		PurchaseLimit:   e.PurchaseLimit,
 		PurchaseWarning: e.PurchaseWarning,
+		IntroArticleID:  introArticleID,
 		VisibilityLevel: e.VisibilityLevel,
 		StockCount:      e.StockCount,
 		LockedCount:     e.LockedCount,

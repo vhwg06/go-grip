@@ -105,6 +105,12 @@ func patchProductFromForm(product *entity.Product, ctx *fiber.Ctx) {
 	if value := strings.TrimSpace(ctx.FormValue("purchaseWarning")); value != "" {
 		product.PurchaseWarning = value
 	}
+	if value := strings.TrimSpace(ctx.FormValue("introArticleId")); value != "" {
+		product.IntroArticleID = value
+	}
+	if value := strings.TrimSpace(ctx.FormValue("intro_article_id")); value != "" {
+		product.IntroArticleID = value
+	}
 	if value := strings.TrimSpace(ctx.FormValue("visibilityLevel")); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil {
 			product.VisibilityLevel = parsed
@@ -116,6 +122,56 @@ func patchProductFromForm(product *entity.Product, ctx *fiber.Ctx) {
 	if value := strings.TrimSpace(ctx.FormValue("isActive")); value != "" {
 		product.IsActive = parseBoolForm(value)
 	}
+}
+
+func patchProductIntroArticleFromBody(product *entity.Product, bodyMap map[string]any) {
+	if bodyMap == nil {
+		return
+	}
+
+	if raw, ok := bodyMap["introArticleId"]; ok {
+		switch val := raw.(type) {
+		case string:
+			product.IntroArticleID = strings.TrimSpace(val)
+		case nil:
+			product.IntroArticleID = ""
+		}
+	}
+	if raw, ok := bodyMap["intro_article_id"]; ok {
+		switch val := raw.(type) {
+		case string:
+			product.IntroArticleID = strings.TrimSpace(val)
+		case nil:
+			product.IntroArticleID = ""
+		}
+	}
+}
+
+func (r *V1) validateIntroArticleLink(ctx *fiber.Ctx, product entity.Product) error {
+	if strings.TrimSpace(product.IntroArticleID) == "" || r.content == nil {
+		return nil
+	}
+	_, err := r.content.GetArticle(ctx.UserContext(), product.IntroArticleID)
+	return err
+}
+
+func (r *V1) hydrateProductIntroArticle(ctx *fiber.Ctx, product *entity.Product, publicOnly bool) {
+	if product == nil || strings.TrimSpace(product.IntroArticleID) == "" || r.content == nil {
+		product.IntroArticle = nil
+		return
+	}
+
+	article, err := r.content.GetArticle(ctx.UserContext(), product.IntroArticleID)
+	if err != nil {
+		product.IntroArticle = nil
+		return
+	}
+	if publicOnly && article.Status != entity.ContentStatusPublished {
+		product.IntroArticle = nil
+		return
+	}
+
+	product.IntroArticle = &article
 }
 
 // @Summary     List admin products
@@ -177,6 +233,11 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 	patchProductFromForm(&product, ctx)
+	if !isMultipart && len(ctx.Body()) > 0 {
+		var bodyMap map[string]any
+		_ = json.Unmarshal(ctx.Body(), &bodyMap)
+		patchProductIntroArticleFromBody(&product, bodyMap)
+	}
 
 	if specsStr := ctx.FormValue("specs"); specsStr != "" {
 		var specs []entity.ProductSpecItem
@@ -184,12 +245,17 @@ func (r *V1) gripAdminCreateProduct(ctx *fiber.Ctx) error {
 			product.Specs = specs
 		}
 	}
+	if err := r.validateIntroArticleLink(ctx, product); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
 
 	created, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), product)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
+	r.hydrateProductIntroArticle(ctx, &created, false)
 	return ctx.Status(http.StatusCreated).JSON(apiSuccessEnvelope(created))
 }
 
@@ -421,6 +487,7 @@ func mergeProductPatch(existing *entity.Product, bodyMap map[string]any, ctx *fi
 			existing.PurchaseWarning = val
 		}
 	}
+	patchProductIntroArticleFromBody(existing, bodyMap)
 	if _, ok := bodyMap["visibilityLevel"]; ok {
 		if val, ok := bodyMap["visibilityLevel"].(float64); ok {
 			existing.VisibilityLevel = int(val)
@@ -487,12 +554,17 @@ func (r *V1) gripAdminUpdateProduct(ctx *fiber.Ctx) error {
 			existing.Specs = specs
 		}
 	}
+	if err := r.validateIntroArticleLink(ctx, existing); err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
 
 	updated, err := ext.UpsertProduct(ctx.UserContext(), r.gripActor(ctx), existing)
 	if err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
+	r.hydrateProductIntroArticle(ctx, &updated, false)
 	return ctx.JSON(apiSuccessEnvelope(updated))
 }
 
@@ -1137,6 +1209,7 @@ func (r *V1) gripAdminProductForm(ctx *fiber.Ctx) error {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
 	}
+	r.hydrateProductIntroArticle(ctx, &product, false)
 
 	var categories []entity.Category
 	if items, err := ext.ListCategories(ctx.UserContext(), r.gripActor(ctx)); err == nil {

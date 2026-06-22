@@ -144,6 +144,7 @@ func (r *V1) gripGetProduct(ctx *fiber.Ctx) error {
 		status, body := mapDomainError(err)
 		return ctx.Status(status).JSON(body)
 	}
+	r.hydrateProductIntroArticle(ctx, &product, true)
 
 	return ctx.JSON(apiSuccessEnvelope(product))
 }

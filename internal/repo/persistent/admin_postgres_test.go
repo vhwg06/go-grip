@@ -60,3 +60,47 @@ func TestAdminRepoUpsertProductPersistsInactiveState(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, stored.IsActive)
 }
+
+func TestAdminRepoUpsertProductPersistsIntroArticleLink(t *testing.T) {
+	t.Parallel()
+
+	repo := newTestAdminRepo(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	created, err := repo.UpsertProduct(ctx, entity.Product{
+		ID:             "p-intro",
+		Title:          "Editorial Product",
+		SKU:            "sku-intro",
+		Price:          100,
+		CategoryID:     "test-category",
+		IntroArticleID: "article-1",
+		IsActive:       true,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "article-1", created.IntroArticleID)
+
+	stored, err := repo.GetProduct(ctx, created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "article-1", stored.IntroArticleID)
+
+	cleared, err := repo.UpsertProduct(ctx, entity.Product{
+		ID:             created.ID,
+		Title:          created.Title,
+		SKU:            created.SKU,
+		Price:          created.Price,
+		CategoryID:     created.CategoryID,
+		IntroArticleID: "",
+		IsActive:       true,
+		CreatedAt:      created.CreatedAt,
+		UpdatedAt:      time.Now().UTC(),
+	})
+	require.NoError(t, err)
+	require.Empty(t, cleared.IntroArticleID)
+
+	stored, err = repo.GetProduct(ctx, created.ID)
+	require.NoError(t, err)
+	require.Empty(t, stored.IntroArticleID)
+}

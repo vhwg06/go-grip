@@ -41,6 +41,8 @@ type Product struct {
 	ReviewCount             int               `json:"review_count"`
 	Attributes              map[string]any    `json:"attributes,omitempty"`
 	MediaIDs                []string          `json:"media_ids,omitempty"`
+	IntroArticleID          string            `json:"intro_article_id,omitempty"`
+	IntroArticle            *ContentArticle   `json:"intro_article,omitempty"`
 	MaxPurchaseableQuantity int               `json:"max_purchaseable_quantity,omitempty"`
 	Specs                   []ProductSpecItem `json:"specs,omitempty"`
 	CreatedAt               time.Time         `json:"created_at"`
