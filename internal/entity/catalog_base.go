@@ -131,9 +131,10 @@ type CatalogProductModel struct {
 	UpdatedAt       time.Time
 }
 
-// CatalogSnapshot is the aggregate boundary used by CatalogBaseRepository.
-// A command loads a snapshot, applies domain invariants in the application
-// service, and persists the complete change in one repository transaction.
+// CatalogSnapshot is the application-level composition used to evaluate
+// Catalog Base invariants across separately persisted entities. It is not a
+// persistence contract; repository CRUD and transaction coordination remain
+// outside the domain package.
 type CatalogSnapshot struct {
 	Categories  []CatalogCategory
 	Definitions []CatalogAttributeDefinition

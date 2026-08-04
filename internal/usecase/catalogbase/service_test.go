@@ -3,23 +3,385 @@ package catalogbase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/stretchr/testify/require"
 )
 
-type memoryCatalogBaseRepository struct {
+type memoryCatalogStore struct {
 	snapshot entity.CatalogSnapshot
 }
 
-func (r *memoryCatalogBaseRepository) LoadCatalogBase(context.Context) (entity.CatalogSnapshot, error) {
-	return cloneCatalogSnapshot(r.snapshot), nil
+func newMemoryCatalogRepositories(store *memoryCatalogStore) repo.CatalogRepositories {
+	return repo.CatalogRepositories{
+		Categories:        &memoryCatalogCategoryRepo{store: store},
+		Definitions:       &memoryCatalogDefinitionRepo{store: store},
+		Masters:           &memoryCatalogMasterRepo{store: store},
+		ProductModels:     &memoryCatalogProductModelRepo{store: store},
+		ProductImages:     &memoryCatalogImageRepo{store: store},
+		VariantDimensions: &memoryCatalogDimensionRepo{store: store},
+		Variants:          &memoryCatalogVariantRepo{store: store},
+	}
 }
 
-func (r *memoryCatalogBaseRepository) SaveCatalogBase(_ context.Context, snapshot entity.CatalogSnapshot) error {
-	r.snapshot = cloneCatalogSnapshot(snapshot)
+type memoryCatalogUnitOfWork struct {
+	store *memoryCatalogStore
+}
+
+func (u *memoryCatalogUnitOfWork) Within(_ context.Context, fn func(repo.CatalogRepositories) error) error {
+	transaction := &memoryCatalogStore{snapshot: cloneCatalogSnapshot(u.store.snapshot)}
+	if err := fn(newMemoryCatalogRepositories(transaction)); err != nil {
+		return err
+	}
+	u.store.snapshot = cloneCatalogSnapshot(transaction.snapshot)
 	return nil
+}
+
+type memoryCatalogCategoryRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogCategoryRepo) List(context.Context) ([]entity.CatalogCategory, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	return snapshot.Categories, nil
+}
+
+func (r *memoryCatalogCategoryRepo) GetByID(_ context.Context, id string) (entity.CatalogCategory, error) {
+	for _, category := range r.store.snapshot.Categories {
+		if category.ID == id {
+			return category, nil
+		}
+	}
+	return entity.CatalogCategory{}, fmt.Errorf("category %s not found", id)
+}
+
+func (r *memoryCatalogCategoryRepo) Store(_ context.Context, category entity.CatalogCategory) error {
+	r.store.snapshot.Categories = append(r.store.snapshot.Categories, category)
+	return nil
+}
+
+func (r *memoryCatalogCategoryRepo) Update(_ context.Context, category entity.CatalogCategory) error {
+	for index := range r.store.snapshot.Categories {
+		if r.store.snapshot.Categories[index].ID == category.ID {
+			r.store.snapshot.Categories[index] = category
+			return nil
+		}
+	}
+	return fmt.Errorf("category %s not found", category.ID)
+}
+
+func (r *memoryCatalogCategoryRepo) Delete(_ context.Context, id string) error {
+	for index := range r.store.snapshot.Categories {
+		if r.store.snapshot.Categories[index].ID == id {
+			r.store.snapshot.Categories = append(r.store.snapshot.Categories[:index], r.store.snapshot.Categories[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+type memoryCatalogDefinitionRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogDefinitionRepo) List(context.Context) ([]entity.CatalogAttributeDefinition, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	return snapshot.Definitions, nil
+}
+
+func (r *memoryCatalogDefinitionRepo) GetByID(_ context.Context, id string) (entity.CatalogAttributeDefinition, error) {
+	for _, definition := range r.store.snapshot.Definitions {
+		if definition.ID == id {
+			return definition, nil
+		}
+	}
+	return entity.CatalogAttributeDefinition{}, fmt.Errorf("definition %s not found", id)
+}
+
+func (r *memoryCatalogDefinitionRepo) Store(_ context.Context, definition entity.CatalogAttributeDefinition) error {
+	r.store.snapshot.Definitions = append(r.store.snapshot.Definitions, definition)
+	return nil
+}
+
+func (r *memoryCatalogDefinitionRepo) Update(_ context.Context, definition entity.CatalogAttributeDefinition) error {
+	for index := range r.store.snapshot.Definitions {
+		if r.store.snapshot.Definitions[index].ID == definition.ID {
+			r.store.snapshot.Definitions[index] = definition
+			return nil
+		}
+	}
+	return fmt.Errorf("definition %s not found", definition.ID)
+}
+
+func (r *memoryCatalogDefinitionRepo) Delete(_ context.Context, id string) error {
+	for index := range r.store.snapshot.Definitions {
+		if r.store.snapshot.Definitions[index].ID == id {
+			r.store.snapshot.Definitions = append(r.store.snapshot.Definitions[:index], r.store.snapshot.Definitions[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+type memoryCatalogMasterRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogMasterRepo) List(_ context.Context, kind string) ([]entity.CatalogMaster, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	result := make([]entity.CatalogMaster, 0)
+	for _, master := range snapshot.Masters {
+		if kind == "" || master.Kind == kind {
+			result = append(result, master)
+		}
+	}
+	return result, nil
+}
+
+func (r *memoryCatalogMasterRepo) GetByID(_ context.Context, kind, id string) (entity.CatalogMaster, error) {
+	for _, master := range r.store.snapshot.Masters {
+		if master.Kind == kind && master.ID == id {
+			return master, nil
+		}
+	}
+	return entity.CatalogMaster{}, fmt.Errorf("master %s/%s not found", kind, id)
+}
+
+func (r *memoryCatalogMasterRepo) Store(_ context.Context, master entity.CatalogMaster) error {
+	r.store.snapshot.Masters = append(r.store.snapshot.Masters, master)
+	return nil
+}
+
+func (r *memoryCatalogMasterRepo) Update(_ context.Context, master entity.CatalogMaster) error {
+	for index := range r.store.snapshot.Masters {
+		if r.store.snapshot.Masters[index].ID == master.ID {
+			r.store.snapshot.Masters[index] = master
+			return nil
+		}
+	}
+	return fmt.Errorf("master %s not found", master.ID)
+}
+
+func (r *memoryCatalogMasterRepo) Delete(_ context.Context, kind, id string) error {
+	for index := range r.store.snapshot.Masters {
+		if r.store.snapshot.Masters[index].Kind == kind && r.store.snapshot.Masters[index].ID == id {
+			r.store.snapshot.Masters = append(r.store.snapshot.Masters[:index], r.store.snapshot.Masters[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+type memoryCatalogProductModelRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogProductModelRepo) List(context.Context) ([]entity.CatalogProductModel, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	result := make([]entity.CatalogProductModel, 0, len(snapshot.Models))
+	for _, model := range snapshot.Models {
+		model.Images = nil
+		model.Dimensions = nil
+		model.Variants = nil
+		result = append(result, model)
+	}
+	return result, nil
+}
+
+func (r *memoryCatalogProductModelRepo) GetByID(_ context.Context, id string) (entity.CatalogProductModel, error) {
+	for _, model := range r.store.snapshot.Models {
+		if model.ID == id {
+			model.Images = nil
+			model.Dimensions = nil
+			model.Variants = nil
+			return model, nil
+		}
+	}
+	return entity.CatalogProductModel{}, fmt.Errorf("model %s not found", id)
+}
+
+func (r *memoryCatalogProductModelRepo) Store(_ context.Context, model entity.CatalogProductModel) error {
+	model.Images = nil
+	model.Dimensions = nil
+	model.Variants = nil
+	r.store.snapshot.Models = append(r.store.snapshot.Models, model)
+	return nil
+}
+
+func (r *memoryCatalogProductModelRepo) Update(_ context.Context, model entity.CatalogProductModel) error {
+	for index := range r.store.snapshot.Models {
+		if r.store.snapshot.Models[index].ID == model.ID {
+			model.Images = nil
+			model.Dimensions = nil
+			model.Variants = nil
+			r.store.snapshot.Models[index] = model
+			return nil
+		}
+	}
+	return fmt.Errorf("model %s not found", model.ID)
+}
+
+func (r *memoryCatalogProductModelRepo) Delete(_ context.Context, id string) error {
+	for index := range r.store.snapshot.Models {
+		if r.store.snapshot.Models[index].ID == id {
+			r.store.snapshot.Models = append(r.store.snapshot.Models[:index], r.store.snapshot.Models[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+type memoryCatalogImageRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogImageRepo) ListByModelID(_ context.Context, modelID string) ([]entity.CatalogProductImage, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	model := memoryModel(&memoryCatalogStore{snapshot: snapshot}, modelID)
+	return append([]entity.CatalogProductImage(nil), model.Images...), nil
+}
+
+func (r *memoryCatalogImageRepo) Store(_ context.Context, modelID string, image entity.CatalogProductImage) error {
+	memoryModel(r.store, modelID).Images = append(memoryModel(r.store, modelID).Images, image)
+	return nil
+}
+
+func (r *memoryCatalogImageRepo) Update(_ context.Context, modelID string, image entity.CatalogProductImage) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Images {
+		if model.Images[index].ID == image.ID {
+			model.Images[index] = image
+			return nil
+		}
+	}
+	return fmt.Errorf("image %s not found", image.ID)
+}
+
+func (r *memoryCatalogImageRepo) Delete(_ context.Context, modelID, imageID string) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Images {
+		if model.Images[index].ID == imageID {
+			model.Images = append(model.Images[:index], model.Images[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *memoryCatalogImageRepo) DeleteByModelID(_ context.Context, modelID string) error {
+	memoryModel(r.store, modelID).Images = nil
+	return nil
+}
+
+type memoryCatalogDimensionRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogDimensionRepo) ListByModelID(_ context.Context, modelID string) ([]entity.CatalogVariantDimension, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	model := memoryModel(&memoryCatalogStore{snapshot: snapshot}, modelID)
+	return append([]entity.CatalogVariantDimension(nil), model.Dimensions...), nil
+}
+
+func (r *memoryCatalogDimensionRepo) GetByID(_ context.Context, modelID, id string) (entity.CatalogVariantDimension, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	for _, dimension := range memoryModel(&memoryCatalogStore{snapshot: snapshot}, modelID).Dimensions {
+		if dimension.ID == id {
+			return dimension, nil
+		}
+	}
+	return entity.CatalogVariantDimension{}, fmt.Errorf("dimension %s not found", id)
+}
+
+func (r *memoryCatalogDimensionRepo) Store(_ context.Context, modelID string, dimension entity.CatalogVariantDimension) error {
+	memoryModel(r.store, modelID).Dimensions = append(memoryModel(r.store, modelID).Dimensions, dimension)
+	return nil
+}
+
+func (r *memoryCatalogDimensionRepo) Update(_ context.Context, modelID string, dimension entity.CatalogVariantDimension) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Dimensions {
+		if model.Dimensions[index].ID == dimension.ID {
+			model.Dimensions[index] = dimension
+			return nil
+		}
+	}
+	return fmt.Errorf("dimension %s not found", dimension.ID)
+}
+
+func (r *memoryCatalogDimensionRepo) Delete(_ context.Context, modelID, id string) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Dimensions {
+		if model.Dimensions[index].ID == id {
+			model.Dimensions = append(model.Dimensions[:index], model.Dimensions[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *memoryCatalogDimensionRepo) DeleteByModelID(_ context.Context, modelID string) error {
+	memoryModel(r.store, modelID).Dimensions = nil
+	return nil
+}
+
+type memoryCatalogVariantRepo struct{ store *memoryCatalogStore }
+
+func (r *memoryCatalogVariantRepo) List(_ context.Context) ([]entity.CatalogVariant, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	result := make([]entity.CatalogVariant, 0)
+	for _, model := range snapshot.Models {
+		result = append(result, model.Variants...)
+	}
+	return result, nil
+}
+
+func (r *memoryCatalogVariantRepo) ListByModelID(_ context.Context, modelID string) ([]entity.CatalogVariant, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	model := memoryModel(&memoryCatalogStore{snapshot: snapshot}, modelID)
+	return append([]entity.CatalogVariant(nil), model.Variants...), nil
+}
+
+func (r *memoryCatalogVariantRepo) GetByID(_ context.Context, modelID, id string) (entity.CatalogVariant, error) {
+	snapshot := cloneCatalogSnapshot(r.store.snapshot)
+	for _, variant := range memoryModel(&memoryCatalogStore{snapshot: snapshot}, modelID).Variants {
+		if variant.ID == id {
+			return variant, nil
+		}
+	}
+	return entity.CatalogVariant{}, fmt.Errorf("variant %s not found", id)
+}
+
+func (r *memoryCatalogVariantRepo) Store(_ context.Context, modelID string, variant entity.CatalogVariant) error {
+	memoryModel(r.store, modelID).Variants = append(memoryModel(r.store, modelID).Variants, variant)
+	return nil
+}
+
+func (r *memoryCatalogVariantRepo) Update(_ context.Context, modelID string, variant entity.CatalogVariant) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Variants {
+		if model.Variants[index].ID == variant.ID {
+			model.Variants[index] = variant
+			return nil
+		}
+	}
+	return fmt.Errorf("variant %s not found", variant.ID)
+}
+
+func (r *memoryCatalogVariantRepo) Delete(_ context.Context, modelID, id string) error {
+	model := memoryModel(r.store, modelID)
+	for index := range model.Variants {
+		if model.Variants[index].ID == id {
+			model.Variants = append(model.Variants[:index], model.Variants[index+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *memoryCatalogVariantRepo) DeleteByModelID(_ context.Context, modelID string) error {
+	memoryModel(r.store, modelID).Variants = nil
+	return nil
+}
+
+func memoryModel(store *memoryCatalogStore, id string) *entity.CatalogProductModel {
+	for index := range store.snapshot.Models {
+		if store.snapshot.Models[index].ID == id {
+			return &store.snapshot.Models[index]
+		}
+	}
+	panic(fmt.Sprintf("model %s not found", id))
 }
 
 func cloneCatalogSnapshot(snapshot entity.CatalogSnapshot) entity.CatalogSnapshot {
@@ -36,7 +398,8 @@ func cloneCatalogSnapshot(snapshot entity.CatalogSnapshot) entity.CatalogSnapsho
 
 func newCatalogBaseTestService(t *testing.T) *Service {
 	t.Helper()
-	return New(&memoryCatalogBaseRepository{})
+	store := &memoryCatalogStore{}
+	return New(newMemoryCatalogRepositories(store), &memoryCatalogUnitOfWork{store: store})
 }
 
 func catalogCategory(t *testing.T, service *Service) string {

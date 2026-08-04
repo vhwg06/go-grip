@@ -1,7 +1,8 @@
 // Package catalogbase contains the Catalog Base application service.
 //
-// The service owns the catalog invariants and only talks to the repository
-// port.  GORM rows and SQL transactions live in internal/repo/persistent.
+// The service owns the catalog invariants and composes explicit CRUD
+// repository ports. GORM rows and transaction binding live in
+// internal/repo/persistent.
 package catalogbase
 
 import (
@@ -57,25 +58,261 @@ func ErrorStatus(err error) (int, map[string]any) {
 }
 
 type Service struct {
-	repository repo.CatalogBaseRepository
+	repositories repo.CatalogRepositories
+	unitOfWork   repo.CatalogUnitOfWork
 }
 
-func New(repository repo.CatalogBaseRepository) *Service {
-	return &Service{repository: repository}
+// New creates the Catalog Base application service from explicit CRUD
+// repositories and a transaction coordinator. The service composes the
+// repositories for aggregate reads and coordinates multi-repository writes.
+func New(repositories repo.CatalogRepositories, unitOfWork repo.CatalogUnitOfWork) *Service {
+	return &Service{repositories: repositories, unitOfWork: unitOfWork}
+}
+
+func (s *Service) validateRepositories() error {
+	if s == nil {
+		return errors.New("catalog base service is not configured")
+	}
+	dependencies := []struct {
+		name  string
+		value any
+	}{
+		{
+			name:  "category repository",
+			value: s.repositories.Categories,
+		},
+		{
+			name:  "attribute definition repository",
+			value: s.repositories.Definitions,
+		},
+		{
+			name:  "master repository",
+			value: s.repositories.Masters,
+		},
+		{
+			name:  "ProductModel repository",
+			value: s.repositories.ProductModels,
+		},
+		{
+			name:  "ProductModel image repository",
+			value: s.repositories.ProductImages,
+		},
+		{
+			name:  "VariantDimension repository",
+			value: s.repositories.VariantDimensions,
+		},
+		{
+			name:  "Variant repository",
+			value: s.repositories.Variants,
+		},
+	}
+	for _, dependency := range dependencies {
+		if dependency.value == nil {
+			return fmt.Errorf("catalog base %s is not configured", dependency.name)
+		}
+	}
+	return nil
 }
 
 func (s *Service) load(ctx context.Context) (entity.CatalogSnapshot, error) {
-	if s == nil || s.repository == nil {
-		return entity.CatalogSnapshot{}, errors.New("catalog base repository is not configured")
+	if err := s.validateRepositories(); err != nil {
+		return entity.CatalogSnapshot{}, err
 	}
-	return s.repository.LoadCatalogBase(ctx)
+	categories, err := s.repositories.Categories.List(ctx)
+	if err != nil {
+		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load categories: %w", err)
+	}
+	definitions, err := s.repositories.Definitions.List(ctx)
+	if err != nil {
+		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load definitions: %w", err)
+	}
+	masters, err := s.repositories.Masters.List(ctx, "")
+	if err != nil {
+		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load masters: %w", err)
+	}
+	models, err := s.repositories.ProductModels.List(ctx)
+	if err != nil {
+		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModels: %w", err)
+	}
+	for index := range models {
+		images, imageErr := s.repositories.ProductImages.ListByModelID(ctx, models[index].ID)
+		if imageErr != nil {
+			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModel images: %w", imageErr)
+		}
+		dimensions, dimensionErr := s.repositories.VariantDimensions.ListByModelID(ctx, models[index].ID)
+		if dimensionErr != nil {
+			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load VariantDimensions: %w", dimensionErr)
+		}
+		variants, variantErr := s.repositories.Variants.ListByModelID(ctx, models[index].ID)
+		if variantErr != nil {
+			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load Variants: %w", variantErr)
+		}
+		models[index].Images = images
+		models[index].Dimensions = dimensions
+		models[index].Variants = variants
+	}
+	return entity.CatalogSnapshot{Categories: categories, Definitions: definitions, Masters: masters, Models: models}, nil
 }
 
 func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) error {
-	if s == nil || s.repository == nil {
-		return errors.New("catalog base repository is not configured")
+	if err := s.validateRepositories(); err != nil {
+		return err
 	}
-	return s.repository.SaveCatalogBase(ctx, snapshot)
+	if s.unitOfWork == nil {
+		return errors.New("catalog base unit of work is not configured")
+	}
+	return s.unitOfWork.Within(ctx, func(repositories repo.CatalogRepositories) error {
+		return persistSnapshot(ctx, repositories, snapshot)
+	})
+}
+
+func persistSnapshot(ctx context.Context, repositories repo.CatalogRepositories, snapshot entity.CatalogSnapshot) error {
+	if err := clearSnapshot(ctx, repositories); err != nil {
+		return err
+	}
+	if err := storeCategories(ctx, repositories.Categories, snapshot.Categories); err != nil {
+		return err
+	}
+	for _, definition := range snapshot.Definitions {
+		if err := repositories.Definitions.Store(ctx, definition); err != nil {
+			return fmt.Errorf("catalog base: store definition %s: %w", definition.ID, err)
+		}
+	}
+	for _, master := range snapshot.Masters {
+		if err := repositories.Masters.Store(ctx, master); err != nil {
+			return fmt.Errorf("catalog base: store master %s: %w", master.ID, err)
+		}
+	}
+	for _, model := range snapshot.Models {
+		if err := repositories.ProductModels.Store(ctx, model); err != nil {
+			return fmt.Errorf("catalog base: store ProductModel %s: %w", model.ID, err)
+		}
+		for _, image := range model.Images {
+			if err := repositories.ProductImages.Store(ctx, model.ID, image); err != nil {
+				return fmt.Errorf("catalog base: store image %s: %w", image.ID, err)
+			}
+		}
+		for _, dimension := range model.Dimensions {
+			if err := repositories.VariantDimensions.Store(ctx, model.ID, dimension); err != nil {
+				return fmt.Errorf("catalog base: store VariantDimension %s: %w", dimension.ID, err)
+			}
+		}
+		for _, variant := range model.Variants {
+			if err := repositories.Variants.Store(ctx, model.ID, variant); err != nil {
+				return fmt.Errorf("catalog base: store Variant %s: %w", variant.ID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func clearSnapshot(ctx context.Context, repositories repo.CatalogRepositories) error {
+	models, err := repositories.ProductModels.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list ProductModels for replacement: %w", err)
+	}
+	for _, model := range models {
+		if err := repositories.Variants.DeleteByModelID(ctx, model.ID); err != nil {
+			return fmt.Errorf("catalog base: clear Variants for %s: %w", model.ID, err)
+		}
+		if err := repositories.VariantDimensions.DeleteByModelID(ctx, model.ID); err != nil {
+			return fmt.Errorf("catalog base: clear VariantDimensions for %s: %w", model.ID, err)
+		}
+		if err := repositories.ProductImages.DeleteByModelID(ctx, model.ID); err != nil {
+			return fmt.Errorf("catalog base: clear images for %s: %w", model.ID, err)
+		}
+		if err := repositories.ProductModels.Delete(ctx, model.ID); err != nil {
+			return fmt.Errorf("catalog base: clear ProductModel %s: %w", model.ID, err)
+		}
+	}
+	masters, err := repositories.Masters.List(ctx, "")
+	if err != nil {
+		return fmt.Errorf("catalog base: list masters for replacement: %w", err)
+	}
+	for _, master := range masters {
+		if err := repositories.Masters.Delete(ctx, master.Kind, master.ID); err != nil {
+			return fmt.Errorf("catalog base: clear master %s: %w", master.ID, err)
+		}
+	}
+	definitions, err := repositories.Definitions.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list definitions for replacement: %w", err)
+	}
+	for _, definition := range definitions {
+		if err := repositories.Definitions.Delete(ctx, definition.ID); err != nil {
+			return fmt.Errorf("catalog base: clear definition %s: %w", definition.ID, err)
+		}
+	}
+	categories, err := repositories.Categories.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list categories for replacement: %w", err)
+	}
+	if err := deleteCategories(ctx, repositories.Categories, categories); err != nil {
+		return err
+	}
+	return nil
+}
+
+func storeCategories(ctx context.Context, repository repo.CatalogCategoryRepository, categories []entity.CatalogCategory) error {
+	remaining := append([]entity.CatalogCategory(nil), categories...)
+	for len(remaining) > 0 {
+		progress := false
+		next := make([]entity.CatalogCategory, 0, len(remaining))
+		for _, category := range remaining {
+			if category.ParentID != nil && containsCategory(remaining, *category.ParentID) {
+				next = append(next, category)
+				continue
+			}
+			if err := repository.Store(ctx, category); err != nil {
+				return fmt.Errorf("catalog base: store category %s: %w", category.ID, err)
+			}
+			progress = true
+		}
+		if !progress {
+			return errors.New("catalog base: category hierarchy contains an unresolved parent")
+		}
+		remaining = next
+	}
+	return nil
+}
+
+func deleteCategories(ctx context.Context, repository repo.CatalogCategoryRepository, categories []entity.CatalogCategory) error {
+	remaining := append([]entity.CatalogCategory(nil), categories...)
+	for len(remaining) > 0 {
+		progress := false
+		next := make([]entity.CatalogCategory, 0, len(remaining))
+		for _, category := range remaining {
+			hasChild := false
+			for _, candidate := range remaining {
+				if candidate.ParentID != nil && *candidate.ParentID == category.ID {
+					hasChild = true
+					break
+				}
+			}
+			if hasChild {
+				next = append(next, category)
+				continue
+			}
+			if err := repository.Delete(ctx, category.ID); err != nil {
+				return fmt.Errorf("catalog base: clear category %s: %w", category.ID, err)
+			}
+			progress = true
+		}
+		if !progress {
+			return errors.New("catalog base: category hierarchy contains a cycle")
+		}
+		remaining = next
+	}
+	return nil
+}
+
+func containsCategory(categories []entity.CatalogCategory, id string) bool {
+	for _, category := range categories {
+		if category.ID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func findCategory(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogCategory, error) {

@@ -159,11 +159,92 @@ type (
 		GetSetting(ctx context.Context, key string) (entity.Setting, error)
 	}
 
-	// CatalogBaseRepository persists the Catalog Base aggregates as one
-	// transaction.  The application layer never depends on GORM or SQL rows.
-	CatalogBaseRepository interface {
-		LoadCatalogBase(ctx context.Context) (entity.CatalogSnapshot, error)
-		SaveCatalogBase(ctx context.Context, snapshot entity.CatalogSnapshot) error
+	// CatalogCategoryRepository persists catalog category entities.
+	CatalogCategoryRepository interface {
+		List(ctx context.Context) ([]entity.CatalogCategory, error)
+		GetByID(ctx context.Context, id string) (entity.CatalogCategory, error)
+		Store(ctx context.Context, category entity.CatalogCategory) error
+		Update(ctx context.Context, category entity.CatalogCategory) error
+		Delete(ctx context.Context, id string) error
+	}
+
+	// CatalogAttributeDefinitionRepository persists attribute definitions and
+	// their embedded enum values.
+	CatalogAttributeDefinitionRepository interface {
+		List(ctx context.Context) ([]entity.CatalogAttributeDefinition, error)
+		GetByID(ctx context.Context, id string) (entity.CatalogAttributeDefinition, error)
+		Store(ctx context.Context, definition entity.CatalogAttributeDefinition) error
+		Update(ctx context.Context, definition entity.CatalogAttributeDefinition) error
+		Delete(ctx context.Context, id string) error
+	}
+
+	// CatalogMasterRepository persists Material, Finish, and Pack masters.
+	CatalogMasterRepository interface {
+		List(ctx context.Context, kind string) ([]entity.CatalogMaster, error)
+		GetByID(ctx context.Context, kind, id string) (entity.CatalogMaster, error)
+		Store(ctx context.Context, master entity.CatalogMaster) error
+		Update(ctx context.Context, master entity.CatalogMaster) error
+		Delete(ctx context.Context, kind, id string) error
+	}
+
+	// CatalogProductModelRepository persists ProductModel root records.
+	CatalogProductModelRepository interface {
+		List(ctx context.Context) ([]entity.CatalogProductModel, error)
+		GetByID(ctx context.Context, id string) (entity.CatalogProductModel, error)
+		Store(ctx context.Context, model entity.CatalogProductModel) error
+		Update(ctx context.Context, model entity.CatalogProductModel) error
+		Delete(ctx context.Context, id string) error
+	}
+
+	// CatalogProductImageRepository persists ProductModel image entities.
+	CatalogProductImageRepository interface {
+		ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogProductImage, error)
+		Store(ctx context.Context, modelID string, image entity.CatalogProductImage) error
+		Update(ctx context.Context, modelID string, image entity.CatalogProductImage) error
+		Delete(ctx context.Context, modelID, imageID string) error
+		DeleteByModelID(ctx context.Context, modelID string) error
+	}
+
+	// CatalogVariantDimensionRepository persists ProductModel variant
+	// dimension entities.
+	CatalogVariantDimensionRepository interface {
+		ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogVariantDimension, error)
+		GetByID(ctx context.Context, modelID, id string) (entity.CatalogVariantDimension, error)
+		Store(ctx context.Context, modelID string, dimension entity.CatalogVariantDimension) error
+		Update(ctx context.Context, modelID string, dimension entity.CatalogVariantDimension) error
+		Delete(ctx context.Context, modelID, id string) error
+		DeleteByModelID(ctx context.Context, modelID string) error
+	}
+
+	// CatalogVariantRepository persists ProductModel variant entities.
+	CatalogVariantRepository interface {
+		List(ctx context.Context) ([]entity.CatalogVariant, error)
+		ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogVariant, error)
+		GetByID(ctx context.Context, modelID, id string) (entity.CatalogVariant, error)
+		Store(ctx context.Context, modelID string, variant entity.CatalogVariant) error
+		Update(ctx context.Context, modelID string, variant entity.CatalogVariant) error
+		Delete(ctx context.Context, modelID, id string) error
+		DeleteByModelID(ctx context.Context, modelID string) error
+	}
+
+	// CatalogRepositories groups the repositories used by Catalog Base
+	// application orchestration. Each field remains a separate persistence
+	// contract so CRUD and ownership are explicit at the application boundary.
+	CatalogRepositories struct {
+		Categories        CatalogCategoryRepository
+		Definitions       CatalogAttributeDefinitionRepository
+		Masters           CatalogMasterRepository
+		ProductModels     CatalogProductModelRepository
+		ProductImages     CatalogProductImageRepository
+		VariantDimensions CatalogVariantDimensionRepository
+		Variants          CatalogVariantRepository
+	}
+
+	// CatalogUnitOfWork executes a catalog operation with all participating
+	// repositories bound to one transaction without exposing infrastructure
+	// transaction handles to the application layer.
+	CatalogUnitOfWork interface {
+		Within(ctx context.Context, fn func(CatalogRepositories) error) error
 	}
 
 	CheckoutRepository interface {
