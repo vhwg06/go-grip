@@ -1,6 +1,14 @@
 version: "3.9"
 
 services:
+  # Integration tests exercise the app directly with httptest and do not need
+  # the local reverse proxy.  The base compose file still defines nginx for
+  # local development, where its optional RabbitMQ/NATS upstreams are present.
+  # Keep that service out of CI so a missing optional upstream cannot prevent
+  # the integration container from starting.
+  nginx:
+    profiles: ["local"]
+
   db:
     container_name: integration-db
     image: postgres:18.4-alpine

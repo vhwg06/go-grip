@@ -78,13 +78,6 @@ func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) err
 	return s.repository.SaveCatalogBase(ctx, snapshot)
 }
 
-type lookup struct {
-	model      *entity.CatalogProductModel
-	category   *entity.CatalogCategory
-	definition *entity.CatalogAttributeDefinition
-	master     *entity.CatalogMaster
-}
-
 func findCategory(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogCategory, error) {
 	for index := range snapshot.Categories {
 		if snapshot.Categories[index].ID == id {
