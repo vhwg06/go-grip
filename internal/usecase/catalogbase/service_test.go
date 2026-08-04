@@ -27,16 +27,17 @@ func newMemoryCatalogRepositories(store *memoryCatalogStore) repo.CatalogReposit
 	}
 }
 
-type memoryCatalogUnitOfWork struct {
+type memoryUnitOfWork struct {
 	store *memoryCatalogStore
 }
 
-func (u *memoryCatalogUnitOfWork) Within(_ context.Context, fn func(repo.CatalogRepositories) error) error {
-	transaction := &memoryCatalogStore{snapshot: cloneCatalogSnapshot(u.store.snapshot)}
-	if err := fn(newMemoryCatalogRepositories(transaction)); err != nil {
+func (u *memoryUnitOfWork) Within(ctx context.Context, fn func(context.Context) error) error {
+	original := cloneCatalogSnapshot(u.store.snapshot)
+	u.store.snapshot = cloneCatalogSnapshot(u.store.snapshot)
+	if err := fn(ctx); err != nil {
+		u.store.snapshot = original
 		return err
 	}
-	u.store.snapshot = cloneCatalogSnapshot(transaction.snapshot)
 	return nil
 }
 
@@ -399,7 +400,7 @@ func cloneCatalogSnapshot(snapshot entity.CatalogSnapshot) entity.CatalogSnapsho
 func newCatalogBaseTestService(t *testing.T) *Service {
 	t.Helper()
 	store := &memoryCatalogStore{}
-	return New(newMemoryCatalogRepositories(store), &memoryCatalogUnitOfWork{store: store})
+	return New(newMemoryCatalogRepositories(store), &memoryUnitOfWork{store: store})
 }
 
 func catalogCategory(t *testing.T, service *Service) string {

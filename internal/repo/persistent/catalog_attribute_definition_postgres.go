@@ -34,7 +34,7 @@ var _ repo.CatalogAttributeDefinitionRepository = (*CatalogAttributeDefinitionRe
 
 // List returns definitions in their configured ordering.
 func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]entity.CatalogAttributeDefinition, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]entity.Cat
 
 // GetByID returns one definition by identity.
 func (r *CatalogAttributeDefinitionRepo) GetByID(ctx context.Context, id string) (entity.CatalogAttributeDefinition, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogAttributeDefinition{}, err
 	}
@@ -64,7 +64,7 @@ func (r *CatalogAttributeDefinitionRepo) GetByID(ctx context.Context, id string)
 
 // Store creates one definition.
 func (r *CatalogAttributeDefinitionRepo) Store(ctx context.Context, definition entity.CatalogAttributeDefinition) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (r *CatalogAttributeDefinitionRepo) Store(ctx context.Context, definition e
 
 // Update replaces one definition and its embedded enum values.
 func (r *CatalogAttributeDefinitionRepo) Update(ctx context.Context, definition entity.CatalogAttributeDefinition) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (r *CatalogAttributeDefinitionRepo) Update(ctx context.Context, definition 
 
 // Delete removes one definition by identity.
 func (r *CatalogAttributeDefinitionRepo) Delete(ctx context.Context, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

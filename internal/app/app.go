@@ -110,7 +110,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 
 	catalogUseCase := catalog.NewWithGrip(catalogRepo, gripCatalogRepo)
 	catalogBaseRepositories := persistent.NewCatalogRepositories(pg)
-	catalogBaseUnitOfWork := persistent.NewCatalogUnitOfWork(pg)
+	catalogBaseUnitOfWork := persistent.NewUnitOfWork(pg)
 	catalogBaseUseCase := catalogbase.New(catalogBaseRepositories, catalogBaseUnitOfWork)
 
 	return useCases{

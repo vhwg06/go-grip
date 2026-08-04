@@ -35,7 +35,7 @@ var _ repo.CatalogProductModelRepository = (*CatalogProductModelRepo)(nil)
 
 // List returns ProductModel roots in creation order.
 func (r *CatalogProductModelRepo) List(ctx context.Context) ([]entity.CatalogProductModel, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *CatalogProductModelRepo) List(ctx context.Context) ([]entity.CatalogPro
 
 // GetByID returns one ProductModel root by identity.
 func (r *CatalogProductModelRepo) GetByID(ctx context.Context, id string) (entity.CatalogProductModel, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogProductModel{}, err
 	}
@@ -65,7 +65,7 @@ func (r *CatalogProductModelRepo) GetByID(ctx context.Context, id string) (entit
 
 // Store creates one ProductModel root.
 func (r *CatalogProductModelRepo) Store(ctx context.Context, model entity.CatalogProductModel) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (r *CatalogProductModelRepo) Store(ctx context.Context, model entity.Catalo
 
 // Update replaces one ProductModel root.
 func (r *CatalogProductModelRepo) Update(ctx context.Context, model entity.CatalogProductModel) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (r *CatalogProductModelRepo) Update(ctx context.Context, model entity.Catal
 
 // Delete removes one ProductModel root by identity.
 func (r *CatalogProductModelRepo) Delete(ctx context.Context, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

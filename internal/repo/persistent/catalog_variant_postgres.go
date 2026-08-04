@@ -32,7 +32,7 @@ var _ repo.CatalogVariantRepository = (*CatalogVariantRepo)(nil)
 
 // List returns variants across ProductModels in stable creation order.
 func (r *CatalogVariantRepo) List(ctx context.Context) ([]entity.CatalogVariant, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *CatalogVariantRepo) List(ctx context.Context) ([]entity.CatalogVariant,
 
 // ListByModelID returns variants for one ProductModel.
 func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogVariant, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) 
 
 // GetByID returns one variant for its owning ProductModel.
 func (r *CatalogVariantRepo) GetByID(ctx context.Context, modelID, id string) (entity.CatalogVariant, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogVariant{}, err
 	}
@@ -84,7 +84,7 @@ func variantToEntity(row models.CatalogBaseVariant) entity.CatalogVariant {
 
 // Store creates one variant for a ProductModel.
 func (r *CatalogVariantRepo) Store(ctx context.Context, modelID string, variant entity.CatalogVariant) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (r *CatalogVariantRepo) Store(ctx context.Context, modelID string, variant 
 
 // Update replaces one variant for a ProductModel.
 func (r *CatalogVariantRepo) Update(ctx context.Context, modelID string, variant entity.CatalogVariant) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (r *CatalogVariantRepo) Update(ctx context.Context, modelID string, variant
 
 // Delete removes one variant from a ProductModel.
 func (r *CatalogVariantRepo) Delete(ctx context.Context, modelID, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (r *CatalogVariantRepo) Delete(ctx context.Context, modelID, id string) err
 
 // DeleteByModelID removes all variants belonging to one ProductModel.
 func (r *CatalogVariantRepo) DeleteByModelID(ctx context.Context, modelID string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

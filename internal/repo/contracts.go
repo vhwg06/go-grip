@@ -240,11 +240,10 @@ type (
 		Variants          CatalogVariantRepository
 	}
 
-	// CatalogUnitOfWork executes a catalog operation with all participating
-	// repositories bound to one transaction without exposing infrastructure
-	// transaction handles to the application layer.
-	CatalogUnitOfWork interface {
-		Within(ctx context.Context, fn func(CatalogRepositories) error) error
+	// UnitOfWork executes an application operation with one transaction-bound
+	// context without exposing infrastructure transaction handles.
+	UnitOfWork interface {
+		Within(ctx context.Context, fn func(context.Context) error) error
 	}
 
 	CheckoutRepository interface {

@@ -33,7 +33,7 @@ var _ repo.CatalogProductImageRepository = (*CatalogProductImageRepo)(nil)
 
 // ListByModelID returns images for one ProductModel in display order.
 func (r *CatalogProductImageRepo) ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogProductImage, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (r *CatalogProductImageRepo) ListByModelID(ctx context.Context, modelID str
 
 // Store creates one image for a ProductModel.
 func (r *CatalogProductImageRepo) Store(ctx context.Context, modelID string, image entity.CatalogProductImage) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (r *CatalogProductImageRepo) Store(ctx context.Context, modelID string, ima
 
 // Update replaces one image for a ProductModel.
 func (r *CatalogProductImageRepo) Update(ctx context.Context, modelID string, image entity.CatalogProductImage) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (r *CatalogProductImageRepo) Update(ctx context.Context, modelID string, im
 
 // Delete removes one image from a ProductModel.
 func (r *CatalogProductImageRepo) Delete(ctx context.Context, modelID, imageID string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (r *CatalogProductImageRepo) Delete(ctx context.Context, modelID, imageID s
 
 // DeleteByModelID removes all images belonging to one ProductModel.
 func (r *CatalogProductImageRepo) DeleteByModelID(ctx context.Context, modelID string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

@@ -33,7 +33,7 @@ var _ repo.CatalogMasterRepository = (*CatalogMasterRepo)(nil)
 
 // List returns masters for a kind. An empty kind returns all supported rows.
 func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]entity.CatalogMaster, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]entity.Cat
 
 // GetByID returns one master by kind and identity.
 func (r *CatalogMasterRepo) GetByID(ctx context.Context, kind, id string) (entity.CatalogMaster, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogMaster{}, err
 	}
@@ -67,7 +67,7 @@ func (r *CatalogMasterRepo) GetByID(ctx context.Context, kind, id string) (entit
 
 // Store creates one master.
 func (r *CatalogMasterRepo) Store(ctx context.Context, master entity.CatalogMaster) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (r *CatalogMasterRepo) Store(ctx context.Context, master entity.CatalogMast
 
 // Update replaces one master.
 func (r *CatalogMasterRepo) Update(ctx context.Context, master entity.CatalogMaster) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (r *CatalogMasterRepo) Update(ctx context.Context, master entity.CatalogMas
 
 // Delete removes one master by kind and identity.
 func (r *CatalogMasterRepo) Delete(ctx context.Context, kind, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

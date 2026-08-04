@@ -32,7 +32,7 @@ var _ repo.CatalogCategoryRepository = (*CatalogCategoryRepo)(nil)
 
 // List returns categories in their stable display order.
 func (r *CatalogCategoryRepo) List(ctx context.Context) ([]entity.CatalogCategory, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *CatalogCategoryRepo) List(ctx context.Context) ([]entity.CatalogCategor
 
 // GetByID returns one category by identity.
 func (r *CatalogCategoryRepo) GetByID(ctx context.Context, id string) (entity.CatalogCategory, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogCategory{}, err
 	}
@@ -62,7 +62,7 @@ func (r *CatalogCategoryRepo) GetByID(ctx context.Context, id string) (entity.Ca
 
 // Store creates one category.
 func (r *CatalogCategoryRepo) Store(ctx context.Context, category entity.CatalogCategory) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (r *CatalogCategoryRepo) Store(ctx context.Context, category entity.Catalog
 
 // Update replaces the persisted fields of one category.
 func (r *CatalogCategoryRepo) Update(ctx context.Context, category entity.CatalogCategory) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (r *CatalogCategoryRepo) Update(ctx context.Context, category entity.Catalo
 
 // Delete removes one category by identity.
 func (r *CatalogCategoryRepo) Delete(ctx context.Context, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}

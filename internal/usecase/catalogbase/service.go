@@ -59,13 +59,13 @@ func ErrorStatus(err error) (int, map[string]any) {
 
 type Service struct {
 	repositories repo.CatalogRepositories
-	unitOfWork   repo.CatalogUnitOfWork
+	unitOfWork   repo.UnitOfWork
 }
 
 // New creates the Catalog Base application service from explicit CRUD
 // repositories and a transaction coordinator. The service composes the
 // repositories for aggregate reads and coordinates multi-repository writes.
-func New(repositories repo.CatalogRepositories, unitOfWork repo.CatalogUnitOfWork) *Service {
+func New(repositories repo.CatalogRepositories, unitOfWork repo.UnitOfWork) *Service {
 	return &Service{repositories: repositories, unitOfWork: unitOfWork}
 }
 
@@ -161,8 +161,8 @@ func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) err
 	if s.unitOfWork == nil {
 		return errors.New("catalog base unit of work is not configured")
 	}
-	return s.unitOfWork.Within(ctx, func(repositories repo.CatalogRepositories) error {
-		return persistSnapshot(ctx, repositories, snapshot)
+	return s.unitOfWork.Within(ctx, func(transactionContext context.Context) error {
+		return persistSnapshot(transactionContext, s.repositories, snapshot)
 	})
 }
 

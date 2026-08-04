@@ -33,7 +33,7 @@ var _ repo.CatalogVariantDimensionRepository = (*CatalogVariantDimensionRepo)(ni
 
 // ListByModelID returns dimensions belonging to one ProductModel.
 func (r *CatalogVariantDimensionRepo) ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogVariantDimension, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func dimensionToEntity(row models.CatalogBaseDimension) entity.CatalogVariantDim
 
 // GetByID returns one variant dimension for its owning ProductModel.
 func (r *CatalogVariantDimensionRepo) GetByID(ctx context.Context, modelID, id string) (entity.CatalogVariantDimension, error) {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return entity.CatalogVariantDimension{}, err
 	}
@@ -68,7 +68,7 @@ func (r *CatalogVariantDimensionRepo) GetByID(ctx context.Context, modelID, id s
 
 // Store creates one variant dimension.
 func (r *CatalogVariantDimensionRepo) Store(ctx context.Context, modelID string, dimension entity.CatalogVariantDimension) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (r *CatalogVariantDimensionRepo) Store(ctx context.Context, modelID string,
 
 // Update replaces one variant dimension.
 func (r *CatalogVariantDimensionRepo) Update(ctx context.Context, modelID string, dimension entity.CatalogVariantDimension) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (r *CatalogVariantDimensionRepo) Update(ctx context.Context, modelID string
 
 // Delete removes one variant dimension.
 func (r *CatalogVariantDimensionRepo) Delete(ctx context.Context, modelID, id string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (r *CatalogVariantDimensionRepo) Delete(ctx context.Context, modelID, id st
 
 // DeleteByModelID removes all dimensions belonging to one ProductModel.
 func (r *CatalogVariantDimensionRepo) DeleteByModelID(ctx context.Context, modelID string) error {
-	db, err := catalogDB(r.db)
+	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
