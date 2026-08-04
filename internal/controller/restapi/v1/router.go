@@ -5,6 +5,7 @@ import (
 
 	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
 	"github.com/evrone/go-clean-template/internal/usecase"
+	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 	"github.com/go-playground/validator/v10"
@@ -35,6 +36,9 @@ func NewRoutes(apiV1Group fiber.Router, t usecase.Translation, u usecase.User, t
 		adminUsers: adminUsers,
 		l:          l,
 		v:          validator.New(validator.WithRequiredStructEnabled()),
+	}
+	if provider, ok := catalog.(interface{ CatalogBaseService() *catalogbase.Service }); ok {
+		r.catalogBase = provider.CatalogBaseService()
 	}
 
 	// Public routes

@@ -18,6 +18,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/usecase/auth"
 	"github.com/evrone/go-clean-template/internal/usecase/cart"
 	"github.com/evrone/go-clean-template/internal/usecase/catalog"
+	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/evrone/go-clean-template/internal/usecase/checkout"
 	"github.com/evrone/go-clean-template/internal/usecase/content"
 	"github.com/evrone/go-clean-template/internal/usecase/importer"
@@ -106,11 +107,14 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		mediaStorage = webapi.NewLocalStorage(cfg.App.BaseURL)
 	}
 
+	catalogUseCase := catalog.NewWithGrip(catalogRepo, gripCatalogRepo)
+	catalogUseCase.SetCatalogBase(catalogbase.New(pg.Gorm))
+
 	return useCases{
 		user:        user.New(userRepo, jwtManager),
 		task:        task.New(taskRepo),
 		translation: translation.New(translationRepo, webapi.New()),
-		catalog:     catalog.NewWithGrip(catalogRepo, gripCatalogRepo),
+		catalog:     catalogUseCase,
 		auth:        auth.New(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
 		checkout:    checkoutUC,
 		orders:      orders.New(gripOrderRepo),

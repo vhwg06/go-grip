@@ -7,12 +7,14 @@ import (
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
+	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/google/uuid"
 )
 
 type UseCase struct {
 	repo     repo.CatalogRepo
 	gripRepo repo.CatalogRepository
+	base     *catalogbase.Service
 }
 
 func New(r repo.CatalogRepo) *UseCase { return &UseCase{repo: r} }
@@ -21,6 +23,17 @@ func NewGrip(r repo.CatalogRepository) *UseCase { return &UseCase{gripRepo: r} }
 
 func NewWithGrip(r repo.CatalogRepo, grip repo.CatalogRepository) *UseCase {
 	return &UseCase{repo: r, gripRepo: grip}
+}
+
+// SetCatalogBase wires the ProductModel/Variant Catalog Base service without
+// changing the legacy Catalog interface used by the existing storefront.
+func (uc *UseCase) SetCatalogBase(service *catalogbase.Service) { uc.base = service }
+
+func (uc *UseCase) CatalogBaseService() *catalogbase.Service {
+	if uc == nil {
+		return nil
+	}
+	return uc.base
 }
 
 func (uc *UseCase) CreateProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
