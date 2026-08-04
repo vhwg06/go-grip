@@ -605,10 +605,27 @@ func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) 
 	require.NoError(t, err)
 	materialID := mapString(t, material, "id")
 	reference, err := service.CreateDefinition(ctx, map[string]any{
-		"key": "material-reference-" + t.Name(), "displayName": "Material", "valueKind": "Reference", "referenceTarget": "Material",
+		"key":             "material-reference-" + t.Name(),
+		"displayName":     "Material",
+		"ordering":        20,
+		"valueKind":       "Reference",
+		"referenceTarget": "Material",
 	})
 	require.NoError(t, err)
 	referenceID := mapString(t, reference, "id")
+	surface, err := service.CreateDefinition(ctx, map[string]any{
+		"key":         "surface-" + t.Name(),
+		"displayName": "Surface",
+		"ordering":    10,
+		"valueKind":   "Enum",
+	})
+	require.NoError(t, err)
+	surfaceID := mapString(t, surface, "id")
+	surfaceValue, err := service.AddEnumValue(ctx, surfaceID, map[string]any{
+		"key":   "brushed",
+		"label": "Brushed",
+	})
+	require.NoError(t, err)
 	variantReference, err := service.CreateDefinition(ctx, map[string]any{
 		"key": "variant-material-reference-" + t.Name(), "displayName": "Variant Material", "valueKind": "Reference", "referenceTarget": "Material",
 	})
@@ -622,16 +639,34 @@ func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) 
 
 	model, err := service.CreateModel(ctx, map[string]any{
 		"name": "Reference model", "categoryId": categoryID,
-		"fixedAttributes": map[string]any{referenceID: "Inox 304"},
+		"fixedAttributes": map[string]any{
+			referenceID: "Inox 304",
+			surfaceID:   surfaceValue["id"],
+		},
 		"measurements":    map[string]any{"overallLength": map[string]any{"value": 20, "unit": "cm"}},
 	})
 	require.NoError(t, err)
 	modelID := mapString(t, model, "id")
 	fixed := mapStringMap(t, model, "fixedAttributes")
 	require.Equal(t, materialID, fixed[referenceID])
+	require.Equal(t, surfaceValue["id"], fixed[surfaceID])
 	measurement := mapStringMap(t, model, "measurements")
 	require.Equal(t, float64(200), measurementMapNumber(t, measurement["overallLength"], "value"))
 	require.Equal(t, "mm", mapStringMap(t, measurement, "overallLength")["unit"])
+	require.Equal(t, []map[string]any{
+		{
+			"key":   "Surface",
+			"value": "Brushed",
+		},
+		{
+			"key":   "Material",
+			"value": "Inox 304",
+		},
+		{
+			"key":   "Overall length",
+			"value": "200 mm",
+		},
+	}, model["specs"])
 
 	dimension, err := service.CreateDimension(ctx, modelID, map[string]any{
 		"definitionId":  variantReferenceID,
@@ -649,6 +684,20 @@ func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) 
 	require.NoError(t, err)
 	require.Len(t, variants, 1)
 	require.Equal(t, materialID, mapStringMap(t, variants[0], "selectedOptions")["Variant Material"])
+	_, err = service.DeactivateEnumValue(ctx, surfaceID, mapString(t, surfaceValue, "id"))
+	require.NoError(t, err)
+	_, err = service.DeactivateMaster(ctx, "material", materialID)
+	require.NoError(t, err)
+
+	_, err = service.ReplaceMedia(ctx, modelID, map[string]any{"images": []any{
+		map[string]any{"url": "https://cdn.example.test/reference.png", "ordering": 1, "primary": true},
+	}})
+	require.NoError(t, err)
+	_, err = service.PublishModel(ctx, modelID)
+	require.NoError(t, err)
+	publicModel, err := service.GetPublicModel(ctx, modelID)
+	require.NoError(t, err)
+	require.Equal(t, model["specs"], publicModel["specs"])
 }
 
 func measurementMapNumber(t *testing.T, value any, key string) float64 {

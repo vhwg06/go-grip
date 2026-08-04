@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/repo"
@@ -650,8 +651,166 @@ func variantOutput(value entity.CatalogVariant) map[string]any {
 	return result
 }
 
+type catalogSpecification struct {
+	key      string
+	value    string
+	ordering int
+}
+
+// specificationOutput resolves stored definition and master identities into
+// the display projection consumed by product detail. Stored attribute maps
+// remain canonical and unchanged; inactive referenced vocabulary stays
+// readable because deactivation is explicitly non-destructive.
+func specificationOutput(snapshot *entity.CatalogSnapshot, model entity.CatalogProductModel) ([]map[string]any, error) {
+	items := make([]catalogSpecification, 0, len(model.FixedAttributes)+len(model.Measurements))
+	for key, rawValue := range model.FixedAttributes {
+		item, err := fixedSpecification(snapshot, key, rawValue)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	for key, rawValue := range model.Measurements {
+		label := humanizeCatalogKey(key)
+		ordering := int(^uint(0) >> 1)
+		unit := ""
+		if definition := definitionByKey(snapshot, key); definition != nil {
+			label = definition.DisplayName
+			ordering = definition.Ordering
+			unit = definition.Unit
+		}
+		items = append(items, catalogSpecification{
+			key:      label,
+			value:    catalogValueText(rawValue, unit),
+			ordering: ordering,
+		})
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].ordering != items[j].ordering {
+			return items[i].ordering < items[j].ordering
+		}
+		return strings.ToLower(items[i].key) < strings.ToLower(items[j].key)
+	})
+
+	result := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		result = append(result, map[string]any{
+			"key":   item.key,
+			"value": item.value,
+		})
+	}
+	return result, nil
+}
+
+func fixedSpecification(snapshot *entity.CatalogSnapshot, key string, rawValue any) (catalogSpecification, error) {
+	definition, err := fixedAttributeDefinition(snapshot, key)
+	if err != nil {
+		kind := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(key)), "id")
+		if kind != "material" && kind != "finish" && kind != "pack" {
+			return catalogSpecification{}, err
+		}
+		master, masterErr := findMaster(snapshot, kind, strings.TrimSpace(fmt.Sprint(rawValue)))
+		if masterErr != nil {
+			return catalogSpecification{}, masterErr
+		}
+		return catalogSpecification{
+			key:      humanizeCatalogKey(kind),
+			value:    master.Name,
+			ordering: len(snapshot.Definitions),
+		}, nil
+	}
+
+	value, err := definitionValueText(snapshot, definition, rawValue)
+	if err != nil {
+		return catalogSpecification{}, err
+	}
+	return catalogSpecification{
+		key:      definition.DisplayName,
+		value:    value,
+		ordering: definition.Ordering,
+	}, nil
+}
+
+func definitionValueText(snapshot *entity.CatalogSnapshot, definition *entity.CatalogAttributeDefinition, rawValue any) (string, error) {
+	raw := strings.TrimSpace(fmt.Sprint(rawValue))
+	switch definition.ValueKind {
+	case "Reference":
+		master, err := findMaster(snapshot, strings.ToLower(definition.ReferenceTarget), raw)
+		if err != nil {
+			return "", err
+		}
+		return master.Name, nil
+	case "Enum":
+		for _, value := range definition.EnumValues {
+			if value.ID == raw || strings.EqualFold(value.Key, raw) || strings.EqualFold(normalizeText(value.Label), normalizeText(raw)) {
+				return value.Label, nil
+			}
+		}
+		return "", notFound("attribute enum value not found")
+	case "Scalar":
+		return catalogValueText(rawValue, definition.Unit), nil
+	default:
+		return "", bad("unsupported attribute valueKind")
+	}
+}
+
+func catalogValueText(rawValue any, fallbackUnit string) string {
+	if object := recordMap(rawValue); len(object) > 0 {
+		value, hasValue := mapValue(object, "value")
+		if hasValue {
+			unit := stringValue(object, "unit")
+			if unit == "" {
+				unit = fallbackUnit
+			}
+			return strings.TrimSpace(strings.TrimSpace(fmt.Sprint(value)) + " " + unit)
+		}
+	}
+	value := strings.TrimSpace(fmt.Sprint(rawValue))
+	if _, numeric := floatValue(rawValue); numeric && fallbackUnit != "" {
+		return value + " " + fallbackUnit
+	}
+	return value
+}
+
+func definitionByKey(snapshot *entity.CatalogSnapshot, key string) *entity.CatalogAttributeDefinition {
+	for index := range snapshot.Definitions {
+		definition := &snapshot.Definitions[index]
+		if strings.EqualFold(definition.Key, key) || strings.EqualFold(definition.DisplayName, key) {
+			return definition
+		}
+	}
+	return nil
+}
+
+func humanizeCatalogKey(key string) string {
+	var builder strings.Builder
+	for index, value := range strings.TrimSpace(key) {
+		switch {
+		case value == '_' || value == '-':
+			builder.WriteRune(' ')
+		case unicode.IsUpper(value) && index > 0:
+			builder.WriteRune(' ')
+			builder.WriteRune(unicode.ToLower(value))
+		default:
+			builder.WriteRune(value)
+		}
+	}
+	text := strings.Join(strings.Fields(builder.String()), " ")
+	if text == "" {
+		return text
+	}
+	runes := []rune(text)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
+}
+
 func modelOutput(snapshot *entity.CatalogSnapshot, value entity.CatalogProductModel, public bool) (map[string]any, error) {
 	result := map[string]any{"id": value.ID, "name": value.Name, "categoryId": value.CategoryID, "description": value.Description, "fixedAttributes": jsonMap(value.FixedAttributes), "measurements": jsonMap(value.Measurements), "status": value.Status, "images": []map[string]any{}, "variants": []map[string]any{}, "variantDimensions": []map[string]any{}, "warrantySummary": value.WarrantySummary}
+	specs, err := specificationOutput(snapshot, value)
+	if err != nil {
+		return nil, err
+	}
+	result["specs"] = specs
 	if value.FixedPackID != nil {
 		result["fixedPackId"] = *value.FixedPackID
 	}
