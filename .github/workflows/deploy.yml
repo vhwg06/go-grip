@@ -137,7 +137,7 @@ jobs:
           VM_PORT: ${{ secrets.VM_PORT || '22' }}
           VM_USER: ${{ secrets.VM_USER }}
           VM_DEPLOY_DIR: ${{ secrets.VM_DEPLOY_DIR || '/opt/go-grip' }}
-          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GHCR_PAT: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
         run: |
           printf '%s\n' "$GHCR_PAT" | ssh -i ~/.ssh/deploy_key -p "$VM_PORT" "$VM_USER@$VM_HOST" "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
