@@ -62,6 +62,7 @@ type storeSettingsContact struct {
 	StickyBarAddress string `json:"stickyBarAddress"`
 	StickyBarHotline string `json:"stickyBarHotline"`
 	ContactEmail     string `json:"contactEmail"`
+	Email            string `json:"email"`
 }
 
 type storeSettingsHomepage struct {
@@ -70,9 +71,11 @@ type storeSettingsHomepage struct {
 }
 
 type storeSettingsHomepageBlock struct {
-	Key     string `json:"key"`
-	Enabled bool   `json:"enabled"`
-	Order   int    `json:"order"`
+	Key      string `json:"key"`
+	Enabled  bool   `json:"enabled"`
+	Order    int    `json:"order"`
+	Priority *int   `json:"priority,omitempty"`
+	Active   *bool  `json:"active,omitempty"`
 }
 
 type storeSettingsFooter struct {
@@ -201,6 +204,9 @@ func (r *V1) gripAdminPutStoreSettingsContact(ctx *fiber.Ctx) error {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
+	if strings.TrimSpace(body.ContactEmail) == "" {
+		body.ContactEmail = strings.TrimSpace(body.Email)
+	}
 	if err := validateStoreSettingsContact(body); err != nil {
 		status, payload := mapDomainError(err)
 		return ctx.Status(status).JSON(payload)
@@ -218,6 +224,15 @@ func (r *V1) gripAdminPutStoreSettingsHomepage(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&body); err != nil {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
+	}
+	for i := range body.Blocks {
+		body.Blocks[i].Key = normalizeHomepageBlockKey(body.Blocks[i].Key)
+		if body.Blocks[i].Priority != nil {
+			body.Blocks[i].Order = *body.Blocks[i].Priority
+		}
+		if body.Blocks[i].Active != nil {
+			body.Blocks[i].Enabled = *body.Blocks[i].Active
+		}
 	}
 	if err := validateStoreSettingsHomepage(body); err != nil {
 		status, payload := mapDomainError(err)
@@ -479,6 +494,15 @@ func validateStoreSettingsHomepage(body storeSettingsHomepage) error {
 		seen[block.Key] = struct{}{}
 	}
 	return nil
+}
+
+func normalizeHomepageBlockKey(key string) string {
+	switch strings.TrimSpace(key) {
+	case "featured":
+		return "featured_products"
+	default:
+		return strings.TrimSpace(key)
+	}
 }
 
 func validateStoreSettingsFooter(body storeSettingsFooter) error {

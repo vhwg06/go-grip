@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
@@ -110,6 +111,9 @@ func (r *V1) saveAdminBanner(ctx *fiber.Ctx) error {
 	}
 
 	sortBannerSlides(slides)
+	if bannerBlock.Config == nil {
+		bannerBlock.Config = map[string]any{}
+	}
 	bannerBlock.Config["slides"] = slides
 
 	if !found {
@@ -128,7 +132,18 @@ func (r *V1) saveAdminBanner(ctx *fiber.Ctx) error {
 	}
 
 	log.Printf("[banners-debug] saveAdminBanner success, block ID=%s", bannerBlock.ID)
-	return ctx.JSON(fiber.Map{"success": true})
+	return ctx.JSON(fiber.Map{
+		"success":     true,
+		"id":          payload.ID,
+		"title":       payload.Title,
+		"subtitle":    payload.Subtitle,
+		"image":       payload.Image,
+		"mobileImage": payload.MobileImage,
+		"ctaText":     payload.CtaText,
+		"ctaLink":     payload.CtaLink,
+		"sortOrder":   payload.SortOrder,
+		"isActive":    payload.IsActive,
+	})
 }
 
 func (r *V1) deleteAdminBanner(ctx *fiber.Ctx) error {
@@ -207,8 +222,37 @@ func sortBannerSlides(slides []AdminBannerSlide) {
 
 func parseBannerPayload(ctx *fiber.Ctx) AdminBannerSlide {
 	var payload AdminBannerSlide
+	var raw map[string]any
 	if len(ctx.Body()) > 0 {
 		_ = ctx.BodyParser(&payload)
+		_ = json.Unmarshal(ctx.Body(), &raw)
+		if payload.ID == 0 {
+			payload.ID = intValueFromJSON(raw, "id")
+		}
+		if payload.SortOrder == 0 {
+			payload.SortOrder = intValueFromJSON(raw, "sortOrder", "sort_order")
+		}
+		if payload.Title == "" {
+			payload.Title = stringValueFromJSON(raw, "title")
+		}
+		if payload.Subtitle == "" {
+			payload.Subtitle = stringValueFromJSON(raw, "subtitle")
+		}
+		if payload.Image == "" {
+			payload.Image = stringValueFromJSON(raw, "image")
+		}
+		if payload.MobileImage == "" {
+			payload.MobileImage = stringValueFromJSON(raw, "mobileImage", "mobile_image")
+		}
+		if payload.CtaText == "" {
+			payload.CtaText = stringValueFromJSON(raw, "ctaText", "cta_text")
+		}
+		if payload.CtaLink == "" {
+			payload.CtaLink = stringValueFromJSON(raw, "ctaLink", "cta_link")
+		}
+		if value, ok := boolValueFromJSON(raw, "isActive", "is_active", "active"); ok {
+			payload.IsActive = value
+		}
 	}
 	if payload.Title != "" || payload.Image != "" || payload.SortOrder != 0 || payload.ID != 0 || payload.MobileImage != "" || payload.CtaText != "" || payload.CtaLink != "" {
 		return payload
@@ -231,4 +275,43 @@ func parseBannerPayload(ctx *fiber.Ctx) AdminBannerSlide {
 		SortOrder:   sortOrder,
 		IsActive:    isActive,
 	}
+}
+
+func intValueFromJSON(raw map[string]any, names ...string) int {
+	for _, name := range names {
+		if value, ok := raw[name]; ok {
+			switch typed := value.(type) {
+			case float64:
+				return int(typed)
+			case string:
+				parsed, _ := strconv.Atoi(strings.TrimSpace(typed))
+				return parsed
+			}
+		}
+	}
+	return 0
+}
+
+func stringValueFromJSON(raw map[string]any, names ...string) string {
+	for _, name := range names {
+		if value, ok := raw[name]; ok && value != nil {
+			return strings.TrimSpace(fmt.Sprint(value))
+		}
+	}
+	return ""
+}
+
+func boolValueFromJSON(raw map[string]any, names ...string) (bool, bool) {
+	for _, name := range names {
+		if value, ok := raw[name]; ok {
+			switch typed := value.(type) {
+			case bool:
+				return typed, true
+			case string:
+				parsed, err := strconv.ParseBool(strings.TrimSpace(typed))
+				return parsed, err == nil
+			}
+		}
+	}
+	return false, false
 }

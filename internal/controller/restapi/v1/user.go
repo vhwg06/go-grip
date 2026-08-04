@@ -90,7 +90,7 @@ func (r *V1) login(ctx *fiber.Ctx) error {
 			return errorResponse(ctx, http.StatusInternalServerError, "internal server error")
 		}
 
-		return ctx.Status(http.StatusOK).JSON(apiSuccessEnvelope(gripTokenPairResponse{
+		return ctx.Status(http.StatusOK).JSON(gripTokenPairEnvelope(gripTokenPairResponse{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			User:         user,

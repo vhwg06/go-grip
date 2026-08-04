@@ -86,6 +86,9 @@ func (r *V1) saveAdminFAQ(ctx *fiber.Ctx) error {
 	}
 
 	sortFAQEntries(entries)
+	if faqBlock.Config == nil {
+		faqBlock.Config = map[string]any{}
+	}
 	faqBlock.Config["entries"] = entries
 
 	if !found {
@@ -97,7 +100,14 @@ func (r *V1) saveAdminFAQ(ctx *fiber.Ctx) error {
 		return errorResponse(ctx, http.StatusInternalServerError, err.Error())
 	}
 
-	return ctx.JSON(fiber.Map{"success": true, "id": payload.ID})
+	return ctx.JSON(fiber.Map{
+		"success":   true,
+		"id":        payload.ID,
+		"question":  payload.Question,
+		"answer":    payload.Answer,
+		"sortOrder": payload.SortOrder,
+		"isActive":  payload.IsActive,
+	})
 }
 
 func (r *V1) deleteAdminFAQ(ctx *fiber.Ctx) error {
@@ -203,9 +213,28 @@ func sortFAQEntries(entries []adminFAQEntry) {
 
 func parseFAQPayload(ctx *fiber.Ctx) (adminFAQEntry, error) {
 	var payload adminFAQEntry
+	var raw map[string]any
 	if len(ctx.Body()) > 0 {
-		if err := ctx.BodyParser(&payload); err == nil && (payload.ID != 0 || payload.Question != "" || payload.Answer != "" || payload.SortOrder != 0 || payload.IsActive) {
-			return payload, nil
+		if err := ctx.BodyParser(&payload); err == nil {
+			_ = json.Unmarshal(ctx.Body(), &raw)
+			if payload.ID == 0 {
+				payload.ID = jsonInt(raw, "id")
+			}
+			if payload.SortOrder == 0 {
+				payload.SortOrder = jsonInt(raw, "sortOrder", "sort_order")
+			}
+			if payload.Question == "" {
+				payload.Question = jsonString(raw, "question")
+			}
+			if payload.Answer == "" {
+				payload.Answer = jsonString(raw, "answer")
+			}
+			if value, ok := jsonBool(raw, "isActive", "is_active", "active"); ok {
+				payload.IsActive = value
+			}
+			if len(raw) > 0 {
+				return payload, nil
+			}
 		}
 	}
 
@@ -224,4 +253,47 @@ func parseFAQPayload(ctx *fiber.Ctx) (adminFAQEntry, error) {
 		IsActive:  isActive,
 	}
 	return payload, nil
+}
+
+func jsonInt(raw map[string]any, names ...string) int {
+	for _, name := range names {
+		value, ok := raw[name]
+		if !ok {
+			continue
+		}
+		switch typed := value.(type) {
+		case float64:
+			return int(typed)
+		case string:
+			parsed, _ := strconv.Atoi(strings.TrimSpace(typed))
+			return parsed
+		}
+	}
+	return 0
+}
+
+func jsonString(raw map[string]any, names ...string) string {
+	for _, name := range names {
+		if value, ok := raw[name].(string); ok {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func jsonBool(raw map[string]any, names ...string) (bool, bool) {
+	for _, name := range names {
+		value, ok := raw[name]
+		if !ok {
+			continue
+		}
+		switch typed := value.(type) {
+		case bool:
+			return typed, true
+		case string:
+			parsed, err := strconv.ParseBool(strings.TrimSpace(typed))
+			return parsed, err == nil
+		}
+	}
+	return false, false
 }

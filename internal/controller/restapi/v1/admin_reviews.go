@@ -24,31 +24,74 @@ func (r *V1) gripAdminListReviews(ctx *fiber.Ctx) error {
 
 	items := make([]fiber.Map, 0, len(reviews))
 	for _, review := range reviews {
-		items = append(items, fiber.Map{
-			"id":                 review.ID,
-			"productId":          review.ProductID,
-			"productName":        review.ProductName,
-			"orderId":            review.OrderID,
-			"userId":             review.UserID,
-			"username":           review.Username,
-			"rating":             review.Rating,
-			"comment":            review.Comment,
-			"attachments":        review.Attachments,
-			"status":             review.Status,
-			"isVerifiedPurchase": review.IsVerifiedPurchase,
-			"flaggedReason":      review.FlaggedReason,
-			"createdAt":          review.CreatedAt.UTC().Format(timeRFC3339),
-		})
+		items = append(items, adminReviewPayload(review))
 	}
 
 	normalized := page.Normalize()
-	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
+	data := fiber.Map{
 		"reviews":  items,
+		"items":    items,
 		"stats":    stats,
 		"total":    total,
 		"page":     normalized.Offset/normalized.Limit + 1,
 		"pageSize": normalized.Limit,
-	}))
+	}
+	return ctx.JSON(fiber.Map{
+		"data":     data,
+		"reviews":  items,
+		"items":    items,
+		"stats":    stats,
+		"total":    total,
+		"page":     normalized.Offset/normalized.Limit + 1,
+		"pageSize": normalized.Limit,
+	})
+}
+
+// adminReviewPayload exposes one review in the field naming used by the
+// moderation UI and API tests.
+func adminReviewPayload(review entity.Review) fiber.Map {
+	return fiber.Map{
+		"id":                 review.ID,
+		"productId":          review.ProductID,
+		"productName":        review.ProductName,
+		"orderId":            review.OrderID,
+		"userId":             review.UserID,
+		"username":           review.Username,
+		"rating":             review.Rating,
+		"comment":            review.Comment,
+		"attachments":        review.Attachments,
+		"status":             review.Status,
+		"isVerifiedPurchase": review.IsVerifiedPurchase,
+		"flaggedReason":      review.FlaggedReason,
+		"createdAt":          review.CreatedAt.UTC().Format(timeRFC3339),
+		"updatedAt":          review.UpdatedAt.UTC().Format(timeRFC3339),
+	}
+}
+
+func (r *V1) gripAdminGetReview(ctx *fiber.Ctx) error {
+	ext, ok := r.adminUC.(adminExtendedUseCase)
+	if !ok {
+		return ctx.Status(http.StatusInternalServerError).JSON(envelope{Error: "admin_reviews_not_available"})
+	}
+
+	reviewID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+
+	reviews, _, _, err := ext.ListReviews(ctx.UserContext(), r.gripActor(ctx), entity.Pagination{Limit: 200}, "", "")
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+	for _, review := range reviews {
+		if review.ID == reviewID {
+			return ctx.JSON(adminReviewPayload(review))
+		}
+	}
+	status, payload := mapDomainError(entity.ErrNotFound)
+	return ctx.Status(status).JSON(payload)
 }
 
 func (r *V1) gripAdminApproveReview(ctx *fiber.Ctx) error {
@@ -72,9 +115,17 @@ func (r *V1) gripAdminFeatureReview(ctx *fiber.Ctx) error {
 	}
 
 	var body struct {
-		IsFeatured *bool `json:"isFeatured"`
+		IsFeatured       *bool `json:"isFeatured"`
+		IsFeaturedLegacy *bool `json:"is_featured"`
 	}
-	if err := ctx.BodyParser(&body); err != nil || body.IsFeatured == nil {
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	if body.IsFeatured == nil {
+		body.IsFeatured = body.IsFeaturedLegacy
+	}
+	if body.IsFeatured == nil {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
@@ -104,9 +155,17 @@ func (r *V1) gripAdminPublishSelectedReviews(ctx *fiber.Ctx) error {
 	}
 
 	var body struct {
-		IDs []int64 `json:"ids"`
+		IDs       []int64 `json:"ids"`
+		LegacyIDs []int64 `json:"review_ids"`
 	}
-	if err := ctx.BodyParser(&body); err != nil || len(body.IDs) == 0 {
+	if err := ctx.BodyParser(&body); err != nil {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	if len(body.IDs) == 0 {
+		body.IDs = body.LegacyIDs
+	}
+	if len(body.IDs) == 0 {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
