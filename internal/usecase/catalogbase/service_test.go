@@ -2,29 +2,41 @@ package catalogbase
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"testing"
 
+	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
+
+type memoryCatalogBaseRepository struct {
+	snapshot entity.CatalogSnapshot
+}
+
+func (r *memoryCatalogBaseRepository) LoadCatalogBase(context.Context) (entity.CatalogSnapshot, error) {
+	return cloneCatalogSnapshot(r.snapshot), nil
+}
+
+func (r *memoryCatalogBaseRepository) SaveCatalogBase(_ context.Context, snapshot entity.CatalogSnapshot) error {
+	r.snapshot = cloneCatalogSnapshot(snapshot)
+	return nil
+}
+
+func cloneCatalogSnapshot(snapshot entity.CatalogSnapshot) entity.CatalogSnapshot {
+	encoded, err := json.Marshal(snapshot)
+	if err != nil {
+		panic(err)
+	}
+	var clone entity.CatalogSnapshot
+	if err := json.Unmarshal(encoded, &clone); err != nil {
+		panic(err)
+	}
+	return clone
+}
 
 func newCatalogBaseTestService(t *testing.T) *Service {
 	t.Helper()
-	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=private", t.Name())), &gorm.Config{})
-	require.NoError(t, err)
-	migrateErr := db.AutoMigrate(
-		&categoryRow{},
-		&attributeDefinitionRow{},
-		&masterRow{},
-		&productModelRow{},
-		&productImageRow{},
-		&variantDimensionRow{},
-		&variantRow{},
-	)
-	require.NoError(t, migrateErr)
-	return New(db)
+	return New(&memoryCatalogBaseRepository{})
 }
 
 func catalogCategory(t *testing.T, service *Service) string {
@@ -115,7 +127,9 @@ func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) { //noli
 	variant := catalogVariant(t, service, modelID, "200 mm", " SKU-001 ", 400000)
 	variantID := mapString(t, variant, "id")
 	require.Equal(t, "sku-001", variant["sku"])
-	require.Equal(t, "200 mm", jsonMap(jsonString(variant["selectedOptions"], "{}"))["Size"])
+	selectedOptions, ok := variant["selectedOptions"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "200 mm", selectedOptions["Size"])
 	require.True(t, mapBool(t, variant, "saleReady"))
 
 	_, err = service.CreateVariant(ctx, modelID, map[string]any{
@@ -215,6 +229,76 @@ func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
 	for _, item := range updated {
 		require.Equal(t, int64(250000), mapStringMap(t, item, "sellingPrice")["amount"])
 	}
+}
+
+func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) {
+	t.Parallel()
+	service := newCatalogBaseTestService(t)
+	ctx := context.Background()
+	categoryID := catalogCategory(t, service)
+
+	material, err := service.CreateMaster(ctx, "material", map[string]any{"name": "Inox 304"})
+	require.NoError(t, err)
+	materialID := mapString(t, material, "id")
+	reference, err := service.CreateDefinition(ctx, map[string]any{
+		"key": "material-reference-" + t.Name(), "displayName": "Material", "valueKind": "Reference", "referenceTarget": "Material",
+	})
+	require.NoError(t, err)
+	referenceID := mapString(t, reference, "id")
+	variantReference, err := service.CreateDefinition(ctx, map[string]any{
+		"key": "variant-material-reference-" + t.Name(), "displayName": "Variant Material", "valueKind": "Reference", "referenceTarget": "Material",
+	})
+	require.NoError(t, err)
+	variantReferenceID := mapString(t, variantReference, "id")
+
+	_, err = service.CreateDefinition(ctx, map[string]any{
+		"key": "length-" + t.Name(), "displayName": "Overall length", "valueKind": "Scalar", "dataType": "Number", "unitFamily": "length", "unit": "mm",
+	})
+	require.NoError(t, err)
+
+	model, err := service.CreateModel(ctx, map[string]any{
+		"name": "Reference model", "categoryId": categoryID,
+		"fixedAttributes": map[string]any{referenceID: "Inox 304"},
+		"measurements":    map[string]any{"overallLength": map[string]any{"value": 20, "unit": "cm"}},
+	})
+	require.NoError(t, err)
+	modelID := mapString(t, model, "id")
+	fixed := mapStringMap(t, model, "fixedAttributes")
+	require.Equal(t, materialID, fixed[referenceID])
+	measurement := mapStringMap(t, model, "measurements")
+	require.Equal(t, float64(200), measurementMapNumber(t, measurement["overallLength"], "value"))
+	require.Equal(t, "mm", mapStringMap(t, measurement, "overallLength")["unit"])
+
+	dimension, err := service.CreateDimension(ctx, modelID, map[string]any{
+		"definitionId":  variantReferenceID,
+		"allowedValues": []any{map[string]any{"id": materialID, "label": "Inox 304", "active": true}},
+	})
+	require.NoError(t, err)
+	_, err = service.CreateVariant(ctx, modelID, map[string]any{
+		"selectedOptions": map[string]any{"Variant Material": "Inox 304"},
+		"sku":             "REF-001",
+		"sellingPrice":    map[string]any{"amount": 100000, "currency": "VND"},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, dimension["id"])
+	variants, err := service.ListVariants(ctx, modelID)
+	require.NoError(t, err)
+	require.Len(t, variants, 1)
+	require.Equal(t, materialID, mapStringMap(t, variants[0], "selectedOptions")["Variant Material"])
+}
+
+func measurementMapNumber(t *testing.T, value any, key string) float64 {
+	t.Helper()
+	measurement := mapStringMap(t, map[string]any{"measurement": value}, "measurement")
+	parsed, ok := measurement[key].(float64)
+	if ok {
+		return parsed
+	}
+	integer, ok := measurement[key].(int)
+	if ok {
+		return float64(integer)
+	}
+	return 0
 }
 
 func mapStringMap(t *testing.T, object map[string]any, key string) map[string]any {

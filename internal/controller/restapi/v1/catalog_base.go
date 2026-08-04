@@ -15,7 +15,7 @@ func (r *V1) catalogBaseError(ctx *fiber.Ctx, err error) error {
 	return ctx.Status(status).JSON(body)
 }
 
-func (r *V1) requireCatalogBase(ctx *fiber.Ctx) (*catalogbase.Service, error) {
+func (r *V1) requireCatalogBase(ctx *fiber.Ctx) (catalogbase.UseCase, error) {
 	if r.catalogBase == nil {
 		return nil, &catalogbase.APIError{Status: http.StatusInternalServerError, Code: "catalog_base_not_configured", Message: "Catalog Base service is not configured"}
 	}

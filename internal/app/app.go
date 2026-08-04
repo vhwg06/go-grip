@@ -42,6 +42,7 @@ type useCases struct {
 	user        *user.UseCase
 	task        *task.UseCase
 	catalog     *catalog.UseCase
+	catalogBase catalogbase.UseCase
 	auth        *auth.UseCase
 	checkout    *checkout.UseCase
 	orders      *orders.UseCase
@@ -108,13 +109,15 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	}
 
 	catalogUseCase := catalog.NewWithGrip(catalogRepo, gripCatalogRepo)
-	catalogUseCase.SetCatalogBase(catalogbase.New(pg.Gorm))
+	catalogBaseRepo := persistent.NewCatalogBaseRepo(pg)
+	catalogBaseUseCase := catalogbase.New(catalogBaseRepo)
 
 	return useCases{
 		user:        user.New(userRepo, jwtManager),
 		task:        task.New(taskRepo),
 		translation: translation.New(translationRepo, webapi.New()),
 		catalog:     catalogUseCase,
+		catalogBase: catalogBaseUseCase,
 		auth:        auth.New(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
 		checkout:    checkoutUC,
 		orders:      orders.New(gripOrderRepo),
@@ -136,7 +139,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 
 func initServers(cfg *config.Config, uc useCases, jwtManager *jwt.Manager, l logger.Interface) servers {
 	httpServer := httpserver.New(l, httpserver.Port(cfg.HTTP.Port), httpserver.Prefork(cfg.HTTP.UsePreforkMode))
-	restapi.NewRouter(httpServer.App, cfg, uc.translation, uc.user, uc.task, uc.catalog, uc.auth, uc.checkout, uc.orders, uc.profile, uc.admin, uc.wishlist, uc.notify, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
+	restapi.NewRouter(httpServer.App, cfg, uc.translation, uc.user, uc.task, uc.catalog, uc.catalogBase, uc.auth, uc.checkout, uc.orders, uc.profile, uc.admin, uc.wishlist, uc.notify, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
 
 	interval := cfg.Ecommerce.SchedulerInterval
 	if interval <= 0 {

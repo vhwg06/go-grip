@@ -159,6 +159,13 @@ type (
 		GetSetting(ctx context.Context, key string) (entity.Setting, error)
 	}
 
+	// CatalogBaseRepository persists the Catalog Base aggregates as one
+	// transaction.  The application layer never depends on GORM or SQL rows.
+	CatalogBaseRepository interface {
+		LoadCatalogBase(ctx context.Context) (entity.CatalogSnapshot, error)
+		SaveCatalogBase(ctx context.Context, snapshot entity.CatalogSnapshot) error
+	}
+
 	CheckoutRepository interface {
 		CreateOrderWithReservation(ctx context.Context, actor entity.Actor, order entity.Order) (entity.Order, error)
 		AttachPayment(ctx context.Context, payment entity.Payment) error

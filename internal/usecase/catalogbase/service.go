@@ -1,28 +1,26 @@
-// Package catalogbase implements the Catalog Base vertical slice.
+// Package catalogbase contains the Catalog Base application service.
 //
-// Catalog Base deliberately lives beside the legacy Product use case.  The
-// legacy surface is still used by the existing storefront, while this service
-// owns the ProductModel/Variant contract described by the Catalog Base spec.
+// The service owns the catalog invariants and only talks to the repository
+// port.  GORM rows and SQL transactions live in internal/repo/persistent.
 package catalogbase
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-// APIError is a domain error with the HTTP status required by the Catalog Base
-// contract.  Controllers should use ErrorStatus when translating failures.
 type APIError struct {
 	Status  int
 	Code    string
@@ -32,198 +30,106 @@ type APIError struct {
 func (e *APIError) Error() string { return e.Message }
 
 func bad(message string) error {
-	return &APIError{Status: 400, Code: "invalid_catalog_command", Message: message}
+	return &APIError{Status: http.StatusBadRequest, Code: "invalid_catalog_command", Message: message}
 }
 
 func conflict(message string) error {
-	return &APIError{Status: 409, Code: "catalog_conflict", Message: message}
+	return &APIError{Status: http.StatusConflict, Code: "catalog_conflict", Message: message}
 }
 
 func notFound(message string) error {
-	return &APIError{Status: 404, Code: "catalog_not_found", Message: message}
+	return &APIError{Status: http.StatusNotFound, Code: "catalog_not_found", Message: message}
 }
 
 func methodNotAllowed(message string) error {
-	return &APIError{Status: 405, Code: "catalog_method_not_allowed", Message: message}
+	return &APIError{Status: http.StatusMethodNotAllowed, Code: "catalog_method_not_allowed", Message: message}
 }
 
-// ErrorStatus converts a service error into an HTTP status and a stable error
-// body.  Unknown persistence errors are intentionally reported as 500.
 func ErrorStatus(err error) (int, map[string]any) {
 	if err == nil {
-		return 200, nil
+		return http.StatusOK, nil
 	}
 	var apiErr *APIError
 	if errors.As(err, &apiErr) {
 		return apiErr.Status, map[string]any{"code": apiErr.Code, "message": apiErr.Message}
 	}
-	return 500, map[string]any{"code": "catalog_internal_error", "message": "catalog operation failed"}
+	return http.StatusInternalServerError, map[string]any{"code": "catalog_internal_error", "message": "catalog operation failed"}
 }
 
-// Service is the transactional Catalog Base application service.
 type Service struct {
-	db *gorm.DB
+	repository repo.CatalogBaseRepository
 }
 
-func New(db *gorm.DB) *Service { return &Service{db: db} }
-
-type categoryRow struct {
-	ID        string    `gorm:"type:uuid;primaryKey"`
-	Name      string    `gorm:"not null"`
-	Slug      string    `gorm:"not null"`
-	ParentID  *string   `gorm:"type:uuid"`
-	Position  int       `gorm:"not null;default:0"`
-	Active    bool      `gorm:"not null;default:true"`
-	CreatedAt time.Time `gorm:"not null"`
-	UpdatedAt time.Time `gorm:"not null"`
+func New(repository repo.CatalogBaseRepository) *Service {
+	return &Service{repository: repository}
 }
 
-func (categoryRow) TableName() string { return "catalog_base_categories" }
-
-type attributeDefinitionRow struct {
-	ID              string    `gorm:"type:uuid;primaryKey"`
-	Key             string    `gorm:"not null"`
-	DisplayName     string    `gorm:"column:display_name;not null;default:''"`
-	Description     string    `gorm:"not null;default:''"`
-	Ordering        int       `gorm:"not null;default:0"`
-	ValueKind       string    `gorm:"column:value_kind;not null"`
-	DataType        string    `gorm:"column:data_type;not null;default:''"`
-	ReferenceTarget string    `gorm:"column:reference_target;not null;default:''"`
-	UnitFamily      string    `gorm:"column:unit_family;not null;default:''"`
-	Unit            string    `gorm:"not null;default:''"`
-	Active          bool      `gorm:"not null;default:true"`
-	EnumValues      string    `gorm:"column:enum_values;type:jsonb;not null"`
-	CreatedAt       time.Time `gorm:"not null"`
-	UpdatedAt       time.Time `gorm:"not null"`
-}
-
-func (attributeDefinitionRow) TableName() string { return "catalog_base_attribute_definitions" }
-
-type masterRow struct {
-	ID          string    `gorm:"type:uuid;primaryKey"`
-	Kind        string    `gorm:"not null"`
-	Name        string    `gorm:"not null"`
-	Description string    `gorm:"not null;default:''"`
-	SwatchMedia string    `gorm:"column:swatch_media;type:jsonb;not null"`
-	SellingUnit string    `gorm:"column:selling_unit;not null;default:''"`
-	Quantity    *float64  `gorm:"type:numeric"`
-	BaseUnit    string    `gorm:"column:base_unit;not null;default:''"`
-	Active      bool      `gorm:"not null;default:true"`
-	CreatedAt   time.Time `gorm:"not null"`
-	UpdatedAt   time.Time `gorm:"not null"`
-}
-
-func (masterRow) TableName() string { return "catalog_base_masters" }
-
-type productModelRow struct {
-	ID              string    `gorm:"type:uuid;primaryKey"`
-	Name            string    `gorm:"not null"`
-	CategoryID      string    `gorm:"column:category_id;type:uuid;not null"`
-	Description     string    `gorm:"not null;default:''"`
-	WarrantySummary string    `gorm:"column:warranty_summary;type:jsonb"`
-	FixedAttributes string    `gorm:"column:fixed_attributes;type:jsonb;not null"`
-	FixedPackID     *string   `gorm:"column:fixed_pack_id;type:uuid"`
-	Measurements    string    `gorm:"type:jsonb;not null"`
-	Status          string    `gorm:"not null;default:'Draft'"`
-	CreatedAt       time.Time `gorm:"not null"`
-	UpdatedAt       time.Time `gorm:"not null"`
-}
-
-func (productModelRow) TableName() string { return "catalog_base_product_models" }
-
-type productImageRow struct {
-	ID           string    `gorm:"type:uuid;primaryKey"`
-	ModelID      string    `gorm:"column:model_id;type:uuid;not null"`
-	URL          string    `gorm:"not null"`
-	Ordering     int       `gorm:"not null;default:0"`
-	PrimaryImage bool      `gorm:"column:primary_image;not null;default:false"`
-	CreatedAt    time.Time `gorm:"not null"`
-}
-
-func (productImageRow) TableName() string { return "catalog_base_product_images" }
-
-type variantDimensionRow struct {
-	ID            string    `gorm:"type:uuid;primaryKey"`
-	ModelID       string    `gorm:"column:model_id;type:uuid;not null"`
-	DefinitionID  string    `gorm:"column:definition_id;type:uuid;not null"`
-	AllowedValues string    `gorm:"column:allowed_values;type:jsonb;not null"`
-	CreatedAt     time.Time `gorm:"not null"`
-	UpdatedAt     time.Time `gorm:"not null"`
-}
-
-func (variantDimensionRow) TableName() string { return "catalog_base_variant_dimensions" }
-
-type variantRow struct {
-	ID                   string    `gorm:"type:uuid;primaryKey"`
-	ModelID              string    `gorm:"column:model_id;type:uuid;not null"`
-	SelectedOptions      string    `gorm:"column:selected_options;type:jsonb;not null"`
-	TechnicalValues      string    `gorm:"column:technical_values;type:jsonb;not null"`
-	SKU                  string    `gorm:"not null;default:''"`
-	SellingAmount        *int64    `gorm:"column:selling_amount"`
-	SellingCurrency      string    `gorm:"column:selling_currency;not null;default:''"`
-	PackID               *string   `gorm:"column:pack_id;type:uuid"`
-	Status               string    `gorm:"not null;default:'Active'"`
-	CanonicalCombination string    `gorm:"column:canonical_combination;not null"`
-	History              string    `gorm:"type:jsonb;not null"`
-	CreatedAt            time.Time `gorm:"not null"`
-	UpdatedAt            time.Time `gorm:"not null"`
-}
-
-func (variantRow) TableName() string { return "catalog_base_variants" }
-
-type enumValue struct {
-	ID     string `json:"id"`
-	Key    string `json:"key"`
-	Label  string `json:"label"`
-	Active bool   `json:"active"`
-}
-
-type dimensionValue struct {
-	ID     string `json:"id"`
-	Label  string `json:"label"`
-	Active bool   `json:"active"`
-}
-
-type historyEntry struct {
-	Action string    `json:"action"`
-	At     time.Time `json:"at"`
-}
-
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F-]{20,}$`)
-
-func now() time.Time { return time.Now().UTC() }
-
-func jsonString(value any, fallback string) string {
-	if value == nil {
-		return fallback
+func (s *Service) load(ctx context.Context) (entity.CatalogSnapshot, error) {
+	if s == nil || s.repository == nil {
+		return entity.CatalogSnapshot{}, errors.New("catalog base repository is not configured")
 	}
-	b, err := json.Marshal(value)
-	if err != nil {
-		return fallback
-	}
-	return string(b)
+	return s.repository.LoadCatalogBase(ctx)
 }
 
-func jsonMap(raw string) map[string]any {
-	result := map[string]any{}
-	if raw == "" {
-		return result
+func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) error {
+	if s == nil || s.repository == nil {
+		return errors.New("catalog base repository is not configured")
 	}
-	if err := json.Unmarshal([]byte(raw), &result); err != nil || result == nil {
-		return map[string]any{}
-	}
-	return result
+	return s.repository.SaveCatalogBase(ctx, snapshot)
 }
 
-func jsonSlice(raw string) []any {
-	result := []any{}
-	if raw == "" {
-		return result
+type lookup struct {
+	model      *entity.CatalogProductModel
+	category   *entity.CatalogCategory
+	definition *entity.CatalogAttributeDefinition
+	master     *entity.CatalogMaster
+}
+
+func findCategory(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogCategory, error) {
+	for index := range snapshot.Categories {
+		if snapshot.Categories[index].ID == id {
+			return &snapshot.Categories[index], nil
+		}
 	}
-	if err := json.Unmarshal([]byte(raw), &result); err != nil || result == nil {
-		return []any{}
+	return nil, notFound("category not found")
+}
+
+func findDefinition(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogAttributeDefinition, error) {
+	for index := range snapshot.Definitions {
+		if snapshot.Definitions[index].ID == id {
+			return &snapshot.Definitions[index], nil
+		}
 	}
-	return result
+	return nil, notFound("attribute definition not found")
+}
+
+func findMaster(snapshot *entity.CatalogSnapshot, kind, id string) (*entity.CatalogMaster, error) {
+	for index := range snapshot.Masters {
+		if snapshot.Masters[index].Kind == kind && snapshot.Masters[index].ID == id {
+			return &snapshot.Masters[index], nil
+		}
+	}
+	return nil, notFound("catalog master not found")
+}
+
+func findModel(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogProductModel, error) {
+	for index := range snapshot.Models {
+		if snapshot.Models[index].ID == id {
+			return &snapshot.Models[index], nil
+		}
+	}
+	return nil, notFound("ProductModel not found")
+}
+
+func findVariant(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogVariant, *entity.CatalogProductModel, error) {
+	for modelIndex := range snapshot.Models {
+		for variantIndex := range snapshot.Models[modelIndex].Variants {
+			if snapshot.Models[modelIndex].Variants[variantIndex].ID == id {
+				return &snapshot.Models[modelIndex].Variants[variantIndex], &snapshot.Models[modelIndex], nil
+			}
+		}
+	}
+	return nil, nil, notFound("Variant not found")
 }
 
 func mapValue(input map[string]any, names ...string) (any, bool) {
@@ -243,25 +149,21 @@ func stringValue(input map[string]any, names ...string) string {
 	return strings.TrimSpace(fmt.Sprint(value))
 }
 
-func boolValue(input map[string]any, defaultValue bool, names ...string) bool {
+func boolValue(input map[string]any, fallback bool, names ...string) bool {
 	value, ok := mapValue(input, names...)
 	if !ok || value == nil {
-		return defaultValue
+		return fallback
 	}
-	switch typed := value.(type) {
-	case bool:
-		return typed
-	case string:
-		return strings.EqualFold(strings.TrimSpace(typed), "true")
-	default:
-		return defaultValue
+	if parsed, ok := value.(bool); ok {
+		return parsed
 	}
+	return strings.EqualFold(strings.TrimSpace(fmt.Sprint(value)), "true")
 }
 
-func intValue(input map[string]any, defaultValue int, names ...string) int {
+func intValue(input map[string]any, fallback int, names ...string) int {
 	value, ok := mapValue(input, names...)
 	if !ok || value == nil {
-		return defaultValue
+		return fallback
 	}
 	switch typed := value.(type) {
 	case int:
@@ -270,21 +172,13 @@ func intValue(input map[string]any, defaultValue int, names ...string) int {
 		return int(typed)
 	case float64:
 		return int(typed)
-	case json.Number:
-		parsed, err := typed.Int64()
-		if err != nil {
-			return defaultValue
-		}
-		return int(parsed)
 	case string:
 		parsed, err := strconv.Atoi(strings.TrimSpace(typed))
-		if err != nil {
-			return defaultValue
+		if err == nil {
+			return parsed
 		}
-		return parsed
-	default:
-		return defaultValue
 	}
+	return fallback
 }
 
 func floatValue(value any) (float64, bool) {
@@ -297,9 +191,6 @@ func floatValue(value any) (float64, bool) {
 		return float64(typed), true
 	case int64:
 		return float64(typed), true
-	case json.Number:
-		parsed, err := typed.Float64()
-		return parsed, err == nil
 	case string:
 		parsed, err := strconv.ParseFloat(strings.TrimSpace(typed), 64)
 		return parsed, err == nil
@@ -308,17 +199,38 @@ func floatValue(value any) (float64, bool) {
 	}
 }
 
-func optionalString(input map[string]any, names ...string) *string {
-	value, ok := mapValue(input, names...)
-	if !ok || value == nil {
-		return nil
+func recordMap(value any) map[string]any {
+	if typed, ok := value.(map[string]any); ok && typed != nil {
+		return typed
 	}
-	text := strings.TrimSpace(fmt.Sprint(value))
-	if text == "" {
-		return nil
-	}
-	return &text
+	return map[string]any{}
 }
+
+func parseStringMap(value any) map[string]string {
+	result := map[string]string{}
+	switch typed := value.(type) {
+	case map[string]string:
+		return typed
+	case map[string]any:
+		for key, raw := range typed {
+			if raw != nil {
+				result[key] = fmt.Sprint(raw)
+			}
+		}
+	}
+	return result
+}
+
+func jsonMap(value map[string]any) map[string]any {
+	if value == nil {
+		return map[string]any{}
+	}
+	return value
+}
+
+var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F-]{20,}$`)
+
+func now() time.Time { return time.Now().UTC() }
 
 func normalizeText(value string) string {
 	return strings.Join(strings.Fields(strings.ToLower(strings.TrimSpace(value))), " ")
@@ -333,21 +245,16 @@ func canonicalUnit(value string) (float64, string, bool) {
 	if err != nil || math.IsNaN(number) || math.IsInf(number, 0) {
 		return 0, "", false
 	}
-	type unitInfo struct {
+	type unit struct {
 		factor float64
 		family string
 	}
-	info, ok := map[string]unitInfo{
-		"mm": {factor: 1, family: "length"},
-		"cm": {factor: 10, family: "length"},
-		"m":  {factor: 1000, family: "length"},
-		"g":  {factor: 1, family: "mass"},
-		"kg": {factor: 1000, family: "mass"},
-	}[parts[1]]
+	units := map[string]unit{"mm": {1, "length"}, "cm": {10, "length"}, "m": {1000, "length"}, "g": {1, "mass"}, "kg": {1000, "mass"}}
+	valueUnit, ok := units[parts[1]]
 	if !ok {
 		return 0, "", false
 	}
-	return number * info.factor, info.family, true
+	return number * valueUnit.factor, valueUnit.family, true
 }
 
 func canonicalValue(value string) string {
@@ -376,23 +283,15 @@ func compatibleUnit(family, unit string) bool {
 	}
 }
 
-func validateUnit(family, unit string) bool {
-	if family == "" && unit == "" {
-		return true
-	}
-	return family != "" && unit != "" && compatibleUnit(family, unit)
-}
-
 func validateDefinition(valueKind, dataType, referenceTarget, unitFamily, unit string) error {
-	valueKind = strings.TrimSpace(valueKind)
-	dataType = strings.TrimSpace(dataType)
+	valueKind, dataType = strings.TrimSpace(valueKind), strings.TrimSpace(dataType)
 	referenceTarget = strings.TrimSpace(referenceTarget)
 	switch valueKind {
 	case "Scalar":
 		if dataType == "" || (dataType != "Text" && dataType != "Number" && dataType != "Boolean") {
 			return bad("Scalar requires a supported dataType")
 		}
-		if dataType == "Number" && !validateUnit(unitFamily, unit) {
+		if dataType == "Number" && !compatibleUnit(unitFamily, unit) {
 			return bad("numeric Scalar has an incompatible unit")
 		}
 		if dataType != "Number" && (unitFamily != "" || unit != "") {
@@ -415,324 +314,397 @@ func validateDefinition(valueKind, dataType, referenceTarget, unitFamily, unit s
 	return nil
 }
 
-func warrantyValue(input map[string]any, names ...string) (string, error) {
+func warrantyValue(input map[string]any, names ...string) (map[string]any, error) {
 	value, ok := mapValue(input, names...)
 	if !ok || value == nil {
-		return "", nil
+		return nil, nil
 	}
 	object, ok := value.(map[string]any)
-	if !ok {
-		return "", bad("warrantySummary must be an object")
+	if !ok || stringValue(object, "term") == "" {
+		return nil, bad("warrantySummary.term is required")
 	}
-	term := stringValue(object, "term")
-	if term == "" {
-		return "", bad("warrantySummary.term is required")
-	}
-	note := stringValue(object, "note")
-	return jsonString(map[string]any{"term": term, "note": note}, "{}"), nil
+	return map[string]any{"term": stringValue(object, "term"), "note": stringValue(object, "note")}, nil
 }
 
 func validateMeasurements(value any) error {
-	object, ok := value.(map[string]any)
-	if !ok {
-		return nil
-	}
-	for name, raw := range object {
-		measurement, ok := raw.(map[string]any)
-		if !ok {
+	for name, raw := range recordMap(value) {
+		measurement := recordMap(raw)
+		unit := stringValue(measurement, "unit")
+		if unit == "" {
 			continue
 		}
-		unit := stringValue(measurement, "unit")
-		if strings.Contains(strings.ToLower(name), "length") && unit != "" && !compatibleUnit("length", unit) {
+		family := ""
+		if strings.Contains(strings.ToLower(name), "length") {
+			family = "length"
+		}
+		if family != "" && !compatibleUnit(family, unit) {
 			return bad("length measurement has an incompatible unit")
+		}
+		if rawValue, ok := mapValue(measurement, "value"); ok {
+			number, valid := floatValue(rawValue)
+			if !valid || math.IsNaN(number) || math.IsInf(number, 0) {
+				return bad("measurement value must be numeric")
+			}
+			if canonicalNumber, canonicalFamily, canonicalUnitName, canonical := canonicalMeasurement(number, unit); canonical {
+				if family != "" && !strings.EqualFold(family, canonicalFamily) {
+					return bad("measurement has an incompatible unit family")
+				}
+				measurement["value"], measurement["unit"] = canonicalNumber, canonicalUnitName
+			}
 		}
 	}
 	return nil
 }
 
-func parseStringMap(value any) map[string]string {
-	result := map[string]string{}
-	object, ok := value.(map[string]any)
-	if !ok {
-		if typed, ok := value.(map[string]string); ok {
-			return typed
-		}
-		return result
+func canonicalMeasurement(number float64, unit string) (float64, string, string, bool) {
+	value, family, valid := canonicalUnit(fmt.Sprintf("%v %s", number, unit))
+	if !valid {
+		return 0, "", "", false
 	}
-	for key, raw := range object {
-		if raw != nil {
-			result[key] = fmt.Sprint(raw)
-		}
+	baseUnit := map[string]string{"length": "mm", "mass": "g", "area": "mm2", "volume": "ml"}[family]
+	if baseUnit == "" {
+		return 0, "", "", false
+	}
+	return value, family, baseUnit, true
+}
+
+func categoryOutput(value entity.CatalogCategory) map[string]any {
+	return map[string]any{"id": value.ID, "name": value.Name, "slug": value.Slug, "parentId": value.ParentID, "position": value.Position, "active": value.Active}
+}
+
+func definitionOutput(value entity.CatalogAttributeDefinition) map[string]any {
+	result := map[string]any{"id": value.ID, "key": value.Key, "displayName": value.DisplayName, "description": value.Description, "ordering": value.Ordering, "valueKind": value.ValueKind, "active": value.Active, "enumValues": value.EnumValues}
+	if value.DataType != "" {
+		result["dataType"] = value.DataType
+	}
+	if value.ReferenceTarget != "" {
+		result["referenceTarget"] = value.ReferenceTarget
+	}
+	if value.UnitFamily != "" {
+		result["unitFamily"] = value.UnitFamily
+	}
+	if value.Unit != "" {
+		result["unit"] = value.Unit
 	}
 	return result
 }
 
-func (s *Service) findModel(ctx context.Context, id string) (productModelRow, error) {
-	var row productModelRow
-	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return productModelRow{}, notFound("ProductModel not found")
-		}
-		return productModelRow{}, err
+func masterOutput(value entity.CatalogMaster) map[string]any {
+	result := map[string]any{"id": value.ID, "kind": value.Kind, "name": value.Name, "description": value.Description, "swatchMedia": value.SwatchMedia, "sellingUnit": value.SellingUnit, "baseUnit": value.BaseUnit, "active": value.Active}
+	if value.Quantity != nil {
+		result["quantity"] = *value.Quantity
 	}
-	return row, nil
+	return result
 }
 
-func (s *Service) findVariant(ctx context.Context, id string) (variantRow, error) {
-	var row variantRow
-	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return variantRow{}, notFound("Variant not found")
-		}
-		return variantRow{}, err
+func dimensionOutput(snapshot *entity.CatalogSnapshot, modelID string, dimension entity.CatalogVariantDimension) (map[string]any, error) {
+	definition, err := findDefinition(snapshot, dimension.DefinitionID)
+	if err != nil {
+		return nil, err
 	}
-	return row, nil
+	return map[string]any{"id": dimension.ID, "definitionId": dimension.DefinitionID, "key": definition.DisplayName, "allowedValues": dimension.AllowedValues, "modelId": modelID}, nil
 }
 
-func (s *Service) findDefinition(ctx context.Context, id string) (attributeDefinitionRow, error) {
-	var row attributeDefinitionRow
-	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return attributeDefinitionRow{}, notFound("attribute definition not found")
-		}
-		return attributeDefinitionRow{}, err
+func variantOutput(value entity.CatalogVariant) map[string]any {
+	selectedOptions := make(map[string]any, len(value.SelectedOptions))
+	for key, option := range value.SelectedOptions {
+		selectedOptions[key] = option
 	}
-	return row, nil
+	result := map[string]any{"id": value.ID, "selectedOptions": selectedOptions, "technicalValues": jsonMap(value.TechnicalValues), "sku": value.SKU, "status": value.Status, "saleReady": value.SaleReady(), "canonicalCombination": value.CanonicalCombination, "history": value.History, "packId": nil, "sellingPrice": nil}
+	if value.PackID != nil {
+		result["packId"] = *value.PackID
+	}
+	if value.SellingPrice != nil {
+		result["sellingPrice"] = map[string]any{"amount": value.SellingPrice.Amount, "currency": value.SellingPrice.Currency}
+	}
+	return result
 }
 
-func (s *Service) findMaster(ctx context.Context, kind, id string) (masterRow, error) {
-	var row masterRow
-	if err := s.db.WithContext(ctx).Where("id = ? AND kind = ?", id, kind).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return masterRow{}, notFound("catalog master not found")
-		}
-		return masterRow{}, err
+func modelOutput(snapshot *entity.CatalogSnapshot, value entity.CatalogProductModel, public bool) (map[string]any, error) {
+	result := map[string]any{"id": value.ID, "name": value.Name, "categoryId": value.CategoryID, "description": value.Description, "fixedAttributes": jsonMap(value.FixedAttributes), "measurements": jsonMap(value.Measurements), "status": value.Status, "images": []map[string]any{}, "variants": []map[string]any{}, "variantDimensions": []map[string]any{}, "warrantySummary": value.WarrantySummary}
+	if value.FixedPackID != nil {
+		result["fixedPackId"] = *value.FixedPackID
 	}
-	return row, nil
+	images := make([]map[string]any, 0, len(value.Images))
+	for _, image := range value.Images {
+		images = append(images, map[string]any{"id": image.ID, "url": image.URL, "ordering": image.Ordering, "primary": image.PrimaryImage})
+	}
+	result["images"] = images
+	dimensions := make([]map[string]any, 0, len(value.Dimensions))
+	for _, dimension := range value.Dimensions {
+		output, err := dimensionOutput(snapshot, value.ID, dimension)
+		if err != nil {
+			return nil, err
+		}
+		dimensions = append(dimensions, output)
+	}
+	result["variantDimensions"] = dimensions
+	variants := make([]map[string]any, 0, len(value.Variants))
+	for _, variant := range value.Variants {
+		if !public || variant.SaleReady() {
+			variants = append(variants, variantOutput(variant))
+		}
+	}
+	result["variants"] = variants
+	return result, nil
 }
 
-func (s *Service) activeMaster(ctx context.Context, kind, id string) error {
-	row, err := s.findMaster(ctx, kind, id)
+func (s *Service) activeMaster(snapshot *entity.CatalogSnapshot, kind, id string) error {
+	master, err := findMaster(snapshot, kind, id)
 	if err != nil {
 		return err
 	}
-	if !row.Active {
+	if !master.Active {
 		return conflict("inactive catalog master cannot be assigned")
 	}
 	return nil
 }
 
-func (s *Service) categoryOutput(row categoryRow) map[string]any {
-	result := map[string]any{
-		"id": row.ID, "name": row.Name, "slug": row.Slug, "position": row.Position, "active": row.Active,
-	}
-	if row.ParentID != nil {
-		result["parentId"] = *row.ParentID
-	} else {
-		result["parentId"] = nil
-	}
-	return result
-}
-
-func (s *Service) definitionOutput(row attributeDefinitionRow) map[string]any {
-	result := map[string]any{
-		"id": row.ID, "key": row.Key, "displayName": row.DisplayName, "description": row.Description,
-		"ordering": row.Ordering, "valueKind": row.ValueKind, "active": row.Active,
-	}
-	if row.DataType != "" {
-		result["dataType"] = row.DataType
-	}
-	if row.ReferenceTarget != "" {
-		result["referenceTarget"] = row.ReferenceTarget
-	}
-	if row.UnitFamily != "" {
-		result["unitFamily"] = row.UnitFamily
-	}
-	if row.Unit != "" {
-		result["unit"] = row.Unit
-	}
-	values := []enumValue{}
-	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
-		values = []enumValue{}
-	}
-	if values == nil {
-		values = []enumValue{}
-	}
-	result["enumValues"] = values
-	return result
-}
-
-func (s *Service) masterOutput(row masterRow) map[string]any {
-	result := map[string]any{
-		"id": row.ID, "kind": row.Kind, "name": row.Name, "description": row.Description, "active": row.Active,
-		"swatchMedia": jsonSlice(row.SwatchMedia), "sellingUnit": row.SellingUnit, "baseUnit": row.BaseUnit,
-	}
-	if row.Quantity != nil {
-		result["quantity"] = *row.Quantity
-	}
-	return result
-}
-
-func (s *Service) dimensionOutput(ctx context.Context, row variantDimensionRow) (map[string]any, error) {
-	definition, err := s.findDefinition(ctx, row.DefinitionID)
-	if err != nil {
-		return nil, err
-	}
-	values := []dimensionValue{}
-	if err := json.Unmarshal([]byte(row.AllowedValues), &values); err != nil || values == nil {
-		values = []dimensionValue{}
-	}
-	return map[string]any{
-		"id": row.ID, "definitionId": row.DefinitionID, "key": definition.DisplayName, "allowedValues": values,
-	}, nil
-}
-
-func (s *Service) variantOutput(row variantRow) map[string]any {
-	result := map[string]any{
-		"id": row.ID, "modelId": row.ModelID, "selectedOptions": jsonMap(row.SelectedOptions),
-		"technicalValues": jsonMap(row.TechnicalValues), "sku": row.SKU, "status": row.Status,
-		"saleReady": saleReady(row), "canonicalCombination": row.CanonicalCombination,
-		"history": jsonSlice(row.History), "packId": nil,
-	}
-	if row.PackID != nil {
-		result["packId"] = *row.PackID
-	}
-	if row.SellingAmount != nil {
-		result["sellingPrice"] = map[string]any{"amount": *row.SellingAmount, "currency": row.SellingCurrency}
-	} else {
-		result["sellingPrice"] = nil
-	}
-	return result
-}
-
-func saleReady(row variantRow) bool {
-	return row.Status == "Active" && strings.TrimSpace(row.SKU) != "" && row.SellingAmount != nil && *row.SellingAmount > 0 && strings.EqualFold(row.SellingCurrency, "VND")
-}
-
-func (s *Service) modelOutput(ctx context.Context, row productModelRow, public bool) (map[string]any, error) {
-	result := map[string]any{
-		"id": row.ID, "name": row.Name, "categoryId": row.CategoryID, "description": row.Description,
-		"fixedAttributes": jsonMap(row.FixedAttributes), "measurements": jsonMap(row.Measurements),
-		"status": row.Status, "images": []map[string]any{}, "variants": []map[string]any{}, "variantDimensions": []map[string]any{},
-	}
-	if row.FixedPackID != nil {
-		result["fixedPackId"] = *row.FixedPackID
-	}
-	if row.WarrantySummary != "" {
-		result["warrantySummary"] = jsonMap(row.WarrantySummary)
-	} else {
-		result["warrantySummary"] = nil
-	}
-
-	var images []productImageRow
-	if err := s.db.WithContext(ctx).Where("model_id = ?", row.ID).Order("ordering ASC, id ASC").Find(&images).Error; err != nil {
-		return nil, err
-	}
-	imageOutput := make([]map[string]any, 0, len(images))
-	for _, image := range images {
-		imageOutput = append(imageOutput, map[string]any{"id": image.ID, "url": image.URL, "ordering": image.Ordering, "primary": image.PrimaryImage})
-	}
-	result["images"] = imageOutput
-
-	var dimensions []variantDimensionRow
-	if err := s.db.WithContext(ctx).Where("model_id = ?", row.ID).Order("created_at ASC, id ASC").Find(&dimensions).Error; err != nil {
-		return nil, err
-	}
-	dimensionOutput := make([]map[string]any, 0, len(dimensions))
-	for _, dimension := range dimensions {
-		value, err := s.dimensionOutput(ctx, dimension)
-		if err != nil {
-			return nil, err
+func (s *Service) validateFixedAttributes(snapshot *entity.CatalogSnapshot, input map[string]any) error {
+	fixed := recordMapValue(input, "fixedAttributes", "fixed_attributes")
+	for key, rawValue := range fixed {
+		definition, definitionErr := fixedAttributeDefinition(snapshot, key)
+		if definitionErr != nil && uuidPattern.MatchString(key) {
+			return definitionErr
 		}
-		dimensionOutput = append(dimensionOutput, value)
-	}
-	result["variantDimensions"] = dimensionOutput
-
-	query := s.db.WithContext(ctx).Where("model_id = ?", row.ID).Order("created_at ASC, id ASC")
-	var variants []variantRow
-	if err := query.Find(&variants).Error; err != nil {
-		return nil, err
-	}
-	variantOutput := make([]map[string]any, 0, len(variants))
-	for _, variant := range variants {
-		if public && !saleReady(variant) {
+		if definitionErr == nil {
+			if !definition.Active {
+				return conflict("inactive attribute definition cannot be assigned")
+			}
+			switch definition.ValueKind {
+			case "Reference":
+				master, err := s.findActiveMasterByValue(snapshot, strings.ToLower(definition.ReferenceTarget), fmt.Sprint(rawValue))
+				if err != nil {
+					return err
+				}
+				fixed[key] = master.ID
+			case "Enum":
+				if !enumValueMatches(definition.EnumValues, fmt.Sprint(rawValue)) {
+					return conflict("fixed attribute must use an active enum value")
+				}
+			case "Scalar":
+				if err := validateScalarValue(definition, rawValue); err != nil {
+					return err
+				}
+			}
 			continue
 		}
-		variantOutput = append(variantOutput, s.variantOutput(variant))
+		if strings.EqualFold(key, "materialId") || strings.EqualFold(key, "finishId") || strings.EqualFold(key, "packId") {
+			kind := strings.ToLower(strings.TrimSuffix(key, "Id"))
+			if err := s.activeMaster(snapshot, kind, fmt.Sprint(rawValue)); err != nil {
+				var apiErr *APIError
+				if errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound {
+					continue
+				}
+				return err
+			}
+		}
 	}
-	result["variants"] = variantOutput
-	return result, nil
+	return nil
+}
+
+func fixedAttributeDefinition(snapshot *entity.CatalogSnapshot, key string) (*entity.CatalogAttributeDefinition, error) {
+	if uuidPattern.MatchString(key) {
+		return findDefinition(snapshot, key)
+	}
+	for index := range snapshot.Definitions {
+		definition := &snapshot.Definitions[index]
+		if strings.EqualFold(definition.Key, key) || strings.EqualFold(definition.DisplayName, key) {
+			return definition, nil
+		}
+	}
+	return nil, notFound("attribute definition not found")
+}
+
+func enumValueMatches(values []entity.CatalogEnumValue, raw string) bool {
+	for _, value := range values {
+		if value.Active && (value.ID == raw || strings.EqualFold(value.Key, raw) || strings.EqualFold(normalizeText(value.Label), normalizeText(raw))) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateScalarValue(definition *entity.CatalogAttributeDefinition, raw any) error {
+	switch definition.DataType {
+	case "Text":
+		if strings.TrimSpace(fmt.Sprint(raw)) == "" {
+			return bad("text fixed attribute cannot be empty")
+		}
+	case "Boolean":
+		if _, ok := raw.(bool); !ok && !strings.EqualFold(strings.TrimSpace(fmt.Sprint(raw)), "true") && !strings.EqualFold(strings.TrimSpace(fmt.Sprint(raw)), "false") {
+			return bad("boolean fixed attribute must be true or false")
+		}
+	case "Number":
+		if number, valid := floatValue(raw); valid && !math.IsNaN(number) && !math.IsInf(number, 0) {
+			return nil
+		}
+		if object := recordMap(raw); len(object) > 0 {
+			if number, valid := floatValue(object["value"]); valid && !math.IsNaN(number) && !math.IsInf(number, 0) {
+				unit := stringValue(object, "unit")
+				if unit == "" || compatibleUnit(definition.UnitFamily, unit) {
+					return nil
+				}
+			}
+		}
+		if _, family, valid := canonicalUnit(fmt.Sprint(raw)); !valid || (definition.UnitFamily != "" && !strings.EqualFold(family, definition.UnitFamily)) {
+			return bad("numeric fixed attribute has an incompatible value")
+		}
+	default:
+		return bad("unsupported Scalar data type")
+	}
+	return nil
+}
+
+func (s *Service) findActiveMasterByValue(snapshot *entity.CatalogSnapshot, kind, value string) (*entity.CatalogMaster, error) {
+	for index := range snapshot.Masters {
+		master := &snapshot.Masters[index]
+		if master.Kind != kind {
+			continue
+		}
+		if master.ID == value || strings.EqualFold(normalizeText(master.Name), normalizeText(value)) {
+			if !master.Active {
+				return nil, conflict("inactive catalog master cannot be assigned")
+			}
+			return master, nil
+		}
+	}
+	return nil, notFound("catalog master not found")
+}
+
+func recordMapValue(input map[string]any, names ...string) map[string]any {
+	value, _ := mapValue(input, names...)
+	return recordMap(value)
+}
+
+func (s *Service) validateModelInput(snapshot *entity.CatalogSnapshot, input map[string]any, existing *entity.CatalogProductModel) error {
+	categoryID := stringValue(input, "categoryId", "category_id")
+	if categoryID != "" {
+		category, err := findCategory(snapshot, categoryID)
+		if err != nil {
+			return err
+		}
+		if !category.Active && (existing == nil || existing.CategoryID != categoryID) {
+			return conflict("inactive category cannot be assigned to a new ProductModel")
+		}
+	}
+	if err := s.validateFixedAttributes(snapshot, input); err != nil {
+		return err
+	}
+	if fixedPackID := stringValue(input, "fixedPackId", "fixed_pack_id"); fixedPackID != "" {
+		if err := s.activeMaster(snapshot, "pack", fixedPackID); err != nil {
+			return err
+		}
+	}
+	if value, ok := mapValue(input, "measurements"); ok {
+		if err := validateMeasurements(value); err != nil {
+			return err
+		}
+	}
+	_, err := warrantyValue(input, "warrantySummary", "warranty")
+	return err
 }
 
 // Categories -----------------------------------------------------------------
 
 func (s *Service) ListCategories(ctx context.Context) ([]map[string]any, error) {
-	var rows []categoryRow
-	if err := s.db.WithContext(ctx).Order("position ASC, name ASC").Find(&rows).Error; err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	result := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, s.categoryOutput(row))
+	result := make([]map[string]any, 0, len(snapshot.Categories))
+	for _, value := range snapshot.Categories {
+		result = append(result, categoryOutput(value))
 	}
 	return result, nil
 }
 
 func (s *Service) CreateCategory(ctx context.Context, input map[string]any) (map[string]any, error) {
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
 	name, slug := stringValue(input, "name"), stringValue(input, "slug")
 	if name == "" || slug == "" {
 		return nil, bad("category name and slug are required")
 	}
-	parentID := optionalString(input, "parentId", "parent_id")
-	if parentID != nil {
-		var parent categoryRow
-		if err := s.db.WithContext(ctx).Where("id = ?", *parentID).First(&parent).Error; err != nil {
-			return nil, notFound("parent category not found")
-		}
-	}
-	row := categoryRow{ID: uuid.NewString(), Name: name, Slug: slug, ParentID: parentID, Position: intValue(input, 0, "position"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+	for _, value := range snapshot.Categories {
+		if value.Slug == slug {
 			return nil, conflict("category slug already exists")
 		}
+	}
+	var parentID *string
+	if value := stringValue(input, "parentId", "parent_id"); value != "" {
+		if _, err := findCategory(&snapshot, value); err != nil {
+			return nil, err
+		}
+		parentID = &value
+	}
+	value := entity.CatalogCategory{ID: uuid.NewString(), Name: name, Slug: slug, ParentID: parentID, Position: intValue(input, 0, "position"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
+	snapshot.Categories = append(snapshot.Categories, value)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.categoryOutput(row), nil
+	return categoryOutput(value), nil
 }
 
 func (s *Service) UpdateCategory(ctx context.Context, id string, input map[string]any) (map[string]any, error) {
-	var row categoryRow
-	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, notFound("category not found")
-		}
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	if value := stringValue(input, "name"); value != "" {
-		row.Name = value
+	if slug := stringValue(input, "slug"); slug != "" {
+		for _, candidate := range snapshot.Categories {
+			if candidate.ID != id && candidate.Slug == slug {
+				return nil, conflict("category slug already exists")
+			}
+		}
 	}
-	if value := stringValue(input, "slug"); value != "" {
-		row.Slug = value
+	value, err := findCategory(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	if text := stringValue(input, "name"); text != "" {
+		value.Name = text
+	}
+	if text := stringValue(input, "slug"); text != "" {
+		value.Slug = text
 	}
 	if _, ok := mapValue(input, "position"); ok {
-		row.Position = intValue(input, row.Position, "position")
+		value.Position = intValue(input, value.Position, "position")
 	}
 	if _, ok := mapValue(input, "active"); ok {
-		row.Active = boolValue(input, row.Active, "active")
+		value.Active = boolValue(input, value.Active, "active")
 	}
 	if parentID, ok := mapValue(input, "parentId", "parent_id"); ok {
 		if parentID == nil || strings.TrimSpace(fmt.Sprint(parentID)) == "" {
-			row.ParentID = nil
+			value.ParentID = nil
 		} else {
-			value := strings.TrimSpace(fmt.Sprint(parentID))
-			row.ParentID = &value
+			parent := strings.TrimSpace(fmt.Sprint(parentID))
+			if parent == id {
+				return nil, bad("category cannot be its own parent")
+			}
+			if _, parentErr := findCategory(&snapshot, parent); parentErr != nil {
+				return nil, parentErr
+			}
+			for ancestor := parent; ancestor != ""; {
+				candidate, ancestorErr := findCategory(&snapshot, ancestor)
+				if ancestorErr != nil || candidate.ParentID == nil {
+					break
+				}
+				if *candidate.ParentID == id {
+					return nil, bad("category hierarchy cannot contain a cycle")
+				}
+				ancestor = *candidate.ParentID
+			}
+			value.ParentID = &parent
 		}
 	}
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.categoryOutput(row), nil
+	return categoryOutput(*value), nil
 }
 
 func (s *Service) DeactivateCategory(ctx context.Context, id string) (map[string]any, error) {
@@ -746,174 +718,186 @@ func (s *Service) DeleteCategory(context.Context, string) (map[string]any, error
 // Attribute definitions ------------------------------------------------------
 
 func (s *Service) ListDefinitions(ctx context.Context) ([]map[string]any, error) {
-	var rows []attributeDefinitionRow
-	if err := s.db.WithContext(ctx).Order("ordering ASC, display_name ASC, id ASC").Find(&rows).Error; err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	result := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, s.definitionOutput(row))
+	result := make([]map[string]any, 0, len(snapshot.Definitions))
+	for _, value := range snapshot.Definitions {
+		result = append(result, definitionOutput(value))
 	}
 	return result, nil
 }
 
 func (s *Service) CreateDefinition(ctx context.Context, input map[string]any) (map[string]any, error) {
-	key := stringValue(input, "key")
-	valueKind := stringValue(input, "valueKind", "value_kind")
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	key, valueKind := stringValue(input, "key"), stringValue(input, "valueKind", "value_kind")
 	if key == "" || valueKind == "" {
 		return nil, bad("attribute key and valueKind are required")
 	}
-	dataType := stringValue(input, "dataType", "data_type")
-	referenceTarget := stringValue(input, "referenceTarget", "reference_target")
+	dataType, referenceTarget := stringValue(input, "dataType", "data_type"), stringValue(input, "referenceTarget", "reference_target")
 	unitFamily, unit := stringValue(input, "unitFamily", "unit_family"), stringValue(input, "unit")
 	if err := validateDefinition(valueKind, dataType, referenceTarget, unitFamily, unit); err != nil {
 		return nil, err
 	}
-	row := attributeDefinitionRow{
-		ID: uuid.NewString(), Key: key, DisplayName: stringValue(input, "displayName", "display_name"), Description: stringValue(input, "description"),
-		Ordering: intValue(input, 0, "ordering"), ValueKind: valueKind, DataType: dataType, ReferenceTarget: referenceTarget,
-		UnitFamily: unitFamily, Unit: unit, Active: boolValue(input, true, "active"), EnumValues: "[]", CreatedAt: now(), UpdatedAt: now(),
-	}
-	if row.DisplayName == "" {
-		row.DisplayName = key
-	}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
+	for _, value := range snapshot.Definitions {
+		if value.Key == key {
 			return nil, conflict("attribute key already exists")
 		}
+	}
+	value := entity.CatalogAttributeDefinition{ID: uuid.NewString(), Key: key, DisplayName: stringValue(input, "displayName", "display_name"), Description: stringValue(input, "description"), Ordering: intValue(input, 0, "ordering"), ValueKind: valueKind, DataType: dataType, ReferenceTarget: referenceTarget, UnitFamily: unitFamily, Unit: unit, Active: boolValue(input, true, "active"), EnumValues: []entity.CatalogEnumValue{}, CreatedAt: now(), UpdatedAt: now()}
+	if value.DisplayName == "" {
+		value.DisplayName = key
+	}
+	snapshot.Definitions = append(snapshot.Definitions, value)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.definitionOutput(row), nil
+	return definitionOutput(value), nil
 }
 
-func (s *Service) definitionUsed(ctx context.Context, id string) (bool, error) {
-	var count int64
-	if err := s.db.WithContext(ctx).Model(&variantDimensionRow{}).Where("definition_id = ?", id).Count(&count).Error; err != nil {
-		return false, err
-	}
-	if count > 0 {
-		return true, nil
-	}
-	var models []productModelRow
-	if err := s.db.WithContext(ctx).Find(&models).Error; err != nil {
-		return false, err
-	}
-	for _, model := range models {
-		if _, ok := jsonMap(model.FixedAttributes)[id]; ok {
-			return true, nil
+func definitionUsed(snapshot entity.CatalogSnapshot, id string) bool {
+	for _, model := range snapshot.Models {
+		if _, ok := model.FixedAttributes[id]; ok {
+			return true
+		}
+		for _, dimension := range model.Dimensions {
+			if dimension.DefinitionID == id {
+				return true
+			}
 		}
 	}
-	return false, nil
+	return false
 }
 
 func (s *Service) UpdateDefinition(ctx context.Context, id string, input map[string]any) (map[string]any, error) {
-	row, err := s.findDefinition(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	used, err := s.definitionUsed(ctx, id)
+	value, err := findDefinition(&snapshot, id)
 	if err != nil {
 		return nil, err
 	}
-	valueKind, dataType, referenceTarget := row.ValueKind, row.DataType, row.ReferenceTarget
-	unitFamily, unit := row.UnitFamily, row.Unit
-	if value, ok := mapValue(input, "valueKind", "value_kind"); ok {
-		valueKind = strings.TrimSpace(fmt.Sprint(value))
+	valueKind, dataType, referenceTarget := value.ValueKind, value.DataType, value.ReferenceTarget
+	unitFamily, unit := value.UnitFamily, value.Unit
+	if raw, ok := mapValue(input, "valueKind", "value_kind"); ok {
+		valueKind = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "dataType", "data_type"); ok {
-		dataType = strings.TrimSpace(fmt.Sprint(value))
+	if raw, ok := mapValue(input, "dataType", "data_type"); ok {
+		dataType = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "referenceTarget", "reference_target"); ok {
-		referenceTarget = strings.TrimSpace(fmt.Sprint(value))
+	if raw, ok := mapValue(input, "referenceTarget", "reference_target"); ok {
+		referenceTarget = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "unitFamily", "unit_family"); ok {
-		unitFamily = strings.TrimSpace(fmt.Sprint(value))
+	if raw, ok := mapValue(input, "unitFamily", "unit_family"); ok {
+		unitFamily = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "unit"); ok {
-		unit = strings.TrimSpace(fmt.Sprint(value))
+	if raw, ok := mapValue(input, "unit"); ok {
+		unit = fmt.Sprint(raw)
 	}
-	if used && (valueKind != row.ValueKind || dataType != row.DataType || referenceTarget != row.ReferenceTarget || unitFamily != row.UnitFamily || unit != row.Unit) {
+	if definitionUsed(snapshot, id) && (valueKind != value.ValueKind || dataType != value.DataType || referenceTarget != value.ReferenceTarget || unitFamily != value.UnitFamily || unit != value.Unit) {
 		return nil, conflict("used attribute semantic structure cannot change")
 	}
 	if err := validateDefinition(valueKind, dataType, referenceTarget, unitFamily, unit); err != nil {
 		return nil, err
 	}
-	row.ValueKind, row.DataType, row.ReferenceTarget, row.UnitFamily, row.Unit = valueKind, dataType, referenceTarget, unitFamily, unit
-	if value := stringValue(input, "displayName", "display_name"); value != "" {
-		row.DisplayName = value
+	value.ValueKind, value.DataType, value.ReferenceTarget, value.UnitFamily, value.Unit = valueKind, dataType, referenceTarget, unitFamily, unit
+	if text := stringValue(input, "displayName", "display_name"); text != "" {
+		value.DisplayName = text
 	}
-	if value, ok := mapValue(input, "description"); ok {
-		row.Description = fmt.Sprint(value)
+	if raw, ok := mapValue(input, "description"); ok {
+		value.Description = fmt.Sprint(raw)
 	}
 	if _, ok := mapValue(input, "ordering"); ok {
-		row.Ordering = intValue(input, row.Ordering, "ordering")
+		value.Ordering = intValue(input, value.Ordering, "ordering")
 	}
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.definitionOutput(row), nil
+	return definitionOutput(*value), nil
 }
 
 func (s *Service) DeactivateDefinition(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findDefinition(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	row.Active, row.UpdatedAt = false, now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value, err := findDefinition(&snapshot, id)
+	if err != nil {
 		return nil, err
 	}
-	return s.definitionOutput(row), nil
+	value.Active, value.UpdatedAt = false, now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return definitionOutput(*value), nil
 }
 
 func (s *Service) AddEnumValue(ctx context.Context, definitionID string, input map[string]any) (map[string]any, error) {
-	row, err := s.findDefinition(ctx, definitionID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.ValueKind != "Enum" {
+	definition, err := findDefinition(&snapshot, definitionID)
+	if err != nil {
+		return nil, err
+	}
+	if definition.ValueKind != "Enum" {
 		return nil, bad("enum values require an Enum definition")
 	}
 	key, label := stringValue(input, "key"), stringValue(input, "label")
 	if key == "" || label == "" {
 		return nil, bad("enum key and label are required")
 	}
-	values := []enumValue{}
-	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
-		values = []enumValue{}
-	}
-	for _, value := range values {
+	for _, value := range definition.EnumValues {
 		if strings.EqualFold(value.Key, key) {
 			return nil, conflict("enum key already exists")
 		}
 	}
-	item := enumValue{ID: uuid.NewString(), Key: key, Label: label, Active: boolValue(input, true, "active")}
-	values = append(values, item)
-	row.EnumValues, row.UpdatedAt = jsonString(values, "[]"), now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	item := entity.CatalogEnumValue{ID: uuid.NewString(), Key: key, Label: label, Active: boolValue(input, true, "active")}
+	definition.EnumValues = append(definition.EnumValues, item)
+	definition.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
 	return map[string]any{"id": item.ID, "key": item.Key, "label": item.Label, "active": item.Active}, nil
 }
 
 func (s *Service) DeactivateEnumValue(ctx context.Context, definitionID, enumID string) (map[string]any, error) {
-	row, err := s.findDefinition(ctx, definitionID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	values := []enumValue{}
-	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
-		values = []enumValue{}
+	definition, err := findDefinition(&snapshot, definitionID)
+	if err != nil {
+		return nil, err
 	}
-	for index := range values {
-		if values[index].ID == enumID {
-			values[index].Active = false
-			row.EnumValues, row.UpdatedAt = jsonString(values, "[]"), now()
-			if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	for index := range definition.EnumValues {
+		if definition.EnumValues[index].ID == enumID {
+			definition.EnumValues[index].Active = false
+			for modelIndex := range snapshot.Models {
+				for dimensionIndex := range snapshot.Models[modelIndex].Dimensions {
+					dimension := &snapshot.Models[modelIndex].Dimensions[dimensionIndex]
+					if dimension.DefinitionID != definitionID {
+						continue
+					}
+					for valueIndex := range dimension.AllowedValues {
+						if dimension.AllowedValues[valueIndex].ID == enumID {
+							dimension.AllowedValues[valueIndex].Active = false
+						}
+					}
+				}
+			}
+			definition.UpdatedAt = now()
+			if err := s.save(ctx, snapshot); err != nil {
 				return nil, err
 			}
-			return map[string]any{"id": values[index].ID, "key": values[index].Key, "label": values[index].Label, "active": false}, nil
+			return map[string]any{"id": enumID, "key": definition.EnumValues[index].Key, "label": definition.EnumValues[index].Label, "active": false}, nil
 		}
 	}
 	return nil, notFound("enum value not found")
@@ -929,14 +913,17 @@ func (s *Service) ListMasters(ctx context.Context, kind string) ([]map[string]an
 	if !validMasterKind(kind) {
 		return nil, bad("unsupported catalog master kind")
 	}
-	var rows []masterRow
-	if err := s.db.WithContext(ctx).Where("kind = ?", kind).Order("name ASC, id ASC").Find(&rows).Error; err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	result := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, s.masterOutput(row))
+	result := make([]map[string]any, 0)
+	for _, value := range snapshot.Masters {
+		if value.Kind == kind {
+			result = append(result, masterOutput(value))
+		}
 	}
+	sort.Slice(result, func(i, j int) bool { return fmt.Sprint(result[i]["name"]) < fmt.Sprint(result[j]["name"]) })
 	return result, nil
 }
 
@@ -944,66 +931,100 @@ func (s *Service) CreateMaster(ctx context.Context, kind string, input map[strin
 	if !validMasterKind(kind) {
 		return nil, bad("unsupported catalog master kind")
 	}
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
 	name := stringValue(input, "name")
 	if name == "" {
 		return nil, bad("master name is required")
 	}
+	for _, value := range snapshot.Masters {
+		if value.Kind == kind && value.Name == name {
+			return nil, conflict("catalog master already exists")
+		}
+	}
 	var quantity *float64
-	if value, ok := mapValue(input, "quantity"); ok && value != nil {
-		parsed, valid := floatValue(value)
+	if raw, ok := mapValue(input, "quantity"); ok && raw != nil {
+		parsed, valid := floatValue(raw)
 		if !valid || parsed <= 0 {
 			return nil, bad("pack quantity must be positive")
 		}
 		quantity = &parsed
 	}
-	row := masterRow{ID: uuid.NewString(), Kind: kind, Name: name, Description: stringValue(input, "description"), SwatchMedia: jsonString(input["swatchMedia"], "[]"), SellingUnit: stringValue(input, "sellingUnit"), Quantity: quantity, BaseUnit: stringValue(input, "baseUnit"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
-			return nil, conflict("catalog master already exists")
+	media := []string{}
+	if raw, ok := mapValue(input, "swatchMedia", "swatch_media"); ok {
+		for _, item := range recordSlice(raw) {
+			media = append(media, fmt.Sprint(item))
 		}
+	}
+	value := entity.CatalogMaster{ID: uuid.NewString(), Kind: kind, Name: name, Description: stringValue(input, "description"), SwatchMedia: media, SellingUnit: stringValue(input, "sellingUnit", "selling_unit"), Quantity: quantity, BaseUnit: stringValue(input, "baseUnit", "base_unit"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
+	snapshot.Masters = append(snapshot.Masters, value)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.masterOutput(row), nil
+	return masterOutput(value), nil
+}
+
+func recordSlice(value any) []any {
+	switch values := value.(type) {
+	case []any:
+		return values
+	case []string:
+		result := make([]any, len(values))
+		for index, item := range values {
+			result[index] = item
+		}
+		return result
+	}
+	return nil
 }
 
 func (s *Service) UpdateMaster(ctx context.Context, kind, id string, input map[string]any) (map[string]any, error) {
 	if !validMasterKind(kind) {
 		return nil, bad("unsupported catalog master kind")
 	}
-	row, err := s.findMaster(ctx, kind, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if value := stringValue(input, "name"); value != "" {
-		row.Name = value
+	value, err := findMaster(&snapshot, kind, id)
+	if err != nil {
+		return nil, err
 	}
-	if value, ok := mapValue(input, "description"); ok {
-		row.Description = fmt.Sprint(value)
+	if text := stringValue(input, "name"); text != "" {
+		value.Name = text
 	}
-	if value, ok := mapValue(input, "swatchMedia"); ok {
-		row.SwatchMedia = jsonString(value, "[]")
+	if raw, ok := mapValue(input, "description"); ok {
+		value.Description = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "sellingUnit"); ok {
-		row.SellingUnit = fmt.Sprint(value)
+	if raw, ok := mapValue(input, "swatchMedia", "swatch_media"); ok {
+		value.SwatchMedia = make([]string, 0)
+		for _, item := range recordSlice(raw) {
+			value.SwatchMedia = append(value.SwatchMedia, fmt.Sprint(item))
+		}
 	}
-	if value, ok := mapValue(input, "baseUnit"); ok {
-		row.BaseUnit = fmt.Sprint(value)
+	if raw, ok := mapValue(input, "sellingUnit", "selling_unit"); ok {
+		value.SellingUnit = fmt.Sprint(raw)
 	}
-	if value, ok := mapValue(input, "quantity"); ok {
-		parsed, valid := floatValue(value)
+	if raw, ok := mapValue(input, "baseUnit", "base_unit"); ok {
+		value.BaseUnit = fmt.Sprint(raw)
+	}
+	if raw, ok := mapValue(input, "quantity"); ok {
+		parsed, valid := floatValue(raw)
 		if !valid || parsed <= 0 {
 			return nil, bad("pack quantity must be positive")
 		}
-		row.Quantity = &parsed
+		value.Quantity = &parsed
 	}
 	if _, ok := mapValue(input, "active"); ok {
-		row.Active = boolValue(input, row.Active, "active")
+		value.Active = boolValue(input, value.Active, "active")
 	}
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.masterOutput(row), nil
+	return masterOutput(*value), nil
 }
 
 func (s *Service) DeactivateMaster(ctx context.Context, kind, id string) (map[string]any, error) {
@@ -1012,80 +1033,16 @@ func (s *Service) DeactivateMaster(ctx context.Context, kind, id string) (map[st
 
 // ProductModel ---------------------------------------------------------------
 
-func (s *Service) validateFixedAttributes(ctx context.Context, input map[string]any) error {
-	value, ok := mapValue(input, "fixedAttributes", "fixed_attributes")
-	if !ok || value == nil {
-		return nil
-	}
-	fixed := parseStringMap(value)
-	for key, rawValue := range fixed {
-		if uuidPattern.MatchString(key) {
-			definition, err := s.findDefinition(ctx, key)
-			if err != nil {
-				return err
-			}
-			if !definition.Active {
-				return conflict("inactive attribute definition cannot be assigned")
-			}
-			if definition.ValueKind == "Reference" {
-				if err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), rawValue); err != nil {
-					return err
-				}
-			}
-			continue
-		}
-		// Public discovery fixtures use explicit materialId/finishId keys.  If
-		// those point at a known master, enforce its lifecycle too.
-		if strings.EqualFold(key, "materialId") || strings.EqualFold(key, "finishId") || strings.EqualFold(key, "packId") {
-			kind := strings.ToLower(strings.TrimSuffix(key, "Id"))
-			if err := s.activeMaster(ctx, kind, rawValue); err != nil {
-				var apiErr *APIError
-				if errors.As(err, &apiErr) && apiErr.Status == 404 {
-					continue
-				}
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (s *Service) validateModelInput(ctx context.Context, input map[string]any, existing *productModelRow) error {
-	categoryID := stringValue(input, "categoryId", "category_id")
-	if categoryID != "" {
-		var category categoryRow
-		if err := s.db.WithContext(ctx).Where("id = ?", categoryID).First(&category).Error; err != nil {
-			return notFound("category not found")
-		}
-		if !category.Active && (existing == nil || existing.CategoryID != categoryID) {
-			return conflict("inactive category cannot be assigned to a new ProductModel")
-		}
-	}
-	if err := s.validateFixedAttributes(ctx, input); err != nil {
-		return err
-	}
-	if fixedPackID := stringValue(input, "fixedPackId", "fixed_pack_id"); fixedPackID != "" {
-		if err := s.activeMaster(ctx, "pack", fixedPackID); err != nil {
-			return err
-		}
-	}
-	if value, ok := mapValue(input, "measurements"); ok {
-		if err := validateMeasurements(value); err != nil {
-			return err
-		}
-	}
-	if _, err := warrantyValue(input, "warrantySummary", "warranty"); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Service) CreateModel(ctx context.Context, input map[string]any) (map[string]any, error) {
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
 	name, categoryID := stringValue(input, "name"), stringValue(input, "categoryId", "category_id")
 	if name == "" || categoryID == "" {
 		return nil, bad("ProductModel name and categoryId are required")
 	}
-	if err := s.validateModelInput(ctx, input, nil); err != nil {
+	if err := s.validateModelInput(&snapshot, input, nil); err != nil {
 		return nil, err
 	}
 	warranty, err := warrantyValue(input, "warrantySummary", "warranty")
@@ -1093,165 +1050,181 @@ func (s *Service) CreateModel(ctx context.Context, input map[string]any) (map[st
 		return nil, err
 	}
 	fixedPackID := optionalString(input, "fixedPackId", "fixed_pack_id")
-	fixedAttributes := map[string]any{}
-	if value, ok := mapValue(input, "fixedAttributes", "fixed_attributes"); ok {
-		fixedAttributes = recordMap(value)
-	}
-	measurements := map[string]any{}
-	if value, ok := mapValue(input, "measurements"); ok {
-		measurements = recordMap(value)
-	}
-	row := productModelRow{ID: uuid.NewString(), Name: name, CategoryID: categoryID, Description: stringValue(input, "description"), WarrantySummary: warranty, FixedAttributes: jsonString(fixedAttributes, "{}"), FixedPackID: fixedPackID, Measurements: jsonString(measurements, "{}"), Status: "Draft", CreatedAt: now(), UpdatedAt: now()}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
+	value := entity.CatalogProductModel{ID: uuid.NewString(), Name: name, CategoryID: categoryID, Description: stringValue(input, "description"), WarrantySummary: warranty, FixedAttributes: recordMapValue(input, "fixedAttributes", "fixed_attributes"), FixedPackID: fixedPackID, Measurements: recordMapValue(input, "measurements"), Status: entity.CatalogDraft, Images: []entity.CatalogProductImage{}, Dimensions: []entity.CatalogVariantDimension{}, Variants: []entity.CatalogVariant{}, CreatedAt: now(), UpdatedAt: now()}
+	snapshot.Models = append(snapshot.Models, value)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	return modelOutput(&snapshot, value, false)
+}
+
+func optionalString(input map[string]any, names ...string) *string {
+	value, ok := mapValue(input, names...)
+	if !ok || value == nil {
+		return nil
+	}
+	text := strings.TrimSpace(fmt.Sprint(value))
+	if text == "" {
+		return nil
+	}
+	return &text
 }
 
 func (s *Service) ListModels(ctx context.Context) ([]map[string]any, error) {
-	var rows []productModelRow
-	if err := s.db.WithContext(ctx).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	result := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		value, err := s.modelOutput(ctx, row, false)
-		if err != nil {
-			return nil, err
+	result := make([]map[string]any, 0, len(snapshot.Models))
+	for _, value := range snapshot.Models {
+		output, outputErr := modelOutput(&snapshot, value, false)
+		if outputErr != nil {
+			return nil, outputErr
 		}
-		result = append(result, value)
+		result = append(result, output)
 	}
 	return result, nil
 }
 
 func (s *Service) GetModel(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	value, err := findModel(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	return modelOutput(&snapshot, *value, false)
 }
 
 func (s *Service) UpdateModel(ctx context.Context, id string, input map[string]any) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.Status == "Discontinued" && (stringValue(input, "status") != "Discontinued" || boolValue(input, false, "is_active")) {
-		return nil, conflict("Discontinued ProductModel is terminal")
-	}
-	if err := s.validateModelInput(ctx, input, &row); err != nil {
+	value, err := findModel(&snapshot, id)
+	if err != nil {
 		return nil, err
 	}
-	if value := stringValue(input, "name"); value != "" {
-		row.Name = value
+	if value.Status == entity.CatalogDiscontinued && (stringValue(input, "status") != entity.CatalogDiscontinued || boolValue(input, false, "is_active")) {
+		return nil, conflict("Discontinued ProductModel is terminal")
 	}
-	if value := stringValue(input, "categoryId", "category_id"); value != "" {
-		row.CategoryID = value
+	if err := s.validateModelInput(&snapshot, input, value); err != nil {
+		return nil, err
 	}
-	if value, ok := mapValue(input, "description"); ok {
-		row.Description = fmt.Sprint(value)
+	if text := stringValue(input, "name"); text != "" {
+		value.Name = text
 	}
-	if value, ok := mapValue(input, "fixedAttributes", "fixed_attributes"); ok {
-		row.FixedAttributes = jsonString(value, "{}")
+	if text := stringValue(input, "categoryId", "category_id"); text != "" {
+		value.CategoryID = text
 	}
-	if value, ok := mapValue(input, "fixedPackId", "fixed_pack_id"); ok {
-		if value == nil || strings.TrimSpace(fmt.Sprint(value)) == "" {
-			row.FixedPackID = nil
+	if raw, ok := mapValue(input, "description"); ok {
+		value.Description = fmt.Sprint(raw)
+	}
+	if _, ok := mapValue(input, "fixedAttributes", "fixed_attributes"); ok {
+		value.FixedAttributes = recordMapValue(input, "fixedAttributes", "fixed_attributes")
+	}
+	if raw, ok := mapValue(input, "fixedPackId", "fixed_pack_id"); ok {
+		if raw == nil || strings.TrimSpace(fmt.Sprint(raw)) == "" {
+			value.FixedPackID = nil
 		} else {
-			packID := strings.TrimSpace(fmt.Sprint(value))
-			row.FixedPackID = &packID
+			packID := strings.TrimSpace(fmt.Sprint(raw))
+			value.FixedPackID = &packID
 		}
 	}
-	if value, ok := mapValue(input, "measurements"); ok {
-		row.Measurements = jsonString(value, "{}")
+	if _, ok := mapValue(input, "measurements"); ok {
+		value.Measurements = recordMapValue(input, "measurements")
 	}
-	if value, ok := mapValue(input, "warrantySummary", "warranty"); ok {
-		warranty, warrantyErr := warrantyValue(map[string]any{"warrantySummary": value}, "warrantySummary")
+	if _, ok := mapValue(input, "warrantySummary", "warranty"); ok {
+		warranty, warrantyErr := warrantyValue(map[string]any{"warrantySummary": mapValueMust(input, "warrantySummary", "warranty")}, "warrantySummary")
 		if warrantyErr != nil {
 			return nil, warrantyErr
 		}
-		row.WarrantySummary = warranty
+		value.WarrantySummary = warranty
 	}
 	if status := stringValue(input, "status"); status != "" {
-		if status != "Draft" && status != "Active" && status != "Inactive" && status != "Discontinued" {
+		if status != entity.CatalogDraft && status != entity.CatalogActive && status != entity.CatalogInactive && status != entity.CatalogDiscontinued {
 			return nil, bad("unsupported ProductModel status")
 		}
-		if status == "Discontinued" && row.Status == "Discontinued" {
+		if value.Status == entity.CatalogDiscontinued && status != entity.CatalogDiscontinued {
 			return nil, conflict("Discontinued ProductModel is terminal")
 		}
-		row.Status = status
+		value.Status = status
 	}
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	return modelOutput(&snapshot, *value, false)
+}
+
+func mapValueMust(input map[string]any, names ...string) any {
+	value, _ := mapValue(input, names...)
+	return value
 }
 
 func (s *Service) PublishModel(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.Status == "Discontinued" {
+	value, err := findModel(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	if value.Status == entity.CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot be published")
 	}
-	var primaryCount int64
-	if err := s.db.WithContext(ctx).Model(&productImageRow{}).Where("model_id = ? AND primary_image = ?", id, true).Count(&primaryCount).Error; err != nil {
-		return nil, err
-	}
-	if primaryCount != 1 {
+	if !value.HasPrimaryImage() {
 		return nil, conflict("ProductModel requires exactly one primary model image")
 	}
-	var variants []variantRow
-	if err := s.db.WithContext(ctx).Where("model_id = ?", id).Find(&variants).Error; err != nil {
-		return nil, err
-	}
-	saleReadyCount := 0
-	for _, variant := range variants {
-		if saleReady(variant) {
-			saleReadyCount++
-		}
-	}
-	if saleReadyCount == 0 {
+	if value.SaleReadyVariantCount() == 0 {
 		return nil, conflict("ProductModel requires a sale-ready Variant")
 	}
-	row.Status, row.UpdatedAt = "Active", now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value.Status, value.UpdatedAt = entity.CatalogActive, now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	return modelOutput(&snapshot, *value, false)
 }
 
 func (s *Service) UnpublishModel(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.Status == "Discontinued" {
-		return nil, conflict("Discontinued ProductModel is terminal")
-	}
-	row.Status, row.UpdatedAt = "Inactive", now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value, err := findModel(&snapshot, id)
+	if err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	if value.Status == entity.CatalogDiscontinued {
+		return nil, conflict("Discontinued ProductModel is terminal")
+	}
+	value.Status, value.UpdatedAt = entity.CatalogInactive, now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return modelOutput(&snapshot, *value, false)
 }
 
 func (s *Service) DiscontinueModel(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.Status == "Discontinued" {
-		return nil, conflict("Discontinued ProductModel is terminal")
-	}
-	row.Status, row.UpdatedAt = "Discontinued", now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	value, err := findModel(&snapshot, id)
+	if err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	if value.Status == entity.CatalogDiscontinued {
+		return nil, conflict("Discontinued ProductModel is terminal")
+	}
+	value.Status, value.UpdatedAt = entity.CatalogDiscontinued, now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return modelOutput(&snapshot, *value, false)
 }
 
 func (s *Service) DeleteModel(context.Context, string) (map[string]any, error) {
@@ -1259,25 +1232,26 @@ func (s *Service) DeleteModel(context.Context, string) (map[string]any, error) {
 }
 
 func (s *Service) ReplaceMedia(ctx context.Context, modelID string, input map[string]any) (map[string]any, error) {
-	row, err := s.findModel(ctx, modelID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	value, ok := mapValue(input, "images")
+	value, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	raw, ok := mapValue(input, "images")
 	if !ok {
 		return nil, bad("images are required")
 	}
-	items, ok := value.([]any)
-	if !ok {
+	items := recordSlice(raw)
+	if items == nil {
 		return nil, bad("images must be an array")
 	}
-	images := make([]productImageRow, 0, len(items))
+	images := make([]entity.CatalogProductImage, 0, len(items))
 	primaryCount := 0
-	for _, raw := range items {
-		image, ok := raw.(map[string]any)
-		if !ok {
-			return nil, bad("invalid ProductModel image")
-		}
+	for _, item := range items {
+		image := recordMap(item)
 		url := stringValue(image, "url")
 		if url == "" {
 			return nil, bad("image url is required")
@@ -1286,60 +1260,30 @@ func (s *Service) ReplaceMedia(ctx context.Context, modelID string, input map[st
 		if primary {
 			primaryCount++
 		}
-		images = append(images, productImageRow{ID: uuid.NewString(), ModelID: modelID, URL: url, Ordering: intValue(image, 0, "ordering"), PrimaryImage: primary, CreatedAt: now()})
+		images = append(images, entity.CatalogProductImage{ID: uuid.NewString(), URL: url, Ordering: intValue(image, 0, "ordering"), PrimaryImage: primary, CreatedAt: now()})
 	}
-	if primaryCount > 1 {
-		return nil, conflict("ProductModel may have only one primary image")
+	if primaryCount > 1 || (value.Status == entity.CatalogActive && primaryCount != 1) {
+		return nil, conflict("ProductModel requires exactly one primary model image")
 	}
-	if row.Status == "Active" && primaryCount != 1 {
-		return nil, conflict("Active ProductModel requires a primary image")
-	}
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("model_id = ?", modelID).Delete(&productImageRow{}).Error; err != nil {
-			return err
-		}
-		for _, image := range images {
-			if err := tx.Create(&image).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	}); err != nil {
+	value.Images = images
+	value.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.modelOutput(ctx, row, false)
+	return modelOutput(&snapshot, *value, false)
 }
 
 // Variant dimensions ---------------------------------------------------------
 
-func (s *Service) loadDimensions(ctx context.Context, modelID string) ([]variantDimensionRow, error) {
-	var rows []variantDimensionRow
-	if err := s.db.WithContext(ctx).Where("model_id = ?", modelID).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
-func (s *Service) modelHasVariants(ctx context.Context, modelID string) (bool, error) {
-	var count int64
-	if err := s.db.WithContext(ctx).Model(&variantRow{}).Where("model_id = ?", modelID).Count(&count).Error; err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
-func decodeDimensionValues(raw any) ([]dimensionValue, error) {
-	items, ok := raw.([]any)
-	if !ok {
+func decodeDimensionValues(value any) ([]entity.CatalogDimensionValue, error) {
+	items := recordSlice(value)
+	if items == nil {
 		return nil, bad("allowedValues must be an array")
 	}
-	values := make([]dimensionValue, 0, len(items))
+	values := make([]entity.CatalogDimensionValue, 0, len(items))
 	seen := map[string]struct{}{}
 	for _, item := range items {
-		object, ok := item.(map[string]any)
-		if !ok {
-			return nil, bad("invalid dimension value")
-		}
+		object := recordMap(item)
 		id, label := stringValue(object, "id"), stringValue(object, "label")
 		if id == "" || label == "" {
 			return nil, bad("dimension value id and label are required")
@@ -1348,55 +1292,57 @@ func decodeDimensionValues(raw any) ([]dimensionValue, error) {
 			return nil, conflict("duplicate dimension value")
 		}
 		seen[id] = struct{}{}
-		values = append(values, dimensionValue{ID: id, Label: label, Active: boolValue(object, true, "active")})
+		values = append(values, entity.CatalogDimensionValue{ID: id, Label: label, Active: boolValue(object, true, "active")})
 	}
 	return values, nil
 }
 
+func findDimension(model *entity.CatalogProductModel, id string) (*entity.CatalogVariantDimension, error) {
+	for index := range model.Dimensions {
+		if model.Dimensions[index].ID == id {
+			return &model.Dimensions[index], nil
+		}
+	}
+	return nil, notFound("VariantDimension not found")
+}
+
 func (s *Service) CreateDimension(ctx context.Context, modelID string, input map[string]any) (map[string]any, error) {
-	if _, err := s.findModel(ctx, modelID); err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	if len(model.Variants) > 0 {
+		return nil, conflict("VariantDimension structure cannot change after Variant creation")
+	}
 	definitionID := stringValue(input, "definitionId", "definition_id")
-	definition, err := s.findDefinition(ctx, definitionID)
+	definition, err := findDefinition(&snapshot, definitionID)
 	if err != nil {
 		return nil, err
 	}
 	if !definition.Active {
 		return nil, conflict("inactive attribute definition cannot become a VariantDimension")
 	}
-	if used, err := s.modelHasVariants(ctx, modelID); err != nil {
-		return nil, err
-	} else if used {
-		return nil, conflict("VariantDimension structure cannot change after Variant creation")
+	for _, dimension := range model.Dimensions {
+		if dimension.DefinitionID == definitionID {
+			return nil, conflict("VariantDimension already exists")
+		}
 	}
-	var existing int64
-	if err := s.db.WithContext(ctx).Model(&variantDimensionRow{}).Where("model_id = ? AND definition_id = ?", modelID, definitionID).Count(&existing).Error; err != nil {
-		return nil, err
-	}
-	if existing > 0 {
-		return nil, conflict("VariantDimension already exists")
-	}
-	model, err := s.findModel(ctx, modelID)
-	if err != nil {
-		return nil, err
-	}
-	if _, ok := jsonMap(model.FixedAttributes)[definitionID]; ok {
+	if _, exists := model.FixedAttributes[definitionID]; exists {
 		return nil, conflict("a fixed attribute cannot also be a VariantDimension")
 	}
-	var values []dimensionValue
+	values := []entity.CatalogDimensionValue{}
 	if raw, ok := mapValue(input, "allowedValues", "allowed_values"); ok {
 		values, err = decodeDimensionValues(raw)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		enumValues := []enumValue{}
-		if err := json.Unmarshal([]byte(definition.EnumValues), &enumValues); err != nil {
-			enumValues = []enumValue{}
-		}
-		for _, value := range enumValues {
-			values = append(values, dimensionValue{ID: value.ID, Label: value.Label, Active: value.Active})
+		for _, value := range definition.EnumValues {
+			values = append(values, entity.CatalogDimensionValue{ID: value.ID, Label: value.Label, Active: value.Active})
 		}
 	}
 	if len(values) == 0 {
@@ -1404,111 +1350,157 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 	}
 	if definition.ValueKind == "Reference" {
 		for _, value := range values {
-			if err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
+			if err := s.activeMaster(&snapshot, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
 				return nil, err
 			}
 		}
 	}
-	row := variantDimensionRow{ID: uuid.NewString(), ModelID: modelID, DefinitionID: definitionID, AllowedValues: jsonString(values, "[]"), CreatedAt: now(), UpdatedAt: now()}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
+	dimension := entity.CatalogVariantDimension{ID: uuid.NewString(), DefinitionID: definitionID, AllowedValues: values, CreatedAt: now(), UpdatedAt: now()}
+	model.Dimensions = append(model.Dimensions, dimension)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.dimensionOutput(ctx, row)
+	return dimensionOutput(&snapshot, modelID, dimension)
 }
 
 func (s *Service) UpdateDimension(ctx context.Context, modelID, dimensionID string, input map[string]any) (map[string]any, error) {
-	var row variantDimensionRow
-	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, notFound("VariantDimension not found")
-		}
-		return nil, err
-	}
-	hasVariants, err := s.modelHasVariants(ctx, modelID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if value, ok := mapValue(input, "definitionId", "definition_id"); ok {
-		definitionID := strings.TrimSpace(fmt.Sprint(value))
-		if definitionID != row.DefinitionID && hasVariants {
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	dimension, err := findDimension(model, dimensionID)
+	if err != nil {
+		return nil, err
+	}
+	hasVariants := len(model.Variants) > 0
+	if raw, ok := mapValue(input, "definitionId", "definition_id"); ok {
+		definitionID := strings.TrimSpace(fmt.Sprint(raw))
+		if definitionID == "" {
+			return nil, bad("definitionId is required")
+		}
+		if hasVariants && definitionID != dimension.DefinitionID {
 			return nil, conflict("VariantDimension definition cannot be replaced after Variant creation")
 		}
-		if _, err := s.findDefinition(ctx, definitionID); err != nil {
-			return nil, err
+		definition, definitionErr := findDefinition(&snapshot, definitionID)
+		if definitionErr != nil {
+			return nil, definitionErr
 		}
-		row.DefinitionID = definitionID
+		if !definition.Active {
+			return nil, conflict("inactive attribute definition cannot become a VariantDimension")
+		}
+		if _, exists := model.FixedAttributes[definitionID]; exists {
+			return nil, conflict("a fixed attribute cannot also be a VariantDimension")
+		}
+		if definition.ValueKind == "Reference" {
+			for _, value := range dimension.AllowedValues {
+				if err := s.activeMaster(&snapshot, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
+					return nil, err
+				}
+			}
+		}
+		dimension.DefinitionID = definitionID
 	}
-	if value, ok := mapValue(input, "allowedValues", "allowed_values"); ok {
+	if raw, ok := mapValue(input, "allowedValues", "allowed_values"); ok {
 		if hasVariants {
 			return nil, conflict("VariantDimension values cannot be replaced after Variant creation")
 		}
-		values, decodeErr := decodeDimensionValues(value)
+		values, decodeErr := decodeDimensionValues(raw)
 		if decodeErr != nil {
 			return nil, decodeErr
 		}
-		row.AllowedValues = jsonString(values, "[]")
+		if len(values) == 0 {
+			return nil, bad("VariantDimension requires at least one allowed value")
+		}
+		definition, definitionErr := findDefinition(&snapshot, dimension.DefinitionID)
+		if definitionErr != nil {
+			return nil, definitionErr
+		}
+		if definition.ValueKind == "Reference" {
+			for _, value := range values {
+				if err := s.activeMaster(&snapshot, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
+					return nil, err
+				}
+			}
+		}
+		dimension.AllowedValues = values
 	}
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	dimension.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.dimensionOutput(ctx, row)
+	return dimensionOutput(&snapshot, modelID, *dimension)
 }
 
 func (s *Service) AddDimensionValue(ctx context.Context, modelID, dimensionID string, input map[string]any) (map[string]any, error) {
-	var row variantDimensionRow
-	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, notFound("VariantDimension not found")
-		}
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	dimension, err := findDimension(model, dimensionID)
+	if err != nil {
 		return nil, err
 	}
 	id, label := stringValue(input, "id"), stringValue(input, "label")
 	if id == "" || label == "" {
 		return nil, bad("dimension value id and label are required")
 	}
-	values := []dimensionValue{}
-	if err := json.Unmarshal([]byte(row.AllowedValues), &values); err != nil {
-		values = []dimensionValue{}
-	}
-	for index := range values {
-		if values[index].ID == id {
-			values[index].Label, values[index].Active = label, boolValue(input, true, "active")
-			row.AllowedValues, row.UpdatedAt = jsonString(values, "[]"), now()
-			if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	for index := range dimension.AllowedValues {
+		if dimension.AllowedValues[index].ID == id {
+			dimension.AllowedValues[index].Label = label
+			dimension.AllowedValues[index].Active = boolValue(input, true, "active")
+			dimension.UpdatedAt = now()
+			if err := s.save(ctx, snapshot); err != nil {
 				return nil, err
 			}
-			return s.dimensionOutput(ctx, row)
+			return dimensionOutput(&snapshot, modelID, *dimension)
 		}
 	}
-	values = append(values, dimensionValue{ID: id, Label: label, Active: boolValue(input, true, "active")})
-	row.AllowedValues, row.UpdatedAt = jsonString(values, "[]"), now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	definition, err := findDefinition(&snapshot, dimension.DefinitionID)
+	if err != nil {
 		return nil, err
 	}
-	return s.dimensionOutput(ctx, row)
+	if definition.ValueKind == "Reference" {
+		if err := s.activeMaster(&snapshot, strings.ToLower(definition.ReferenceTarget), id); err != nil {
+			return nil, err
+		}
+	}
+	dimension.AllowedValues = append(dimension.AllowedValues, entity.CatalogDimensionValue{ID: id, Label: label, Active: boolValue(input, true, "active")})
+	dimension.UpdatedAt = now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return dimensionOutput(&snapshot, modelID, *dimension)
 }
 
 func (s *Service) DeactivateDimensionValue(ctx context.Context, modelID, dimensionID, valueID string) (map[string]any, error) {
-	var row variantDimensionRow
-	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, notFound("VariantDimension not found")
-		}
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
-	values := []dimensionValue{}
-	if err := json.Unmarshal([]byte(row.AllowedValues), &values); err != nil {
-		values = []dimensionValue{}
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
 	}
-	for index := range values {
-		if values[index].ID == valueID {
-			values[index].Active = false
-			row.AllowedValues, row.UpdatedAt = jsonString(values, "[]"), now()
-			if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	dimension, err := findDimension(model, dimensionID)
+	if err != nil {
+		return nil, err
+	}
+	for index := range dimension.AllowedValues {
+		if dimension.AllowedValues[index].ID == valueID {
+			dimension.AllowedValues[index].Active = false
+			dimension.UpdatedAt = now()
+			if err := s.save(ctx, snapshot); err != nil {
 				return nil, err
 			}
-			return s.dimensionOutput(ctx, row)
+			return dimensionOutput(&snapshot, modelID, *dimension)
 		}
 	}
 	return nil, notFound("Variant value not found")
@@ -1516,24 +1508,20 @@ func (s *Service) DeactivateDimensionValue(ctx context.Context, modelID, dimensi
 
 // Variants -------------------------------------------------------------------
 
-func (s *Service) normalizeSelection(ctx context.Context, modelID string, input map[string]string) (map[string]string, string, error) {
-	dimensions, err := s.loadDimensions(ctx, modelID)
-	if err != nil {
-		return nil, "", err
-	}
-	if len(dimensions) == 0 {
+func (s *Service) normalizeSelection(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, input map[string]string) (map[string]string, string, error) {
+	if len(model.Dimensions) == 0 {
 		return nil, "", bad("ProductModel has no VariantDimensions")
 	}
 	selected := map[string]string{}
-	parts := make([]string, 0, len(dimensions))
-	for _, dimension := range dimensions {
-		definition, definitionErr := s.findDefinition(ctx, dimension.DefinitionID)
-		if definitionErr != nil {
-			return nil, "", definitionErr
+	parts := make([]string, 0, len(model.Dimensions))
+	for _, dimension := range model.Dimensions {
+		definition, err := findDefinition(snapshot, dimension.DefinitionID)
+		if err != nil {
+			return nil, "", err
 		}
 		provided, found := "", false
 		for key, value := range input {
-			if key == definition.DisplayName || key == definition.Key || strings.EqualFold(key, definition.DisplayName) || strings.EqualFold(key, definition.Key) {
+			if strings.EqualFold(key, definition.DisplayName) || strings.EqualFold(key, definition.Key) {
 				provided, found = strings.TrimSpace(value), true
 				break
 			}
@@ -1541,44 +1529,71 @@ func (s *Service) normalizeSelection(ctx context.Context, modelID string, input 
 		if !found || provided == "" {
 			return nil, "", bad("Variant must select one value for every dimension")
 		}
-		values := []dimensionValue{}
-		if err := json.Unmarshal([]byte(dimension.AllowedValues), &values); err != nil {
-			values = []dimensionValue{}
-		}
 		matched := false
-		for _, value := range values {
+		for _, value := range dimension.AllowedValues {
 			if !value.Active {
 				continue
 			}
-			if value.ID == provided || strings.EqualFold(normalizeText(value.Label), normalizeText(provided)) || canonicalValue(value.Label) == canonicalValue(provided) {
-				matched = true
-				if definition.ValueKind == "Reference" {
-					selected[definition.DisplayName] = value.ID
-				} else {
-					selected[definition.DisplayName] = value.Label
+			matches := value.ID == provided || strings.EqualFold(normalizeText(value.Label), normalizeText(provided)) || canonicalValue(value.Label) == canonicalValue(provided)
+			if definition.ValueKind == "Reference" && !matches {
+				if master, masterErr := s.findActiveMasterByValue(snapshot, strings.ToLower(definition.ReferenceTarget), value.ID); masterErr == nil {
+					matches = strings.EqualFold(normalizeText(master.Name), normalizeText(provided))
 				}
-				parts = append(parts, dimension.ID+"="+canonicalValue(value.Label))
-				break
 			}
+			if !matches {
+				continue
+			}
+			matched = true
+			if definition.ValueKind == "Reference" {
+				selected[definition.DisplayName] = value.ID
+				parts = append(parts, dimension.ID+"="+canonicalValue(value.ID))
+			} else {
+				selected[definition.DisplayName] = value.Label
+				parts = append(parts, dimension.ID+"="+canonicalValue(value.Label))
+			}
+			break
 		}
 		if !matched {
 			return nil, "", conflict("Variant selection is not an active allowed value")
 		}
 	}
-	if len(input) != len(dimensions) {
+	if len(input) != len(model.Dimensions) {
 		return nil, "", bad("Variant selection contains an unknown dimension")
 	}
 	sort.Strings(parts)
 	return selected, strings.Join(parts, "|"), nil
 }
 
-func (s *Service) validatePackAssignment(ctx context.Context, model productModelRow, selected map[string]string, dimensions []variantDimensionRow, requested *string) (*string, error) {
+func parsePrice(input map[string]any, names ...string) (*entity.CatalogMoney, bool, error) {
+	value, ok := mapValue(input, names...)
+	if !ok {
+		return nil, false, nil
+	}
+	if value == nil {
+		return nil, true, bad("sellingPrice must be a positive VND amount")
+	}
+	object := recordMap(value)
+	amount, valid := floatValue(object["amount"])
+	currency := strings.ToUpper(stringValue(object, "currency"))
+	if !valid || amount <= 0 || math.Trunc(amount) != amount || currency != "VND" {
+		return nil, true, bad("sellingPrice must be a positive VND amount")
+	}
+	integer := int64(amount)
+	return &entity.CatalogMoney{Amount: integer, Currency: currency}, true, nil
+}
+
+func appendHistory(history []entity.CatalogHistoryEntry, action string) []entity.CatalogHistoryEntry {
+	result := append([]entity.CatalogHistoryEntry{}, history...)
+	return append(result, entity.CatalogHistoryEntry{Action: action, At: now()})
+}
+
+func (s *Service) validatePackAssignment(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, selected map[string]string, requested *string) (*string, error) {
 	packID := requested
 	if packID == nil && model.FixedPackID != nil {
 		packID = model.FixedPackID
 	}
-	for _, dimension := range dimensions {
-		definition, err := s.findDefinition(ctx, dimension.DefinitionID)
+	for _, dimension := range model.Dimensions {
+		definition, err := findDefinition(snapshot, dimension.DefinitionID)
 		if err != nil {
 			return nil, err
 		}
@@ -1592,331 +1607,262 @@ func (s *Service) validatePackAssignment(ctx context.Context, model productModel
 		}
 	}
 	if packID != nil {
-		if err := s.activeMaster(ctx, "pack", *packID); err != nil {
+		if err := s.activeMaster(snapshot, "pack", *packID); err != nil {
 			return nil, err
 		}
 	}
 	return packID, nil
 }
 
-func (s *Service) normalizeSKU(ctx context.Context, value string, currentID string) (string, error) {
+func normalizeSKU(snapshot entity.CatalogSnapshot, value, currentID string) (string, error) {
 	sku := strings.ToLower(strings.TrimSpace(value))
 	if sku == "" {
 		return "", nil
 	}
-	var row variantRow
-	query := s.db.WithContext(ctx).Where("sku = ?", sku)
-	if currentID != "" {
-		query = query.Where("id <> ?", currentID)
-	}
-	if err := query.First(&row).Error; err == nil {
-		return "", conflict("SKU is already reserved by another Variant")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", err
+	for _, model := range snapshot.Models {
+		for _, variant := range model.Variants {
+			if variant.ID != currentID && variant.SKU == sku {
+				return "", conflict("SKU is already reserved by another Variant")
+			}
+		}
 	}
 	return sku, nil
 }
 
-func parsePrice(input map[string]any, names ...string) (*int64, string, bool, error) {
-	value, ok := mapValue(input, names...)
-	if !ok {
-		return nil, "", false, nil
-	}
-	if value == nil {
-		return nil, "", true, bad("sellingPrice must be a positive VND amount")
-	}
-	object, ok := value.(map[string]any)
-	if !ok {
-		return nil, "", true, bad("sellingPrice must be an object")
-	}
-	amountValue, amountOK := mapValue(object, "amount")
-	currency := strings.ToUpper(stringValue(object, "currency"))
-	amount, valid := floatValue(amountValue)
-	if !amountOK || !valid || amount <= 0 || math.Trunc(amount) != amount || currency != "VND" {
-		return nil, "", true, bad("sellingPrice must be a positive VND amount")
-	}
-	integer := int64(amount)
-	return &integer, currency, true, nil
-}
-
-func appendHistory(raw, action string) string {
-	entries := []historyEntry{}
-	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
-		entries = []historyEntry{}
-	}
-	entries = append(entries, historyEntry{Action: action, At: now()})
-	return jsonString(entries, "[]")
-}
-
-func (s *Service) ListVariants(ctx context.Context, modelID string) ([]map[string]any, error) {
-	if _, err := s.findModel(ctx, modelID); err != nil {
-		return nil, err
-	}
-	var rows []variantRow
-	if err := s.db.WithContext(ctx).Where("model_id = ?", modelID).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	result := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, s.variantOutput(row))
-	}
-	return result, nil
-}
-
 func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[string]any) (map[string]any, error) {
-	model, err := s.findModel(ctx, modelID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if model.Status == "Discontinued" {
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	if model.Status == entity.CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot receive new Variants")
 	}
-	var selectedInput map[string]string
-	if raw, ok := mapValue(input, "selectedOptions", "selected_options"); ok {
-		selectedInput = parseStringMap(raw)
-	} else {
+	raw, ok := mapValue(input, "selectedOptions", "selected_options")
+	if !ok {
 		return nil, bad("selectedOptions is required")
 	}
-	dimensions, err := s.loadDimensions(ctx, modelID)
+	selected, canonical, err := s.normalizeSelection(&snapshot, model, parseStringMap(raw))
 	if err != nil {
 		return nil, err
 	}
-	selected, canonical, err := s.normalizeSelection(ctx, modelID, selectedInput)
+	for _, variant := range model.Variants {
+		if variant.CanonicalCombination == canonical {
+			return nil, conflict("canonical Variant combination already exists")
+		}
+	}
+	sku, err := normalizeSKU(snapshot, stringValue(input, "sku"), "")
 	if err != nil {
 		return nil, err
 	}
-	var existing variantRow
-	if err := s.db.WithContext(ctx).Where("model_id = ? AND canonical_combination = ?", modelID, canonical).First(&existing).Error; err == nil {
-		return nil, conflict("canonical Variant combination already exists")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-	sku, err := s.normalizeSKU(ctx, stringValue(input, "sku"), "")
-	if err != nil {
-		return nil, err
-	}
-	amount, currency, hasPrice, err := parsePrice(input, "sellingPrice", "selling_price")
+	price, hasPrice, err := parsePrice(input, "sellingPrice", "selling_price")
 	if err != nil {
 		return nil, err
 	}
 	var requestedPack *string
-	if value, ok := mapValue(input, "packId", "pack_id"); ok && value != nil && strings.TrimSpace(fmt.Sprint(value)) != "" {
-		pack := strings.TrimSpace(fmt.Sprint(value))
+	if rawPack, ok := mapValue(input, "packId", "pack_id"); ok && rawPack != nil && strings.TrimSpace(fmt.Sprint(rawPack)) != "" {
+		pack := strings.TrimSpace(fmt.Sprint(rawPack))
 		requestedPack = &pack
 	}
-	packID, err := s.validatePackAssignment(ctx, model, selected, dimensions, requestedPack)
+	packID, err := s.validatePackAssignment(&snapshot, model, selected, requestedPack)
 	if err != nil {
 		return nil, err
 	}
-	technicalValues := map[string]any{}
-	if value, ok := mapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes"); ok {
-		technicalValues = recordMap(value)
-	}
-	row := variantRow{ID: uuid.NewString(), ModelID: modelID, SelectedOptions: jsonString(selected, "{}"), TechnicalValues: jsonString(technicalValues, "{}"), SKU: sku, SellingAmount: amount, SellingCurrency: currency, PackID: packID, Status: "Active", CanonicalCombination: canonical, History: appendHistory("[]", "created"), CreatedAt: now(), UpdatedAt: now()}
+	technicalValues := recordMapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
+	variant := entity.CatalogVariant{ID: uuid.NewString(), SelectedOptions: selected, TechnicalValues: technicalValues, SKU: sku, SellingPrice: price, PackID: packID, Status: entity.CatalogVariantActive, CanonicalCombination: canonical, History: appendHistory(nil, "created"), CreatedAt: now(), UpdatedAt: now()}
 	if !hasPrice {
-		row.SellingAmount, row.SellingCurrency = nil, ""
+		variant.SellingPrice = nil
 	}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
-			return nil, conflict("canonical Variant combination or SKU already exists")
-		}
+	model.Variants = append(model.Variants, variant)
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.variantOutput(row), nil
+	return variantOutput(variant), nil
 }
 
-func recordMap(value any) map[string]any {
-	if typed, ok := value.(map[string]any); ok && typed != nil {
-		return typed
+func (s *Service) ListVariants(ctx context.Context, modelID string) ([]map[string]any, error) {
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return map[string]any{}
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]map[string]any, 0, len(model.Variants))
+	for _, value := range model.Variants {
+		result = append(result, variantOutput(value))
+	}
+	return result, nil
 }
 
 func (s *Service) GetVariant(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findVariant(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return s.variantOutput(row), nil
+	variant, _, err := findVariant(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	return variantOutput(*variant), nil
 }
 
 func (s *Service) UpdateVariant(ctx context.Context, id string, input map[string]any) (map[string]any, error) {
-	row, err := s.findVariant(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	wasSaleReady := saleReady(row)
-	model, err := s.findModel(ctx, row.ModelID)
+	variant, model, err := findVariant(&snapshot, id)
 	if err != nil {
 		return nil, err
 	}
-	if value, ok := mapValue(input, "selectedOptions", "selected_options"); ok {
-		selectedInput := parseStringMap(value)
-		_, canonical, canonicalErr := s.normalizeSelection(ctx, row.ModelID, selectedInput)
+	wasSaleReady := variant.SaleReady()
+	if raw, ok := mapValue(input, "selectedOptions", "selected_options"); ok {
+		_, canonical, canonicalErr := s.normalizeSelection(&snapshot, model, parseStringMap(raw))
 		if canonicalErr != nil {
 			return nil, canonicalErr
 		}
-		if canonical != row.CanonicalCombination {
+		if canonical != variant.CanonicalCombination {
 			return nil, conflict("Variant selected combination is immutable")
 		}
 	}
-	if value, ok := mapValue(input, "sku"); ok {
-		sku, skuErr := s.normalizeSKU(ctx, fmt.Sprint(value), id)
-		if skuErr != nil {
-			return nil, skuErr
+	if _, ok := mapValue(input, "sku"); ok {
+		variant.SKU, err = normalizeSKU(snapshot, stringValue(input, "sku"), id)
+		if err != nil {
+			return nil, err
 		}
-		row.SKU = sku
 	}
-	if amount, currency, hasPrice, priceErr := parsePrice(input, "sellingPrice", "selling_price"); priceErr != nil {
+	if price, hasPrice, priceErr := parsePrice(input, "sellingPrice", "selling_price"); priceErr != nil {
 		return nil, priceErr
 	} else if hasPrice {
-		row.SellingAmount, row.SellingCurrency = amount, currency
+		variant.SellingPrice = price
 	}
-	if value, ok := mapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes"); ok {
-		row.TechnicalValues = jsonString(recordMap(value), "{}")
+	if _, ok := mapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes"); ok {
+		variant.TechnicalValues = recordMapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
 	}
-	if value, ok := mapValue(input, "packId", "pack_id"); ok {
-		if value == nil || strings.TrimSpace(fmt.Sprint(value)) == "" {
+	if rawPack, ok := mapValue(input, "packId", "pack_id"); ok {
+		if rawPack == nil || strings.TrimSpace(fmt.Sprint(rawPack)) == "" {
 			if model.FixedPackID != nil {
 				return nil, conflict("Variant must retain the ProductModel fixed Pack")
 			}
-			row.PackID = nil
+			variant.PackID = nil
 		} else {
-			pack := strings.TrimSpace(fmt.Sprint(value))
+			pack := strings.TrimSpace(fmt.Sprint(rawPack))
 			if model.FixedPackID != nil && pack != *model.FixedPackID {
 				return nil, conflict("Variant Pack reference conflicts with ProductModel Pack")
 			}
-			if packErr := s.activeMaster(ctx, "pack", pack); packErr != nil {
-				return nil, packErr
+			if err := s.activeMaster(&snapshot, "pack", pack); err != nil {
+				return nil, err
 			}
-			row.PackID = &pack
+			variant.PackID = &pack
 		}
 	}
-	if model.Status == "Discontinued" {
+	if model.Status == entity.CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot be mutated")
 	}
-	if model.Status == "Active" && saleReady(row) == false {
-		var siblings []variantRow
-		if err := s.db.WithContext(ctx).Where("model_id = ? AND id <> ?", row.ModelID, row.ID).Find(&siblings).Error; err != nil {
-			return nil, err
-		}
-		if wasSaleReady {
-			remaining := false
-			for _, sibling := range siblings {
-				if saleReady(sibling) {
-					remaining = true
-					break
-				}
-			}
-			if !remaining {
-				return nil, conflict("Active ProductModel must keep one sale-ready Variant")
+	if model.Status == entity.CatalogActive && wasSaleReady && !variant.SaleReady() {
+		remainingSaleReady := 0
+		for index := range model.Variants {
+			if model.Variants[index].ID != variant.ID && model.Variants[index].SaleReady() {
+				remainingSaleReady++
 			}
 		}
-	}
-	row.History = appendHistory(row.History, "updated")
-	row.UpdatedAt = now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
-		return nil, err
-	}
-	return s.variantOutput(row), nil
-}
-
-func (s *Service) ActivateVariant(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findVariant(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	model, err := s.findModel(ctx, row.ModelID)
-	if err != nil {
-		return nil, err
-	}
-	if model.Status == "Discontinued" {
-		return nil, conflict("Discontinued ProductModel cannot receive activated Variants")
-	}
-	row.Status, row.History, row.UpdatedAt = "Active", appendHistory(row.History, "activated"), now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
-		return nil, err
-	}
-	return s.variantOutput(row), nil
-}
-
-func (s *Service) InactivateVariant(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findVariant(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	model, err := s.findModel(ctx, row.ModelID)
-	if err != nil {
-		return nil, err
-	}
-	if model.Status == "Active" && saleReady(row) {
-		var variants []variantRow
-		if err := s.db.WithContext(ctx).Where("model_id = ? AND id <> ?", row.ModelID, row.ID).Find(&variants).Error; err != nil {
-			return nil, err
-		}
-		remaining := false
-		for _, candidate := range variants {
-			if saleReady(candidate) {
-				remaining = true
-				break
-			}
-		}
-		if !remaining {
+		if remainingSaleReady == 0 {
 			return nil, conflict("Active ProductModel must keep one sale-ready Variant")
 		}
 	}
-	row.Status, row.History, row.UpdatedAt = "Inactive", appendHistory(row.History, "inactivated"), now()
-	if err := s.db.WithContext(ctx).Save(&row).Error; err != nil {
+	variant.History, variant.UpdatedAt = appendHistory(variant.History, "updated"), now()
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	return s.variantOutput(row), nil
+	return variantOutput(*variant), nil
+}
+
+func (s *Service) ActivateVariant(ctx context.Context, id string) (map[string]any, error) {
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	variant, model, err := findVariant(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	if model.Status == entity.CatalogDiscontinued {
+		return nil, conflict("Discontinued ProductModel cannot receive activated Variants")
+	}
+	variant.Status, variant.History, variant.UpdatedAt = entity.CatalogVariantActive, appendHistory(variant.History, "activated"), now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return variantOutput(*variant), nil
+}
+
+func (s *Service) InactivateVariant(ctx context.Context, id string) (map[string]any, error) {
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	variant, model, err := findVariant(&snapshot, id)
+	if err != nil {
+		return nil, err
+	}
+	if model.Status == entity.CatalogActive && variant.SaleReady() && model.SaleReadyVariantCount() == 1 {
+		return nil, conflict("Active ProductModel must keep one sale-ready Variant")
+	}
+	variant.Status, variant.History, variant.UpdatedAt = entity.CatalogVariantInactive, appendHistory(variant.History, "inactivated"), now()
+	if err := s.save(ctx, snapshot); err != nil {
+		return nil, err
+	}
+	return variantOutput(*variant), nil
 }
 
 func (s *Service) BulkSetPrice(ctx context.Context, input map[string]any) ([]map[string]any, error) {
-	value, ok := mapValue(input, "variantIds", "variant_ids")
+	idsValue, ok := mapValue(input, "variantIds", "variant_ids")
 	if !ok {
 		return nil, bad("variantIds are required")
 	}
-	items, ok := value.([]any)
-	if !ok || len(items) == 0 {
+	items := recordSlice(idsValue)
+	if len(items) == 0 {
 		return nil, bad("variantIds must not be empty")
 	}
-	amount, currency, hasPrice, err := parsePrice(input, "sellingPrice", "selling_price")
+	price, hasPrice, err := parsePrice(input, "sellingPrice", "selling_price")
 	if err != nil {
 		return nil, err
 	}
 	if !hasPrice {
 		return nil, bad("sellingPrice is required")
 	}
+	snapshot, err := s.load(ctx)
+	if err != nil {
+		return nil, err
+	}
 	ids := make([]string, 0, len(items))
 	for _, item := range items {
 		ids = append(ids, strings.TrimSpace(fmt.Sprint(item)))
 	}
-	result := []variantRow{}
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, id := range ids {
-			var row variantRow
-			if err := tx.Where("id = ?", id).First(&row).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return conflict("bulk price contains an unknown Variant")
-				}
-				return err
-			}
-			row.SellingAmount, row.SellingCurrency, row.History, row.UpdatedAt = amount, currency, appendHistory(row.History, "price_updated"), now()
-			if err := tx.Save(&row).Error; err != nil {
-				return err
-			}
-			result = append(result, row)
+	variants := make([]*entity.CatalogVariant, 0, len(ids))
+	for _, id := range ids {
+		variant, _, findErr := findVariant(&snapshot, id)
+		if findErr != nil {
+			return nil, conflict("bulk price contains an unknown Variant")
 		}
-		return nil
-	}); err != nil {
+		variants = append(variants, variant)
+	}
+	for _, variant := range variants {
+		variant.SellingPrice, variant.History, variant.UpdatedAt = price, appendHistory(variant.History, "price_updated"), now()
+	}
+	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
-	output := make([]map[string]any, 0, len(result))
-	for _, row := range result {
-		output = append(output, s.variantOutput(row))
+	result := make([]map[string]any, 0, len(variants))
+	for _, variant := range variants {
+		result = append(result, variantOutput(*variant))
 	}
-	return output, nil
+	return result, nil
 }
 
 // Public catalog -------------------------------------------------------------
@@ -1933,29 +1879,25 @@ type PublicFilter struct {
 	Sort       string
 }
 
-func publicVariants(ctx context.Context, db *gorm.DB, modelID string) ([]variantRow, error) {
-	var rows []variantRow
-	if err := db.WithContext(ctx).Where("model_id = ?", modelID).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	result := make([]variantRow, 0, len(rows))
-	for _, row := range rows {
-		if saleReady(row) {
-			result = append(result, row)
+func publicVariants(model entity.CatalogProductModel) []entity.CatalogVariant {
+	result := make([]entity.CatalogVariant, 0)
+	for _, variant := range model.Variants {
+		if variant.SaleReady() {
+			result = append(result, variant)
 		}
 	}
-	return result, nil
+	return result
 }
 
-func priceInRange(variants []variantRow, minPrice, maxPrice *int64) bool {
+func priceInRange(variants []entity.CatalogVariant, minPrice, maxPrice *int64) bool {
 	for _, variant := range variants {
-		if variant.SellingAmount == nil {
+		if variant.SellingPrice == nil {
 			continue
 		}
-		if minPrice != nil && *variant.SellingAmount < *minPrice {
+		if minPrice != nil && variant.SellingPrice.Amount < *minPrice {
 			continue
 		}
-		if maxPrice != nil && *variant.SellingAmount > *maxPrice {
+		if maxPrice != nil && variant.SellingPrice.Amount > *maxPrice {
 			continue
 		}
 		return true
@@ -1975,6 +1917,26 @@ func mapMatches(value map[string]any, key, expected string) bool {
 	return false
 }
 
+func (s *Service) referenceMatches(snapshot *entity.CatalogSnapshot, fixed map[string]any, key, expected string) (bool, error) {
+	if expected == "" || mapMatches(fixed, key, expected) {
+		return true, nil
+	}
+	target := strings.TrimSuffix(strings.ToLower(key), "id")
+	for definitionID, rawValue := range fixed {
+		if !uuidPattern.MatchString(definitionID) {
+			continue
+		}
+		definition, err := findDefinition(snapshot, definitionID)
+		if err != nil {
+			continue
+		}
+		if definition.ValueKind == "Reference" && strings.EqualFold(definition.ReferenceTarget, target) && fmt.Sprint(rawValue) == expected {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (s *Service) ListPublicModels(ctx context.Context, filter PublicFilter) (map[string]any, error) {
 	if filter.Page < 1 {
 		filter.Page = 1
@@ -1985,41 +1947,57 @@ func (s *Service) ListPublicModels(ctx context.Context, filter PublicFilter) (ma
 	if filter.Limit > 100 {
 		filter.Limit = 100
 	}
-	var rows []productModelRow
-	if err := s.db.WithContext(ctx).Where("status = ?", "Active").Find(&rows).Error; err != nil {
+	snapshot, err := s.load(ctx)
+	if err != nil {
 		return nil, err
 	}
 	type candidate struct {
-		model    productModelRow
-		variants []variantRow
+		model    entity.CatalogProductModel
+		variants []entity.CatalogVariant
 	}
-	candidates := make([]candidate, 0, len(rows))
-	for _, row := range rows {
-		variants, err := publicVariants(ctx, s.db, row.ID)
-		if err != nil {
-			return nil, err
-		}
-		if len(variants) == 0 || (filter.CategoryID != "" && row.CategoryID != filter.CategoryID) {
+	candidates := make([]candidate, 0)
+	for _, model := range snapshot.Models {
+		if model.Status != entity.CatalogActive || (filter.CategoryID != "" && model.CategoryID != filter.CategoryID) {
 			continue
 		}
-		fixed := jsonMap(row.FixedAttributes)
-		if !mapMatches(fixed, "materialId", filter.MaterialID) || !mapMatches(fixed, "finishId", filter.FinishID) || !priceInRange(variants, filter.MinPrice, filter.MaxPrice) {
+		variants := publicVariants(model)
+		if len(variants) == 0 || !priceInRange(variants, filter.MinPrice, filter.MaxPrice) {
 			continue
 		}
-		if filter.Search != "" && !strings.Contains(strings.ToLower(row.Name+" "+row.Description), strings.ToLower(filter.Search)) {
+		materialMatches, materialErr := s.referenceMatches(&snapshot, model.FixedAttributes, "materialId", filter.MaterialID)
+		if materialErr != nil {
+			return nil, materialErr
+		}
+		finishMatches, finishErr := s.referenceMatches(&snapshot, model.FixedAttributes, "finishId", filter.FinishID)
+		if finishErr != nil {
+			return nil, finishErr
+		}
+		if !materialMatches || !finishMatches {
 			continue
 		}
-		candidates = append(candidates, candidate{model: row, variants: variants})
+		if filter.Search != "" && !strings.Contains(strings.ToLower(model.Name+" "+model.Description), strings.ToLower(filter.Search)) {
+			continue
+		}
+		candidates = append(candidates, candidate{model: model, variants: variants})
 	}
 	sort.SliceStable(candidates, func(i, j int) bool {
 		if filter.Sort == "newest" {
 			return candidates[i].model.CreatedAt.After(candidates[j].model.CreatedAt)
 		}
 		price := func(item candidate) int64 {
-			if len(item.variants) == 0 || item.variants[0].SellingAmount == nil {
+			if len(item.variants) == 0 {
 				return 0
 			}
-			return *item.variants[0].SellingAmount
+			lowest := int64(1<<63 - 1)
+			for _, variant := range item.variants {
+				if variant.SellingPrice != nil && variant.SellingPrice.Amount < lowest {
+					lowest = variant.SellingPrice.Amount
+				}
+			}
+			if lowest == int64(1<<63-1) {
+				return 0
+			}
+			return lowest
 		}
 		if filter.Sort == "price_desc" {
 			return price(candidates[i]) > price(candidates[j])
@@ -2040,9 +2018,9 @@ func (s *Service) ListPublicModels(ctx context.Context, filter PublicFilter) (ma
 	}
 	items := make([]map[string]any, 0, end-start)
 	for _, item := range candidates[start:end] {
-		output, err := s.modelOutput(ctx, item.model, true)
-		if err != nil {
-			return nil, err
+		output, outputErr := modelOutput(&snapshot, item.model, true)
+		if outputErr != nil {
+			return nil, outputErr
 		}
 		items = append(items, output)
 	}
@@ -2050,29 +2028,25 @@ func (s *Service) ListPublicModels(ctx context.Context, filter PublicFilter) (ma
 }
 
 func (s *Service) GetPublicModel(ctx context.Context, id string) (map[string]any, error) {
-	row, err := s.findModel(ctx, id)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if row.Status != "Active" {
-		return nil, notFound("public ProductModel not found")
-	}
-	variants, err := publicVariants(ctx, s.db, id)
+	model, err := findModel(&snapshot, id)
 	if err != nil {
 		return nil, err
 	}
-	if len(variants) == 0 {
+	if model.Status != entity.CatalogActive || len(publicVariants(*model)) == 0 {
 		return nil, notFound("public ProductModel not found")
 	}
-	return s.modelOutput(ctx, row, true)
+	return modelOutput(&snapshot, *model, true)
 }
 
-func selectedCompatible(row variantRow, selected map[string]string) bool {
-	options := jsonMap(row.SelectedOptions)
+func selectedCompatible(variant entity.CatalogVariant, selected map[string]string) bool {
 	for key, value := range selected {
 		found := false
-		for optionKey, optionValue := range options {
-			if strings.EqualFold(optionKey, key) && canonicalValue(fmt.Sprint(optionValue)) == canonicalValue(value) {
+		for optionKey, optionValue := range variant.SelectedOptions {
+			if strings.EqualFold(optionKey, key) && canonicalValue(optionValue) == canonicalValue(value) {
 				found = true
 				break
 			}
@@ -2085,18 +2059,19 @@ func selectedCompatible(row variantRow, selected map[string]string) bool {
 }
 
 func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected map[string]string) (map[string]any, error) {
-	model, err := s.findModel(ctx, modelID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if model.Status != "Active" {
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	if model.Status != entity.CatalogActive {
 		return nil, notFound("public ProductModel not found")
 	}
-	variants, err := publicVariants(ctx, s.db, modelID)
-	if err != nil {
-		return nil, err
-	}
-	compatible := make([]variantRow, 0, len(variants))
+	variants := publicVariants(*model)
+	compatible := make([]entity.CatalogVariant, 0)
 	for _, variant := range variants {
 		if selectedCompatible(variant, selected) {
 			compatible = append(compatible, variant)
@@ -2105,35 +2080,25 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 	if len(compatible) == 0 {
 		return map[string]any{"options": []any{}}, nil
 	}
-	dimensions, err := s.loadDimensions(ctx, modelID)
-	if err != nil {
-		return nil, err
-	}
-	options := make([]map[string]any, 0, len(dimensions))
-	for _, dimension := range dimensions {
-		definition, definitionErr := s.findDefinition(ctx, dimension.DefinitionID)
+	options := make([]map[string]any, 0, len(model.Dimensions))
+	for _, dimension := range model.Dimensions {
+		definition, definitionErr := findDefinition(&snapshot, dimension.DefinitionID)
 		if definitionErr != nil {
 			return nil, definitionErr
 		}
-		valueSet := map[string]dimensionValue{}
+		valueSet := map[string]entity.CatalogDimensionValue{}
 		for _, variant := range compatible {
-			selectedOptions := jsonMap(variant.SelectedOptions)
-			for key, value := range selectedOptions {
-				if !strings.EqualFold(key, definition.DisplayName) {
-					continue
-				}
-				allowed := []dimensionValue{}
-				if err := json.Unmarshal([]byte(dimension.AllowedValues), &allowed); err != nil {
-					allowed = []dimensionValue{}
-				}
-				for _, item := range allowed {
-					if item.ID == fmt.Sprint(value) || canonicalValue(item.Label) == canonicalValue(fmt.Sprint(value)) {
-						valueSet[item.ID] = item
+			for key, value := range variant.SelectedOptions {
+				if strings.EqualFold(key, definition.DisplayName) {
+					for _, allowed := range dimension.AllowedValues {
+						if allowed.ID == value || canonicalValue(allowed.Label) == canonicalValue(value) {
+							valueSet[allowed.ID] = allowed
+						}
 					}
 				}
 			}
 		}
-		values := make([]dimensionValue, 0, len(valueSet))
+		values := make([]entity.CatalogDimensionValue, 0, len(valueSet))
 		for _, value := range valueSet {
 			values = append(values, value)
 		}
@@ -2150,28 +2115,23 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 }
 
 func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, selected map[string]string) (map[string]any, error) {
-	model, err := s.findModel(ctx, modelID)
+	snapshot, err := s.load(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if model.Status != "Active" {
+	model, err := findModel(&snapshot, modelID)
+	if err != nil {
+		return nil, err
+	}
+	if model.Status != entity.CatalogActive {
 		return nil, notFound("public Variant not found")
 	}
-	variants, err := publicVariants(ctx, s.db, modelID)
-	if err != nil {
-		return nil, err
-	}
-	_, canonical, err := s.normalizeSelection(ctx, modelID, selected)
-	if err != nil {
-		// A representation such as 20 cm may not be in the allowed-value set,
-		// so compare its canonical representation directly with public rows.
-		dimensions, dimensionErr := s.loadDimensions(ctx, modelID)
-		if dimensionErr != nil {
-			return nil, dimensionErr
-		}
-		parts := make([]string, 0, len(dimensions))
-		for _, dimension := range dimensions {
-			definition, definitionErr := s.findDefinition(ctx, dimension.DefinitionID)
+	variants := publicVariants(*model)
+	_, canonical, normalizeErr := s.normalizeSelection(&snapshot, model, selected)
+	if normalizeErr != nil {
+		parts := make([]string, 0, len(model.Dimensions))
+		for _, dimension := range model.Dimensions {
+			definition, definitionErr := findDefinition(&snapshot, dimension.DefinitionID)
 			if definitionErr != nil {
 				return nil, definitionErr
 			}
@@ -2186,7 +2146,7 @@ func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, sele
 	}
 	for _, variant := range variants {
 		if variant.CanonicalCombination == canonical {
-			return s.variantOutput(variant), nil
+			return variantOutput(variant), nil
 		}
 	}
 	return nil, notFound("public Variant not found")

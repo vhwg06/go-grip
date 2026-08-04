@@ -14,7 +14,7 @@ type V1 struct {
 	u           usecase.User
 	tk          usecase.Task
 	catalog     usecase.Catalog
-	catalogBase *catalogbase.Service
+	catalogBase catalogbase.UseCase
 	authUC      usecase.Auth
 	checkout    usecase.Checkout
 	orders      usecase.Orders
