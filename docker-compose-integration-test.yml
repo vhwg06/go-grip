@@ -34,7 +34,7 @@ services:
       HTTP_USE_PREFORK_MODE: "false"
       LOG_LEVEL: debug
       PG_POOL_MAX: "2"
-      PG_URL: postgres://user:myAwEsOm3pa55@w0rd@db:5432/db
+      PG_URL: postgres://user:myAwEsOm3pa55@w0rd@db:5432/db?sslmode=disable
       METRICS_ENABLED: "false"
       SWAGGER_ENABLED: "false"
       JWT_TOKEN_EXPIRY: 24h
