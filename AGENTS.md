@@ -70,17 +70,15 @@ shell commands, and other important information, read specs/002-grip-backend-api
 ## Non-Violable Repository and Aggregate Rules
 
 - Do not create a repository without a clear entity or aggregate owner.
-- Do not create a repository directly from a database table.
-- Do not define persistence ownership from table structure.
-- Do not expose aggregate-child persistence contracts as independent application or domain repositories when the child is not independently owned.
-- Independent access to an aggregate child or table-backed entity is allowed only when the domain or application contract explicitly permits it and the operation cannot affect aggregate invariants.
-- Do not independently persist an aggregate child when the operation enforces or may affect aggregate invariants.
-- Operations that enforce or may affect aggregate invariants must go through the Aggregate Root repository.
-- When a use case changes multiple components of the same aggregate and those changes must be atomic, the transaction must be opened and coordinated by the Aggregate Root repository.
-- Do not open, commit, roll back, replace, or fall back from an Aggregate Root-owned transaction inside child persistence operations.
-- Do not permit child persistence operations to continue on a base database connection when an Aggregate Root transaction is required.
-- All child operations participating in one aggregate transaction must use the same transaction owned by the Aggregate Root repository.
-- An error from any child operation participating in an aggregate transaction must propagate and fail the entire Aggregate Root operation.
+- Repository grain may follow the domain/application CRUD contract, including separately exposed repositories for aggregate children when the current use case requires direct child access.
+- A database table alone must not define domain ownership, invariants, lifecycle, or public semantics.
+- Aggregate-root orchestration may query and compose child entities through their repositories; child repositories must not invoke or coordinate the aggregate-root repository.
+- Aggregate invariants remain in the domain/application layer; child repositories only persist the state they own and do not make cross-entity decisions.
+- When a use case changes multiple components of one aggregate and those changes must be atomic, the use case must execute the repositories through a UnitOfWork.
+- UnitOfWork owns opening, committing, and rolling back the transaction without exposing ORM transaction handles through application or domain ports.
+- Repositories participating in one UnitOfWork operation must use the same UnitOfWork-bound transaction and must not open, commit, roll back, replace, or fall back to an independent transaction.
+- Do not permit child persistence operations to continue on a base database connection when a UnitOfWork transaction is required.
+- An error from any repository participating in a UnitOfWork operation must propagate and fail the entire transaction.
 - Aggregate operation and dependency direction is only:
 
 ```text
