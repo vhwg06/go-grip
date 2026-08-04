@@ -65,6 +65,16 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	apiV1Group.Post("/products/:id/reviews", middleware.Auth(r.jwtManager), r.gripReviewCreate)
 	apiV1Group.Get("/faqs/active", r.listActiveFAQs)
 
+	// These historical check-in endpoints were removed from the product
+	// contract. Register explicit 404 routes before the protected profile and
+	// user groups so the auth middleware cannot turn removal into a 401.
+	removedCheckIn := func(ctx *fiber.Ctx) error { return ctx.SendStatus(http.StatusNotFound) }
+	apiV1Group.Post("/profile/checkin", removedCheckIn)
+	apiV1Group.Get("/profile/checkin-status", removedCheckIn)
+	apiV1Group.Get("/profile/checkin/status", removedCheckIn)
+	apiV1Group.Get("/user/profile/checkin-status", removedCheckIn)
+	apiV1Group.Get("/user/profile/checkin/status", removedCheckIn)
+
 	reviewsGroup := apiV1Group.Group("/reviews", middleware.Auth(r.jwtManager))
 	reviewsGroup.Post("/", r.gripReviewCreate)
 
@@ -98,6 +108,7 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Patch("/users/:id", r.gripAdminUsersUpdate)
 	adminGroup.Patch("/users/:id/block", r.gripAdminUsersUpdateBlock)
 	adminGroup.Get("/reviews", r.gripAdminListReviews)
+	adminGroup.Get("/reviews/:id", r.gripAdminGetReview)
 	adminGroup.Put("/reviews/:id/approve", r.gripAdminApproveReview)
 	adminGroup.Put("/reviews/:id/hide", r.gripAdminHideReview)
 	adminGroup.Put("/reviews/:id/feature", r.gripAdminFeatureReview)

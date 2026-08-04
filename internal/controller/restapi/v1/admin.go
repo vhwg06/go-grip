@@ -204,7 +204,11 @@ func (r *V1) gripAdminListProducts(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 	normalized := page.Normalize()
-	return ctx.JSON(gripListResponse{Data: items, Meta: entity.Page{Limit: normalized.Limit, Offset: normalized.Offset, Total: total}})
+	return ctx.JSON(fiber.Map{
+		"data":  items,
+		"items": items,
+		"meta":  entity.Page{Limit: normalized.Limit, Offset: normalized.Offset, Total: total},
+	})
 }
 
 // @Summary     Create admin product
@@ -739,15 +743,18 @@ func (r *V1) gripAdminListOrders(ctx *fiber.Ctx) error {
 	orders := make([]fiber.Map, 0, len(items))
 	for _, order := range items {
 		orders = append(orders, fiber.Map{
-			"orderId":     order.ID,
-			"userId":      order.UserID,
-			"username":    order.Username,
-			"email":       order.Email,
-			"productName": order.ProductName,
-			"amount":      order.Amount,
-			"status":      string(order.Status),
-			"tradeNo":     order.TradeNo,
-			"createdAt":   order.CreatedAt,
+			"orderId":        order.ID,
+			"userId":         order.UserID,
+			"customerId":     order.UserID,
+			"username":       order.Username,
+			"email":          order.Email,
+			"productName":    order.ProductName,
+			"amount":         order.Amount,
+			"totalAmount":    order.Amount,
+			"status":         string(order.Status),
+			"tradeNo":        order.TradeNo,
+			"createdAt":      order.CreatedAt,
+			"allowedActions": adminOrderAllowedActions(order.Status),
 		})
 	}
 
@@ -844,14 +851,40 @@ func (r *V1) gripAdminGetOrder(ctx *fiber.Ctx) error {
 				"quantity":    max(order.Quantity, 1),
 			},
 		},
-		"totalAmount":     order.Amount,
-		"customerName":    order.Username,
-		"customerPhone":   "",
-		"customerEmail":   order.Email,
+		"totalAmount":   order.Amount,
+		"customerName":  order.Username,
+		"customerId":    order.UserID,
+		"customerPhone": "",
+		"customerEmail": order.Email,
+		"customer": fiber.Map{
+			"id":       order.UserID,
+			"username": order.Username,
+			"email":    order.Email,
+		},
 		"shippingAddress": "",
 		"paymentMethod":   "",
+		"note":            "",
+		"notes":           "",
+		"allowedActions":  adminOrderAllowedActions(order.Status),
 		"timeline":        timeline,
 	})
+}
+
+func adminOrderAllowedActions(status entity.OrderStatus) []string {
+	switch status {
+	case entity.OrderStatusDelivered,
+		entity.OrderStatusCancelled,
+		entity.OrderStatusFailed,
+		entity.OrderStatusRefundPending,
+		entity.OrderStatusRefunded:
+		return []string{}
+	case entity.OrderStatusPending:
+		return []string{"cancel"}
+	case entity.OrderStatusPaid:
+		return []string{"deliver", "cancel"}
+	default:
+		return []string{}
+	}
 }
 
 func (r *V1) gripAdminUpdateOrder(ctx *fiber.Ctx) error {
@@ -902,7 +935,10 @@ func (r *V1) gripAdminListRefunds(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	return ctx.JSON(apiSuccessEnvelope(refunds))
+	return ctx.JSON(fiber.Map{
+		"data":  refunds,
+		"items": refunds,
+	})
 }
 
 func (r *V1) gripAdminApproveRefund(ctx *fiber.Ctx) error {
@@ -926,13 +962,17 @@ func (r *V1) gripAdminDecideRefund(ctx *fiber.Ctx, approve bool) error {
 	}
 
 	var body struct {
-		Note string `json:"note"`
+		Note   string `json:"note"`
+		Reason string `json:"reason"`
 	}
 	if len(ctx.Body()) > 0 {
 		if err := ctx.BodyParser(&body); err != nil {
 			status, payload := mapDomainError(entity.ErrInvalidInput)
 			return ctx.Status(status).JSON(payload)
 		}
+	}
+	if strings.TrimSpace(body.Note) == "" {
+		body.Note = body.Reason
 	}
 
 	refund, err := ext.DecideRefund(ctx.UserContext(), r.gripActor(ctx), refundID, approve, body.Note)
@@ -1294,31 +1334,71 @@ func (r *V1) gripAdminPutCollect(ctx *fiber.Ctx) error {
 	}
 
 	var body struct {
-		Payee   string `json:"payee"`
-		PayLink string `json:"payLink"`
+		Payee               *string `json:"payee"`
+		PayLink             *string `json:"payLink"`
+		PayeeLegacy         *string `json:"payee_name"`
+		TransferInstruction *string `json:"transfer_instruction"`
 	}
 	if err := ctx.BodyParser(&body); err != nil {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
 
-	if len(body.PayLink) < 10 || body.Payee == "" {
+	settings, err := ext.ListSettings(ctx.UserContext(), r.gripActor(ctx))
+	if err != nil {
+		status, payload := mapDomainError(err)
+		return ctx.Status(status).JSON(payload)
+	}
+	values := map[string]string{}
+	for _, setting := range settings {
+		values[setting.Key] = setting.Value
+	}
+	payee := values["payee"]
+	payLink := values["payLink"]
+	hasPayee := body.Payee != nil || body.PayeeLegacy != nil
+	hasPayLink := body.PayLink != nil || body.TransferInstruction != nil
+	if body.Payee != nil {
+		payee = strings.TrimSpace(*body.Payee)
+	} else if body.PayeeLegacy != nil {
+		payee = strings.TrimSpace(*body.PayeeLegacy)
+	}
+	if body.PayLink != nil {
+		payLink = strings.TrimSpace(*body.PayLink)
+	} else if body.TransferInstruction != nil {
+		payLink = strings.TrimSpace(*body.TransferInstruction)
+	}
+
+	if !hasPayee && !hasPayLink {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	if hasPayee && payee == "" {
+		status, payload := mapDomainError(entity.ErrInvalidInput)
+		return ctx.Status(status).JSON(payload)
+	}
+	if hasPayLink && len(payLink) < 10 {
 		status, payload := mapDomainError(entity.ErrInvalidInput)
 		return ctx.Status(status).JSON(payload)
 	}
 
-	if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payee", body.Payee); err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
+	if hasPayee {
+		if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payee", payee); err != nil {
+			status, payload := mapDomainError(err)
+			return ctx.Status(status).JSON(payload)
+		}
 	}
-	if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payLink", body.PayLink); err != nil {
-		status, payload := mapDomainError(err)
-		return ctx.Status(status).JSON(payload)
+	if hasPayLink {
+		if err := ext.SetSetting(ctx.UserContext(), r.gripActor(ctx), "payLink", payLink); err != nil {
+			status, payload := mapDomainError(err)
+			return ctx.Status(status).JSON(payload)
+		}
 	}
 
 	return ctx.JSON(apiSuccessEnvelope(fiber.Map{
-		"payee":   body.Payee,
-		"payLink": body.PayLink,
+		"payee":                payee,
+		"payLink":              payLink,
+		"payee_name":           payee,
+		"transfer_instruction": payLink,
 	}))
 }
 
@@ -1392,7 +1472,7 @@ func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
 			return ctx.JSON(fiber.Map{
 				"success":          true,
 				"hasPendingRefund": false,
-				"status":           1,
+				"status":           "none",
 				"msg":              "No pending refund request",
 			})
 		}
@@ -1404,7 +1484,7 @@ func (r *V1) gripAdminGetOrderRefundStatus(ctx *fiber.Ctx) error {
 		"success":          true,
 		"hasPendingRefund": true,
 		"refundId":         refund.ID,
-		"status":           1,
+		"status":           string(refund.Status),
 		"msg":              "Pending refund request exists",
 	})
 }

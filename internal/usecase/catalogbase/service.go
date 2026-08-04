@@ -694,8 +694,20 @@ func (s *Service) validateFixedAttributes(snapshot *entity.CatalogSnapshot, inpu
 	fixed := recordMapValue(input, "fixedAttributes", "fixed_attributes")
 	for key, rawValue := range fixed {
 		definition, definitionErr := fixedAttributeDefinition(snapshot, key)
-		if definitionErr != nil && uuidPattern.MatchString(key) {
-			return definitionErr
+		if definitionErr != nil {
+			if uuidPattern.MatchString(key) {
+				return definitionErr
+			}
+			switch strings.ToLower(strings.TrimSpace(key)) {
+			case "materialid", "finishid", "packid":
+				kind := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(key)), "id")
+				if err := s.activeMaster(snapshot, kind, fmt.Sprint(rawValue)); err != nil {
+					return err
+				}
+				continue
+			default:
+				return definitionErr
+			}
 		}
 		if definitionErr == nil {
 			if !definition.Active {
@@ -718,16 +730,6 @@ func (s *Service) validateFixedAttributes(snapshot *entity.CatalogSnapshot, inpu
 				}
 			}
 			continue
-		}
-		if strings.EqualFold(key, "materialId") || strings.EqualFold(key, "finishId") || strings.EqualFold(key, "packId") {
-			kind := strings.ToLower(strings.TrimSuffix(key, "Id"))
-			if err := s.activeMaster(snapshot, kind, fmt.Sprint(rawValue)); err != nil {
-				var apiErr *APIError
-				if errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound {
-					continue
-				}
-				return err
-			}
 		}
 	}
 	return nil
@@ -821,6 +823,11 @@ func (s *Service) validateModelInput(snapshot *entity.CatalogSnapshot, input map
 	if err := s.validateFixedAttributes(snapshot, input); err != nil {
 		return err
 	}
+	if fixed, ok := mapValue(input, "fixedAttributes", "fixed_attributes"); ok && existing != nil {
+		if err := fixedDimensionScopeConflict(snapshot, existing, recordMap(fixed)); err != nil {
+			return err
+		}
+	}
 	if fixedPackID := stringValue(input, "fixedPackId", "fixed_pack_id"); fixedPackID != "" {
 		if err := s.activeMaster(snapshot, "pack", fixedPackID); err != nil {
 			return err
@@ -833,6 +840,31 @@ func (s *Service) validateModelInput(snapshot *entity.CatalogSnapshot, input map
 	}
 	_, err := warrantyValue(input, "warrantySummary", "warranty")
 	return err
+}
+
+func fixedDimensionScopeConflict(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, fixed map[string]any) error {
+	if len(fixed) == 0 || len(model.Dimensions) == 0 {
+		return nil
+	}
+	dimensionDefinitions := make(map[string]struct{}, len(model.Dimensions))
+	for _, dimension := range model.Dimensions {
+		definition, err := findDefinition(snapshot, dimension.DefinitionID)
+		if err != nil {
+			return err
+		}
+		dimensionDefinitions[definition.ID] = struct{}{}
+		dimensionDefinitions[strings.ToLower(definition.Key)] = struct{}{}
+		dimensionDefinitions[strings.ToLower(definition.DisplayName)] = struct{}{}
+	}
+	for key := range fixed {
+		if _, exists := dimensionDefinitions[key]; exists {
+			return conflict("an attribute cannot be both fixed and a VariantDimension")
+		}
+		if _, exists := dimensionDefinitions[strings.ToLower(key)]; exists {
+			return conflict("an attribute cannot be both fixed and a VariantDimension")
+		}
+	}
+	return nil
 }
 
 // Categories -----------------------------------------------------------------
@@ -1382,6 +1414,14 @@ func (s *Service) UpdateModel(ctx context.Context, id string, input map[string]a
 		}
 		value.Status = status
 	}
+	if value.Status == entity.CatalogActive {
+		if !value.HasPrimaryImage() {
+			return nil, conflict("Active ProductModel requires exactly one primary model image")
+		}
+		if value.SaleReadyVariantCount() == 0 {
+			return nil, conflict("Active ProductModel requires a sale-ready Variant")
+		}
+	}
 	value.UpdatedAt = now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1742,18 +1782,38 @@ func (s *Service) normalizeSelection(snapshot *entity.CatalogSnapshot, model *en
 	if len(model.Dimensions) == 0 {
 		return nil, "", bad("ProductModel has no VariantDimensions")
 	}
+	normalizedInput := make(map[string]string, len(input))
+	for key, value := range input {
+		normalizedKey := strings.ToLower(strings.TrimSpace(key))
+		if normalizedKey == "" {
+			return nil, "", bad("Variant selection contains an empty dimension")
+		}
+		if _, exists := normalizedInput[normalizedKey]; exists {
+			return nil, "", bad("Variant selection contains duplicate dimension keys")
+		}
+		normalizedInput[normalizedKey] = strings.TrimSpace(value)
+	}
 	selected := map[string]string{}
 	parts := make([]string, 0, len(model.Dimensions))
+	consumed := make(map[string]struct{}, len(model.Dimensions)*2)
 	for _, dimension := range model.Dimensions {
 		definition, err := findDefinition(snapshot, dimension.DefinitionID)
 		if err != nil {
 			return nil, "", err
 		}
-		provided, found := "", false
-		for key, value := range input {
-			if strings.EqualFold(key, definition.DisplayName) || strings.EqualFold(key, definition.Key) {
-				provided, found = strings.TrimSpace(value), true
-				break
+		displayKey := strings.ToLower(strings.TrimSpace(definition.DisplayName))
+		definitionKey := strings.ToLower(strings.TrimSpace(definition.Key))
+		provided, found := normalizedInput[displayKey]
+		if found {
+			consumed[displayKey] = struct{}{}
+		}
+		if definitionKey != displayKey {
+			if alternative, alternativeFound := normalizedInput[definitionKey]; alternativeFound {
+				if found && !strings.EqualFold(provided, alternative) {
+					return nil, "", bad("Variant selection contains conflicting dimension keys")
+				}
+				provided, found = alternative, true
+				consumed[definitionKey] = struct{}{}
 			}
 		}
 		if !found || provided == "" {
@@ -1787,7 +1847,7 @@ func (s *Service) normalizeSelection(snapshot *entity.CatalogSnapshot, model *en
 			return nil, "", conflict("Variant selection is not an active allowed value")
 		}
 	}
-	if len(input) != len(model.Dimensions) {
+	if len(consumed) != len(normalizedInput) {
 		return nil, "", bad("Variant selection contains an unknown dimension")
 	}
 	sort.Strings(parts)
@@ -2321,6 +2381,9 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 			for key, value := range variant.SelectedOptions {
 				if strings.EqualFold(key, definition.DisplayName) {
 					for _, allowed := range dimension.AllowedValues {
+						if !allowed.Active {
+							continue
+						}
 						if allowed.ID == value || canonicalValue(allowed.Label) == canonicalValue(value) {
 							valueSet[allowed.ID] = allowed
 						}
@@ -2359,20 +2422,7 @@ func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, sele
 	variants := publicVariants(*model)
 	_, canonical, normalizeErr := s.normalizeSelection(&snapshot, model, selected)
 	if normalizeErr != nil {
-		parts := make([]string, 0, len(model.Dimensions))
-		for _, dimension := range model.Dimensions {
-			definition, definitionErr := findDefinition(&snapshot, dimension.DefinitionID)
-			if definitionErr != nil {
-				return nil, definitionErr
-			}
-			value := selected[definition.DisplayName]
-			if value == "" {
-				return nil, notFound("public Variant not found")
-			}
-			parts = append(parts, dimension.ID+"="+canonicalValue(value))
-		}
-		sort.Strings(parts)
-		canonical = strings.Join(parts, "|")
+		return nil, notFound("public Variant not found")
 	}
 	for _, variant := range variants {
 		if variant.CanonicalCombination == canonical {

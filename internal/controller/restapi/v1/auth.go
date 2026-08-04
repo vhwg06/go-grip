@@ -18,6 +18,28 @@ type gripRefreshRequest struct {
 	RefreshToken2 string `json:"refresh_token"`
 }
 
+// gripTokenPairEnvelope keeps the canonical token-pair payload and the legacy
+// aliases consumed by existing clients during the authentication migration.
+func gripTokenPairEnvelope(pair gripTokenPairResponse) fiber.Map {
+	data := fiber.Map{
+		"accessToken":   pair.AccessToken,
+		"access_token":  pair.AccessToken,
+		"token":         pair.AccessToken,
+		"refreshToken":  pair.RefreshToken,
+		"refresh_token": pair.RefreshToken,
+		"user":          pair.User,
+	}
+	return fiber.Map{
+		"data":          data,
+		"accessToken":   pair.AccessToken,
+		"access_token":  pair.AccessToken,
+		"token":         pair.AccessToken,
+		"refreshToken":  pair.RefreshToken,
+		"refresh_token": pair.RefreshToken,
+		"user":          pair.User,
+	}
+}
+
 // @Summary     Refresh access token
 // @Description Rotates refresh token and returns a new token pair
 // @ID          grip_auth_refresh
@@ -53,7 +75,7 @@ func (r *V1) gripRefresh(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	return ctx.JSON(apiSuccessEnvelope(gripTokenPairResponse{
+	return ctx.JSON(gripTokenPairEnvelope(gripTokenPairResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}))
@@ -117,5 +139,5 @@ func (r *V1) gripMe(ctx *fiber.Ctx) error {
 		return ctx.Status(status).JSON(payload)
 	}
 
-	return ctx.JSON(apiSuccessEnvelope(user))
+	return ctx.JSON(profileEnvelope(user))
 }

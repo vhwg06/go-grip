@@ -37,6 +37,7 @@ func (r *V1) registerEcommerceRoutes(apiV1Group fiber.Router) {
 	apiV1Group.Post("/content/articles", middleware.Auth(r.jwtManager), r.createArticle)
 	apiV1Group.Patch("/content/articles/:id", middleware.Auth(r.jwtManager), r.updateArticle)
 	apiV1Group.Delete("/content/articles/:id", middleware.Auth(r.jwtManager), r.deleteArticle)
+	apiV1Group.Get("/content/articles/:id/preview", middleware.Auth(r.jwtManager), r.previewArticle)
 	apiV1Group.Post("/content/articles/:id/schedule", middleware.Auth(r.jwtManager), r.updateArticle)
 	apiV1Group.Post("/content/articles/:id/publish", middleware.Auth(r.jwtManager), r.updateArticle)
 	apiV1Group.Get("/content/pages", middleware.Auth(r.jwtManager), r.getPage)

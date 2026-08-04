@@ -2,6 +2,8 @@ package content
 
 import (
 	"context"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
@@ -18,6 +20,9 @@ func New(r repo.ContentRepo) *UseCase { return &UseCase{repo: r} }
 func (uc *UseCase) CreateArticle(ctx context.Context, article entity.ContentArticle) (entity.ContentArticle, error) {
 	now := time.Now().UTC()
 	article.ID = uuid.New().String()
+	if strings.TrimSpace(article.Slug) == "" {
+		article.Slug = articleSlug(article.Title, article.ID)
+	}
 	if article.Status == "" {
 		article.Status = entity.ContentStatusDraft
 	}
@@ -27,6 +32,25 @@ func (uc *UseCase) CreateArticle(ctx context.Context, article entity.ContentArti
 		return entity.ContentArticle{}, err
 	}
 	return article, nil
+}
+
+var articleSlugSeparator = regexp.MustCompile(`[^a-z0-9]+`)
+
+// articleSlug supplies the persistence-required URL identity when an editor
+// submits only title/body content. The UUID suffix keeps repeated titles
+// distinct without using a timestamp as identity.
+func articleSlug(title, id string) string {
+	base := strings.ToLower(strings.TrimSpace(title))
+	base = articleSlugSeparator.ReplaceAllString(base, "-")
+	base = strings.Trim(base, "-")
+	if base == "" {
+		base = "article"
+	}
+	suffix := strings.ReplaceAll(id, "-", "")
+	if len(suffix) > 12 {
+		suffix = suffix[:12]
+	}
+	return base + "-" + suffix
 }
 
 func (uc *UseCase) UpdateArticle(ctx context.Context, article entity.ContentArticle) (entity.ContentArticle, error) {

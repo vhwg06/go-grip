@@ -1,7 +1,10 @@
 package v1
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/gofiber/fiber/v2"
@@ -20,16 +23,88 @@ func (r *V1) createArticle(ctx *fiber.Ctx) error {
 }
 
 func (r *V1) updateArticle(ctx *fiber.Ctx) error {
-	var article entity.ContentArticle
-	if err := ctx.BodyParser(&article); err != nil {
+	article, err := r.content.GetArticle(ctx.UserContext(), ctx.Params("id"))
+	if err != nil {
+		return errorResponse(ctx, http.StatusNotFound, "article not found")
+	}
+	if err := mergeArticlePatch(&article, ctx); err != nil {
 		return errorResponse(ctx, http.StatusBadRequest, "invalid request body")
 	}
-	if article.ID == "" {
-		article.ID = ctx.Params("id")
-	}
-	article, err := r.content.UpdateArticle(ctx.UserContext(), article)
+	article, err = r.content.UpdateArticle(ctx.UserContext(), article)
 	if err != nil {
 		return errorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+	return ctx.JSON(article)
+}
+
+func mergeArticlePatch(article *entity.ContentArticle, ctx *fiber.Ctx) error {
+	if article == nil {
+		return entity.ErrInvalidInput
+	}
+	patch := map[string]json.RawMessage{}
+	if body := strings.TrimSpace(string(ctx.Body())); body != "" {
+		if err := json.Unmarshal([]byte(body), &patch); err != nil {
+			return err
+		}
+	}
+	decode := func(target any, names ...string) error {
+		for _, name := range names {
+			if raw, ok := patch[name]; ok {
+				return json.Unmarshal(raw, target)
+			}
+		}
+		return nil
+	}
+	if err := decode(&article.Title, "title"); err != nil {
+		return err
+	}
+	if err := decode(&article.Slug, "slug"); err != nil {
+		return err
+	}
+	if err := decode(&article.Body, "body"); err != nil {
+		return err
+	}
+	if err := decode(&article.Status, "status"); err != nil {
+		return err
+	}
+	if err := decode(&article.ScheduledAt, "scheduled_at", "scheduledAt"); err != nil {
+		return err
+	}
+	if err := decode(&article.PublishedAt, "published_at", "publishedAt"); err != nil {
+		return err
+	}
+	if err := decode(&article.AuthorID, "author_id", "authorId"); err != nil {
+		return err
+	}
+	if err := decode(&article.ImageURL, "image_url", "imageUrl"); err != nil {
+		return err
+	}
+	if err := decode(&article.Tags, "tags"); err != nil {
+		return err
+	}
+	if err := decode(&article.Topic, "topic"); err != nil {
+		return err
+	}
+	if err := decode(&article.Priority, "priority"); err != nil {
+		return err
+	}
+	if strings.HasSuffix(ctx.Path(), "/publish") {
+		article.Status = entity.ContentStatusPublished
+	}
+	if strings.HasSuffix(ctx.Path(), "/schedule") {
+		article.Status = entity.ContentStatusScheduled
+	}
+	if article.Status == entity.ContentStatusPublished && article.PublishedAt == nil {
+		publishedAt := time.Now().UTC()
+		article.PublishedAt = &publishedAt
+	}
+	return nil
+}
+
+func (r *V1) previewArticle(ctx *fiber.Ctx) error {
+	article, err := r.content.GetArticle(ctx.UserContext(), ctx.Params("id"))
+	if err != nil {
+		return errorResponse(ctx, http.StatusNotFound, "article not found")
 	}
 	return ctx.JSON(article)
 }
