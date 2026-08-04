@@ -31,15 +31,15 @@ type adminContractAdminStub struct {
 	listRefundsFunc       func(ctx context.Context, actor entity.Actor, status string) ([]entity.RefundRequest, error)
 	decideRefundFunc      func(ctx context.Context, actor entity.Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
 
-	listSettingsFunc      func(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
-	setSettingFunc        func(ctx context.Context, actor entity.Actor, key, value string) error
-	deleteSettingFunc     func(ctx context.Context, actor entity.Actor, key string) error
-	broadcastFunc         func(ctx context.Context, actor entity.Actor, title, body string) error
-	targetedFunc          func(ctx context.Context, actor entity.Actor, userID, title, body string) error
-	listReviewsFunc       func(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
-	updateReviewFunc      func(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
-	bulkReviewFunc        func(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error)
-	deleteReviewFunc      func(ctx context.Context, actor entity.Actor, reviewID int64) error
+	listSettingsFunc  func(ctx context.Context, actor entity.Actor) ([]entity.Setting, error)
+	setSettingFunc    func(ctx context.Context, actor entity.Actor, key, value string) error
+	deleteSettingFunc func(ctx context.Context, actor entity.Actor, key string) error
+	broadcastFunc     func(ctx context.Context, actor entity.Actor, title, body string) error
+	targetedFunc      func(ctx context.Context, actor entity.Actor, userID, title, body string) error
+	listReviewsFunc   func(ctx context.Context, actor entity.Actor, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
+	updateReviewFunc  func(ctx context.Context, actor entity.Actor, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
+	bulkReviewFunc    func(ctx context.Context, actor entity.Actor, reviewIDs []int64) (int, error)
+	deleteReviewFunc  func(ctx context.Context, actor entity.Actor, reviewID int64) error
 }
 
 func (s *adminContractAdminStub) ListUsers(context.Context, entity.Actor, entity.Pagination) ([]entity.User, int, error) {
@@ -301,7 +301,7 @@ func TestUS4_AdminContract_TDD(t *testing.T) {
 	app := fiber.New()
 	v1.NewRoutes(
 		app.Group("/v1"),
-		nil, nil, nil, nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil, nil, nil, nil, nil,
 		adminUC,
 		nil, nil, nil, nil, nil, nil, nil, importerUC,
 		jwtManager,
@@ -327,7 +327,6 @@ func TestUS4_AdminContract_TDD(t *testing.T) {
 		resp = adminContractRequest(t, app, http.MethodDelete, "/v1/admin/settings/shopName", nil, "Bearer "+adminToken)
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
-
 
 	t.Run("orders and refunds routes", func(t *testing.T) {
 		resp := adminContractRequest(t, app, http.MethodGet, "/v1/admin/orders?q=search&status=pending", nil, "Bearer "+adminToken)

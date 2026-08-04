@@ -202,7 +202,7 @@ func TestUS5_EngagementContract_TDD(t *testing.T) {
 	app := fiber.New()
 	v1.NewRoutes(
 		app.Group("/v1"),
-		nil, nil, nil, nil, nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 		wishlistUC, notifyUC, nil, nil, nil, nil, nil, nil,
 		jwtManager,
 		"",

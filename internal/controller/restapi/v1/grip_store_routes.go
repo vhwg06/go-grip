@@ -23,6 +23,13 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	catalogGroup.Get("/categories", r.gripListCategories)
 	catalogGroup.Get("/settings", r.gripListSettings)
 	catalogGroup.Get("/announcement", r.gripGetAnnouncement)
+	// Catalog Base is the canonical ProductModel/Variant API.  It intentionally
+	// lives beside the legacy Product routes while the storefront migrates.
+	publicCatalogBase := apiV1Group.Group("/catalog")
+	publicCatalogBase.Get("/product-models", r.catalogBasePublicList)
+	publicCatalogBase.Get("/product-models/:modelId", r.catalogBasePublicDetail)
+	publicCatalogBase.Get("/product-models/:modelId/options", r.catalogBasePublicOptions)
+	publicCatalogBase.Post("/product-models/:modelId/variants:resolve", r.catalogBasePublicResolve)
 	apiV1Group.Get("/site-config", r.gripSiteConfig)
 
 	checkoutGroup := apiV1Group.Group("/checkout", middleware.RateLimitByIP(30, time.Minute))
@@ -130,6 +137,46 @@ func (r *V1) registerGripStoreRoutes(apiV1Group fiber.Router) {
 	adminGroup.Delete("/faqs/:id", r.deleteAdminFAQ)
 	adminGroup.Get("/products/new", r.gripAdminProductsNew)
 	adminGroup.Get("/products/:id/form", r.gripAdminProductForm)
+
+	adminCatalog := apiV1Group.Group("/admin/catalog", middleware.Auth(r.jwtManager), middleware.RequireAdminUsernames(r.adminUsers))
+	adminCatalog.Get("/categories", r.catalogBaseListCategories)
+	adminCatalog.Post("/categories", r.catalogBaseCreateCategory)
+	adminCatalog.Patch("/categories/:categoryId", r.catalogBaseUpdateCategory)
+	adminCatalog.Delete("/categories/:categoryId", r.catalogBaseDeleteCategory)
+	adminCatalog.Post("/categories/:categoryId/deactivate", r.catalogBaseDeactivateCategory)
+
+	adminCatalog.Get("/attribute-definitions", r.catalogBaseListDefinitions)
+	adminCatalog.Post("/attribute-definitions", r.catalogBaseCreateDefinition)
+	adminCatalog.Patch("/attribute-definitions/:definitionId", r.catalogBaseUpdateDefinition)
+	adminCatalog.Post("/attribute-definitions/:definitionId/deactivate", r.catalogBaseDeactivateDefinition)
+	adminCatalog.Post("/attribute-definitions/:definitionId/enum-values", r.catalogBaseAddEnumValue)
+	adminCatalog.Post("/attribute-definitions/:definitionId/enum-values/:enumValueId/deactivate", r.catalogBaseDeactivateEnumValue)
+
+	adminCatalog.Get("/masters/:masterKind", r.catalogBaseListMasters)
+	adminCatalog.Post("/masters/:masterKind", r.catalogBaseCreateMaster)
+	adminCatalog.Patch("/masters/:masterKind/:masterId", r.catalogBaseUpdateMaster)
+	adminCatalog.Post("/masters/:masterKind/:masterId/deactivate", r.catalogBaseDeactivateMaster)
+
+	adminCatalog.Get("/product-models", r.catalogBaseListModels)
+	adminCatalog.Post("/product-models", r.catalogBaseCreateModel)
+	adminCatalog.Get("/product-models/:modelId", r.catalogBaseGetModel)
+	adminCatalog.Patch("/product-models/:modelId", r.catalogBaseUpdateModel)
+	adminCatalog.Delete("/product-models/:modelId", r.catalogBaseDeleteModel)
+	adminCatalog.Post("/product-models/:modelId/publish", r.catalogBasePublishModel)
+	adminCatalog.Post("/product-models/:modelId/unpublish", r.catalogBaseUnpublishModel)
+	adminCatalog.Post("/product-models/:modelId/discontinue", r.catalogBaseDiscontinueModel)
+	adminCatalog.Put("/product-models/:modelId/media", r.catalogBaseReplaceMedia)
+	adminCatalog.Post("/product-models/:modelId/variant-dimensions", r.catalogBaseCreateDimension)
+	adminCatalog.Patch("/product-models/:modelId/variant-dimensions/:dimensionId", r.catalogBaseUpdateDimension)
+	adminCatalog.Post("/product-models/:modelId/variant-dimensions/:dimensionId/values", r.catalogBaseAddDimensionValue)
+	adminCatalog.Post("/product-models/:modelId/variant-dimensions/:dimensionId/values/:valueId/deactivate", r.catalogBaseDeactivateDimensionValue)
+	adminCatalog.Get("/product-models/:modelId/variants", r.catalogBaseListVariants)
+	adminCatalog.Post("/product-models/:modelId/variants", r.catalogBaseCreateVariant)
+	adminCatalog.Post("/variants/prices:bulk", r.catalogBaseBulkPrice)
+	adminCatalog.Get("/variants/:variantId", r.catalogBaseGetVariant)
+	adminCatalog.Patch("/variants/:variantId", r.catalogBaseUpdateVariant)
+	adminCatalog.Post("/variants/:variantId/activate", r.catalogBaseActivateVariant)
+	adminCatalog.Post("/variants/:variantId/inactivate", r.catalogBaseInactivateVariant)
 }
 
 func (r *V1) notImplemented(ctx *fiber.Ctx) error {
