@@ -8,6 +8,7 @@ package catalogbase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -33,12 +34,15 @@ func (e *APIError) Error() string { return e.Message }
 func bad(message string) error {
 	return &APIError{Status: 400, Code: "invalid_catalog_command", Message: message}
 }
+
 func conflict(message string) error {
 	return &APIError{Status: 409, Code: "catalog_conflict", Message: message}
 }
+
 func notFound(message string) error {
 	return &APIError{Status: 404, Code: "catalog_not_found", Message: message}
 }
+
 func methodNotAllowed(message string) error {
 	return &APIError{Status: 405, Code: "catalog_method_not_allowed", Message: message}
 }
@@ -49,7 +53,8 @@ func ErrorStatus(err error) (int, map[string]any) {
 	if err == nil {
 		return 200, nil
 	}
-	if apiErr, ok := err.(*APIError); ok {
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
 		return apiErr.Status, map[string]any{"code": apiErr.Code, "message": apiErr.Message}
 	}
 	return 500, map[string]any{"code": "catalog_internal_error", "message": "catalog operation failed"}
@@ -266,10 +271,16 @@ func intValue(input map[string]any, defaultValue int, names ...string) int {
 	case float64:
 		return int(typed)
 	case json.Number:
-		parsed, _ := typed.Int64()
+		parsed, err := typed.Int64()
+		if err != nil {
+			return defaultValue
+		}
 		return int(parsed)
 	case string:
-		parsed, _ := strconv.Atoi(strings.TrimSpace(typed))
+		parsed, err := strconv.Atoi(strings.TrimSpace(typed))
+		if err != nil {
+			return defaultValue
+		}
 		return parsed
 	default:
 		return defaultValue
@@ -322,21 +333,21 @@ func canonicalUnit(value string) (float64, string, bool) {
 	if err != nil || math.IsNaN(number) || math.IsInf(number, 0) {
 		return 0, "", false
 	}
-	unit := parts[1]
-	switch unit {
-	case "mm":
-		return number, "length", true
-	case "cm":
-		return number * 10, "length", true
-	case "m":
-		return number * 1000, "length", true
-	case "g":
-		return number, "mass", true
-	case "kg":
-		return number * 1000, "mass", true
-	default:
+	type unitInfo struct {
+		factor float64
+		family string
+	}
+	info, ok := map[string]unitInfo{
+		"mm": {factor: 1, family: "length"},
+		"cm": {factor: 10, family: "length"},
+		"m":  {factor: 1000, family: "length"},
+		"g":  {factor: 1, family: "mass"},
+		"kg": {factor: 1000, family: "mass"},
+	}[parts[1]]
+	if !ok {
 		return 0, "", false
 	}
+	return number * info.factor, info.family, true
 }
 
 func canonicalValue(value string) string {
@@ -459,7 +470,7 @@ func parseStringMap(value any) map[string]string {
 func (s *Service) findModel(ctx context.Context, id string) (productModelRow, error) {
 	var row productModelRow
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return productModelRow{}, notFound("ProductModel not found")
 		}
 		return productModelRow{}, err
@@ -470,7 +481,7 @@ func (s *Service) findModel(ctx context.Context, id string) (productModelRow, er
 func (s *Service) findVariant(ctx context.Context, id string) (variantRow, error) {
 	var row variantRow
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return variantRow{}, notFound("Variant not found")
 		}
 		return variantRow{}, err
@@ -481,7 +492,7 @@ func (s *Service) findVariant(ctx context.Context, id string) (variantRow, error
 func (s *Service) findDefinition(ctx context.Context, id string) (attributeDefinitionRow, error) {
 	var row attributeDefinitionRow
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return attributeDefinitionRow{}, notFound("attribute definition not found")
 		}
 		return attributeDefinitionRow{}, err
@@ -492,7 +503,7 @@ func (s *Service) findDefinition(ctx context.Context, id string) (attributeDefin
 func (s *Service) findMaster(ctx context.Context, kind, id string) (masterRow, error) {
 	var row masterRow
 	if err := s.db.WithContext(ctx).Where("id = ? AND kind = ?", id, kind).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return masterRow{}, notFound("catalog master not found")
 		}
 		return masterRow{}, err
@@ -500,15 +511,15 @@ func (s *Service) findMaster(ctx context.Context, kind, id string) (masterRow, e
 	return row, nil
 }
 
-func (s *Service) activeMaster(ctx context.Context, kind, id string) (masterRow, error) {
+func (s *Service) activeMaster(ctx context.Context, kind, id string) error {
 	row, err := s.findMaster(ctx, kind, id)
 	if err != nil {
-		return masterRow{}, err
+		return err
 	}
 	if !row.Active {
-		return masterRow{}, conflict("inactive catalog master cannot be assigned")
+		return conflict("inactive catalog master cannot be assigned")
 	}
-	return row, nil
+	return nil
 }
 
 func (s *Service) categoryOutput(row categoryRow) map[string]any {
@@ -541,7 +552,9 @@ func (s *Service) definitionOutput(row attributeDefinitionRow) map[string]any {
 		result["unit"] = row.Unit
 	}
 	values := []enumValue{}
-	_ = json.Unmarshal([]byte(row.EnumValues), &values)
+	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
+		values = []enumValue{}
+	}
 	if values == nil {
 		values = []enumValue{}
 	}
@@ -690,7 +703,7 @@ func (s *Service) CreateCategory(ctx context.Context, input map[string]any) (map
 func (s *Service) UpdateCategory(ctx context.Context, id string, input map[string]any) (map[string]any, error) {
 	var row categoryRow
 	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, notFound("category not found")
 		}
 		return nil, err
@@ -867,7 +880,9 @@ func (s *Service) AddEnumValue(ctx context.Context, definitionID string, input m
 		return nil, bad("enum key and label are required")
 	}
 	values := []enumValue{}
-	_ = json.Unmarshal([]byte(row.EnumValues), &values)
+	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
+		values = []enumValue{}
+	}
 	for _, value := range values {
 		if strings.EqualFold(value.Key, key) {
 			return nil, conflict("enum key already exists")
@@ -888,7 +903,9 @@ func (s *Service) DeactivateEnumValue(ctx context.Context, definitionID, enumID 
 		return nil, err
 	}
 	values := []enumValue{}
-	_ = json.Unmarshal([]byte(row.EnumValues), &values)
+	if err := json.Unmarshal([]byte(row.EnumValues), &values); err != nil {
+		values = []enumValue{}
+	}
 	for index := range values {
 		if values[index].ID == enumID {
 			values[index].Active = false
@@ -1011,7 +1028,7 @@ func (s *Service) validateFixedAttributes(ctx context.Context, input map[string]
 				return conflict("inactive attribute definition cannot be assigned")
 			}
 			if definition.ValueKind == "Reference" {
-				if _, err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), rawValue); err != nil {
+				if err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), rawValue); err != nil {
 					return err
 				}
 			}
@@ -1021,8 +1038,9 @@ func (s *Service) validateFixedAttributes(ctx context.Context, input map[string]
 		// those point at a known master, enforce its lifecycle too.
 		if strings.EqualFold(key, "materialId") || strings.EqualFold(key, "finishId") || strings.EqualFold(key, "packId") {
 			kind := strings.ToLower(strings.TrimSuffix(key, "Id"))
-			if _, err := s.activeMaster(ctx, kind, rawValue); err != nil {
-				if apiErr, ok := err.(*APIError); ok && apiErr.Status == 404 {
+			if err := s.activeMaster(ctx, kind, rawValue); err != nil {
+				var apiErr *APIError
+				if errors.As(err, &apiErr) && apiErr.Status == 404 {
 					continue
 				}
 				return err
@@ -1047,7 +1065,7 @@ func (s *Service) validateModelInput(ctx context.Context, input map[string]any, 
 		return err
 	}
 	if fixedPackID := stringValue(input, "fixedPackId", "fixed_pack_id"); fixedPackID != "" {
-		if _, err := s.activeMaster(ctx, "pack", fixedPackID); err != nil {
+		if err := s.activeMaster(ctx, "pack", fixedPackID); err != nil {
 			return err
 		}
 	}
@@ -1374,7 +1392,9 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 		}
 	} else {
 		enumValues := []enumValue{}
-		_ = json.Unmarshal([]byte(definition.EnumValues), &enumValues)
+		if err := json.Unmarshal([]byte(definition.EnumValues), &enumValues); err != nil {
+			enumValues = []enumValue{}
+		}
 		for _, value := range enumValues {
 			values = append(values, dimensionValue{ID: value.ID, Label: value.Label, Active: value.Active})
 		}
@@ -1384,7 +1404,7 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 	}
 	if definition.ValueKind == "Reference" {
 		for _, value := range values {
-			if _, err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
+			if err := s.activeMaster(ctx, strings.ToLower(definition.ReferenceTarget), value.ID); err != nil {
 				return nil, err
 			}
 		}
@@ -1399,7 +1419,7 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 func (s *Service) UpdateDimension(ctx context.Context, modelID, dimensionID string, input map[string]any) (map[string]any, error) {
 	var row variantDimensionRow
 	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, notFound("VariantDimension not found")
 		}
 		return nil, err
@@ -1438,7 +1458,7 @@ func (s *Service) UpdateDimension(ctx context.Context, modelID, dimensionID stri
 func (s *Service) AddDimensionValue(ctx context.Context, modelID, dimensionID string, input map[string]any) (map[string]any, error) {
 	var row variantDimensionRow
 	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, notFound("VariantDimension not found")
 		}
 		return nil, err
@@ -1448,7 +1468,9 @@ func (s *Service) AddDimensionValue(ctx context.Context, modelID, dimensionID st
 		return nil, bad("dimension value id and label are required")
 	}
 	values := []dimensionValue{}
-	_ = json.Unmarshal([]byte(row.AllowedValues), &values)
+	if err := json.Unmarshal([]byte(row.AllowedValues), &values); err != nil {
+		values = []dimensionValue{}
+	}
 	for index := range values {
 		if values[index].ID == id {
 			values[index].Label, values[index].Active = label, boolValue(input, true, "active")
@@ -1470,13 +1492,15 @@ func (s *Service) AddDimensionValue(ctx context.Context, modelID, dimensionID st
 func (s *Service) DeactivateDimensionValue(ctx context.Context, modelID, dimensionID, valueID string) (map[string]any, error) {
 	var row variantDimensionRow
 	if err := s.db.WithContext(ctx).Where("id = ? AND model_id = ?", dimensionID, modelID).First(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, notFound("VariantDimension not found")
 		}
 		return nil, err
 	}
 	values := []dimensionValue{}
-	_ = json.Unmarshal([]byte(row.AllowedValues), &values)
+	if err := json.Unmarshal([]byte(row.AllowedValues), &values); err != nil {
+		values = []dimensionValue{}
+	}
 	for index := range values {
 		if values[index].ID == valueID {
 			values[index].Active = false
@@ -1518,7 +1542,9 @@ func (s *Service) normalizeSelection(ctx context.Context, modelID string, input 
 			return nil, "", bad("Variant must select one value for every dimension")
 		}
 		values := []dimensionValue{}
-		_ = json.Unmarshal([]byte(dimension.AllowedValues), &values)
+		if err := json.Unmarshal([]byte(dimension.AllowedValues), &values); err != nil {
+			values = []dimensionValue{}
+		}
 		matched := false
 		for _, value := range values {
 			if !value.Active {
@@ -1566,7 +1592,7 @@ func (s *Service) validatePackAssignment(ctx context.Context, model productModel
 		}
 	}
 	if packID != nil {
-		if _, err := s.activeMaster(ctx, "pack", *packID); err != nil {
+		if err := s.activeMaster(ctx, "pack", *packID); err != nil {
 			return nil, err
 		}
 	}
@@ -1585,7 +1611,7 @@ func (s *Service) normalizeSKU(ctx context.Context, value string, currentID stri
 	}
 	if err := query.First(&row).Error; err == nil {
 		return "", conflict("SKU is already reserved by another Variant")
-	} else if err != gorm.ErrRecordNotFound {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", err
 	}
 	return sku, nil
@@ -1615,7 +1641,9 @@ func parsePrice(input map[string]any, names ...string) (*int64, string, bool, er
 
 func appendHistory(raw, action string) string {
 	entries := []historyEntry{}
-	_ = json.Unmarshal([]byte(raw), &entries)
+	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+		entries = []historyEntry{}
+	}
 	entries = append(entries, historyEntry{Action: action, At: now()})
 	return jsonString(entries, "[]")
 }
@@ -1643,7 +1671,7 @@ func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[s
 	if model.Status == "Discontinued" {
 		return nil, conflict("Discontinued ProductModel cannot receive new Variants")
 	}
-	selectedInput := map[string]string{}
+	var selectedInput map[string]string
 	if raw, ok := mapValue(input, "selectedOptions", "selected_options"); ok {
 		selectedInput = parseStringMap(raw)
 	} else {
@@ -1660,7 +1688,7 @@ func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[s
 	var existing variantRow
 	if err := s.db.WithContext(ctx).Where("model_id = ? AND canonical_combination = ?", modelID, canonical).First(&existing).Error; err == nil {
 		return nil, conflict("canonical Variant combination already exists")
-	} else if err != gorm.ErrRecordNotFound {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 	sku, err := s.normalizeSKU(ctx, stringValue(input, "sku"), "")
@@ -1758,7 +1786,7 @@ func (s *Service) UpdateVariant(ctx context.Context, id string, input map[string
 			if model.FixedPackID != nil && pack != *model.FixedPackID {
 				return nil, conflict("Variant Pack reference conflicts with ProductModel Pack")
 			}
-			if _, packErr := s.activeMaster(ctx, "pack", pack); packErr != nil {
+			if packErr := s.activeMaster(ctx, "pack", pack); packErr != nil {
 				return nil, packErr
 			}
 			row.PackID = &pack
@@ -1869,7 +1897,7 @@ func (s *Service) BulkSetPrice(ctx context.Context, input map[string]any) ([]map
 		for _, id := range ids {
 			var row variantRow
 			if err := tx.Where("id = ?", id).First(&row).Error; err != nil {
-				if err == gorm.ErrRecordNotFound {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
 					return conflict("bulk price contains an unknown Variant")
 				}
 				return err
@@ -1919,15 +1947,15 @@ func publicVariants(ctx context.Context, db *gorm.DB, modelID string) ([]variant
 	return result, nil
 }
 
-func priceInRange(variants []variantRow, min, max *int64) bool {
+func priceInRange(variants []variantRow, minPrice, maxPrice *int64) bool {
 	for _, variant := range variants {
 		if variant.SellingAmount == nil {
 			continue
 		}
-		if min != nil && *variant.SellingAmount < *min {
+		if minPrice != nil && *variant.SellingAmount < *minPrice {
 			continue
 		}
-		if max != nil && *variant.SellingAmount > *max {
+		if maxPrice != nil && *variant.SellingAmount > *maxPrice {
 			continue
 		}
 		return true
@@ -2095,7 +2123,9 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 					continue
 				}
 				allowed := []dimensionValue{}
-				_ = json.Unmarshal([]byte(dimension.AllowedValues), &allowed)
+				if err := json.Unmarshal([]byte(dimension.AllowedValues), &allowed); err != nil {
+					allowed = []dimensionValue{}
+				}
 				for _, item := range allowed {
 					if item.ID == fmt.Sprint(value) || canonicalValue(item.Label) == canonicalValue(fmt.Sprint(value)) {
 						valueSet[item.ID] = item
@@ -2135,8 +2165,10 @@ func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, sele
 	if err != nil {
 		// A representation such as 20 cm may not be in the allowed-value set,
 		// so compare its canonical representation directly with public rows.
-		canonical = ""
-		dimensions := mustDimensions(ctx, s, modelID)
+		dimensions, dimensionErr := s.loadDimensions(ctx, modelID)
+		if dimensionErr != nil {
+			return nil, dimensionErr
+		}
 		parts := make([]string, 0, len(dimensions))
 		for _, dimension := range dimensions {
 			definition, definitionErr := s.findDefinition(ctx, dimension.DefinitionID)
@@ -2158,9 +2190,4 @@ func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, sele
 		}
 	}
 	return nil, notFound("public Variant not found")
-}
-
-func mustDimensions(ctx context.Context, service *Service, modelID string) []variantDimensionRow {
-	rows, _ := service.loadDimensions(ctx, modelID)
-	return rows
 }

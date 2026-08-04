@@ -14,7 +14,7 @@ func newCatalogBaseTestService(t *testing.T) *Service {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=private", t.Name())), &gorm.Config{})
 	require.NoError(t, err)
-	require.NoError(t, db.AutoMigrate(
+	migrateErr := db.AutoMigrate(
 		&categoryRow{},
 		&attributeDefinitionRow{},
 		&masterRow{},
@@ -22,7 +22,8 @@ func newCatalogBaseTestService(t *testing.T) *Service {
 		&productImageRow{},
 		&variantDimensionRow{},
 		&variantRow{},
-	))
+	)
+	require.NoError(t, migrateErr)
 	return New(db)
 }
 
@@ -33,7 +34,21 @@ func catalogCategory(t *testing.T, service *Service) string {
 		"slug": "grip-handles-" + t.Name(),
 	})
 	require.NoError(t, err)
-	return category["id"].(string)
+	return mapString(t, category, "id")
+}
+
+func mapString(t *testing.T, object map[string]any, key string) string {
+	t.Helper()
+	value, ok := object[key].(string)
+	require.True(t, ok)
+	return value
+}
+
+func mapBool(t *testing.T, object map[string]any, key string) bool {
+	t.Helper()
+	value, ok := object[key].(bool)
+	require.True(t, ok)
+	return value
 }
 
 func catalogDimension(t *testing.T, service *Service, modelID, displayName string, values []map[string]any) string {
@@ -56,7 +71,7 @@ func catalogDimension(t *testing.T, service *Service, modelID, displayName strin
 		"allowedValues": allowedValues,
 	})
 	require.NoError(t, err)
-	return dimension["id"].(string)
+	return mapString(t, dimension, "id")
 }
 
 func catalogVariant(t *testing.T, service *Service, modelID, selected, sku string, amount int64) map[string]any {
@@ -70,7 +85,8 @@ func catalogVariant(t *testing.T, service *Service, modelID, selected, sku strin
 	return variant
 }
 
-func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) {
+func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) { //nolint:funlen // This scenario verifies the complete Catalog Base lifecycle contract.
+	t.Parallel()
 	service := newCatalogBaseTestService(t)
 	ctx := context.Background()
 	categoryID := catalogCategory(t, service)
@@ -89,7 +105,7 @@ func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) {
 		"description": "Catalog Base model", "warrantySummary": map[string]any{"term": "24 months"},
 	})
 	require.NoError(t, err)
-	modelID := model["id"].(string)
+	modelID := mapString(t, model, "id")
 	require.Equal(t, "Draft", model["status"])
 
 	dimensionID := catalogDimension(t, service, modelID, "Size", []map[string]any{
@@ -97,10 +113,10 @@ func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) {
 		{"id": "300-mm", "label": "300 mm", "active": true},
 	})
 	variant := catalogVariant(t, service, modelID, "200 mm", " SKU-001 ", 400000)
-	variantID := variant["id"].(string)
+	variantID := mapString(t, variant, "id")
 	require.Equal(t, "sku-001", variant["sku"])
 	require.Equal(t, "200 mm", jsonMap(jsonString(variant["selectedOptions"], "{}"))["Size"])
-	require.True(t, variant["saleReady"].(bool))
+	require.True(t, mapBool(t, variant, "saleReady"))
 
 	_, err = service.CreateVariant(ctx, modelID, map[string]any{
 		"selectedOptions": map[string]any{"Size": "20 cm"},
@@ -151,6 +167,7 @@ func TestCatalogBaseLifecycleAndCanonicalPublicProjection(t *testing.T) {
 }
 
 func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
+	t.Parallel()
 	service := newCatalogBaseTestService(t)
 	ctx := context.Background()
 	categoryID := catalogCategory(t, service)
@@ -158,11 +175,11 @@ func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
 		"name": "Box 10", "sellingUnit": "Box", "quantity": 10, "baseUnit": "Piece",
 	})
 	require.NoError(t, err)
-	packID := pack["id"].(string)
+	packID := mapString(t, pack, "id")
 
 	model, err := service.CreateModel(ctx, map[string]any{"name": "Packed handle", "categoryId": categoryID, "fixedPackId": packID})
 	require.NoError(t, err)
-	modelID := model["id"].(string)
+	modelID := mapString(t, model, "id")
 	catalogDimension(t, service, modelID, "Size", []map[string]any{{"id": "200-mm", "label": "200 mm", "active": true}, {"id": "300-mm", "label": "300 mm", "active": true}})
 
 	first := catalogVariant(t, service, modelID, "200 mm", "SKU-PACK-1", 100000)
@@ -176,7 +193,7 @@ func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
 		"sellingPrice": map[string]any{"amount": 100000, "currency": "VND"},
 	})
 	require.Error(t, err, "new references to an inactive Pack must be rejected")
-	readFirst, err := service.GetVariant(ctx, first["id"].(string))
+	readFirst, err := service.GetVariant(ctx, mapString(t, first, "id"))
 	require.NoError(t, err)
 	require.Equal(t, packID, readFirst["packId"])
 
@@ -185,9 +202,9 @@ func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
 		"sellingPrice": map[string]any{"amount": 250000, "currency": "VND"},
 	})
 	require.Error(t, err)
-	unchanged, err := service.GetVariant(ctx, first["id"].(string))
+	unchanged, err := service.GetVariant(ctx, mapString(t, first, "id"))
 	require.NoError(t, err)
-	require.Equal(t, int64(100000), unchanged["sellingPrice"].(map[string]any)["amount"])
+	require.Equal(t, int64(100000), mapStringMap(t, unchanged, "sellingPrice")["amount"])
 
 	updated, err := service.BulkSetPrice(ctx, map[string]any{
 		"variantIds":   []any{first["id"], second["id"]},
@@ -196,8 +213,15 @@ func TestCatalogBaseReferencePackLifecycleAndAtomicPrices(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, updated, 2)
 	for _, item := range updated {
-		require.Equal(t, int64(250000), item["sellingPrice"].(map[string]any)["amount"])
+		require.Equal(t, int64(250000), mapStringMap(t, item, "sellingPrice")["amount"])
 	}
+}
+
+func mapStringMap(t *testing.T, object map[string]any, key string) map[string]any {
+	t.Helper()
+	value, ok := object[key].(map[string]any)
+	require.True(t, ok)
+	return value
 }
 
 func ptrInt64(value int64) *int64 { return &value }
