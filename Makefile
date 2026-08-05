@@ -40,6 +40,12 @@ swag-v1: ### swag init
 	go tool swag init --parseDependency --parseInternal -g internal/controller/restapi/router.go
 .PHONY: swag-v1
 
+api: ### generate OpenAPI types and Fiber server
+	mkdir -p api/gen/go/openapi
+	go tool oapi-codegen -config codegen.types.yaml docs/api/openapi.yaml
+	go tool oapi-codegen -config codegen.server.yaml docs/api/openapi.yaml
+.PHONY: api
+
 deps: ### deps tidy + verify
 	go mod tidy && go mod verify
 .PHONY: deps

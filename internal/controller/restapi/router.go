@@ -2,8 +2,10 @@ package restapi
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/ansrivas/fiberprometheus/v2"
+	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/config"
 	_ "github.com/evrone/go-clean-template/docs" // Swagger docs.
 	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
@@ -17,17 +19,33 @@ import (
 	"github.com/gofiber/swagger"
 )
 
-// NewRouter -.
-// Swagger spec:
-//
-//	@title       Grip Store Backend REST API
-//	@description REST-only backend for catalog, checkout, orders, profile, admin, and notifications
-//	@version     1.0
-//	@host        localhost:8080
-//	@BasePath    /v1
-//	@securityDefinitions.apikey BearerAuth
-//	@in header
-//	@name Authorization
+const selfContainedDocsHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Go-Grip Backend API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "/openapi.yaml",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ]
+      });
+    };
+  </script>
+</body>
+</html>`
+
+// NewRouter registers OpenAPI 3.0 routes, legacy v1 routes, and global middlewares.
 func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, catalogBase catalogbase.UseCase, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, admin usecase.Admin, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
 	// Options
 	app.Use(middleware.Logger(l))
@@ -47,17 +65,41 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 		app.Use(prometheus.Middleware)
 	}
 
-	// Swagger
+	// Serve raw OpenAPI spec
+	app.Get("/openapi.yaml", func(c *fiber.Ctx) error {
+		content, err := os.ReadFile("docs/api/openapi.yaml")
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).SendString("Spec file not found")
+		}
+		c.Set(fiber.HeaderContentType, "text/yaml; charset=utf-8")
+		return c.Send(content)
+	})
+
+	// Swagger & Self-Contained UI Docs
 	if cfg.Swagger.Enabled {
 		app.Get("/swagger/*", swagger.HandlerDefault)
+		app.Get("/docs", func(c *fiber.Ctx) error {
+			c.Set(fiber.HeaderContentType, "text/html; charset=utf-8")
+			return c.SendString(selfContainedDocsHTML)
+		})
 	}
 
 	// K8s probe
 	app.Get("/healthz", func(ctx *fiber.Ctx) error { return ctx.SendStatus(http.StatusOK) })
 
-	// Routers
+	// Register legacy operational routes on /v1 for non-OpenAPI legacy endpoints & parity harness
 	apiV1Group := app.Group("/v1")
 	{
 		v1.NewRoutes(apiV1Group, t, u, tk, catalog, catalogBase, auth, checkout, orders, profile, admin, wishlist, notify, media, homepage, cart, lead, content, importer, jwtManager, cfg.Admin.Users, l)
 	}
+
+	// Strict OpenAPI Composition Server
+	server := v1.NewServer(
+		cfg, t, u, tk, catalog, catalogBase, auth, checkout, orders, profile, admin, wishlist, notify, media, homepage, cart, lead, content, importer, jwtManager, l,
+	)
+
+	strictHandler := openapi.NewStrictHandler(server, nil)
+	openapi.RegisterHandlersWithOptions(app, strictHandler, openapi.FiberServerOptions{
+		BaseURL: "/v1",
+	})
 }

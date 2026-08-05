@@ -1,0 +1,81 @@
+package catalog
+
+import (
+	"github.com/evrone/go-clean-template/api/gen/go/openapi"
+	"github.com/evrone/go-clean-template/internal/entity"
+)
+
+// toProductResponse maps entity.Product to openapi.ProductResponse.
+func toProductResponse(p entity.Product) openapi.ProductResponse {
+	priceInt := int(p.Price)
+	stock := p.StockCount
+	desc := p.Description
+	sku := p.SKU
+	catID := p.CategoryID
+	img := p.ImageURL
+	slug := p.Title // fallback slug
+
+	return openapi.ProductResponse{
+		Id:          p.ID,
+		Title:       p.Title,
+		Slug:        &slug,
+		Description: &desc,
+		Price:       priceInt,
+		Stock:       &stock,
+		Sku:         &sku,
+		CategoryId:  &catID,
+		ImageUrl:    &img,
+		CreatedAt:   &p.CreatedAt,
+		UpdatedAt:   &p.UpdatedAt,
+	}
+}
+
+// toProductListResponse maps []entity.Product and total count to openapi.ProductListResponse.
+func toProductListResponse(products []entity.Product, total int) openapi.ProductListResponse {
+	items := make([]openapi.ProductResponse, len(products))
+	for i, p := range products {
+		items[i] = toProductResponse(p)
+	}
+	return openapi.ProductListResponse{
+		Items: items,
+		Total: total,
+	}
+}
+
+// toCategoryResponse maps entity.Category to openapi.CategoryResponse.
+func toCategoryResponse(c entity.Category) openapi.CategoryResponse {
+	slug := c.Name
+	return openapi.CategoryResponse{
+		Id:   c.ID,
+		Name: c.Name,
+		Slug: &slug,
+	}
+}
+
+// toCategoryListResponse maps []entity.Category to []openapi.CategoryResponse.
+func toCategoryListResponse(categories []entity.Category) []openapi.CategoryResponse {
+	res := make([]openapi.CategoryResponse, len(categories))
+	for i, c := range categories {
+		res[i] = toCategoryResponse(c)
+	}
+	return res
+}
+
+// toTagResponse maps entity.Tag to openapi.TagResponse.
+func toTagResponse(t entity.Tag) openapi.TagResponse {
+	slug := t.Name
+	return openapi.TagResponse{
+		Id:   t.ID,
+		Name: t.Name,
+		Slug: &slug,
+	}
+}
+
+// toTagListResponse maps []entity.Tag to []openapi.TagResponse.
+func toTagListResponse(tags []entity.Tag) []openapi.TagResponse {
+	res := make([]openapi.TagResponse, len(tags))
+	for i, t := range tags {
+		res[i] = toTagResponse(t)
+	}
+	return res
+}

@@ -1,0 +1,6 @@
+package: openapi
+generate:
+  fiber-server: true
+  strict-server: true
+  embedded-spec: true
+output: api/gen/go/openapi/server.gen.go

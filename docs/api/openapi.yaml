@@ -1,0 +1,2612 @@
+openapi: 3.0.3
+info:
+  title: Go-Grip Backend API
+  version: 1.0.0
+  description: OpenAPI 3.0 specification for Go-Grip clean architecture backend.
+servers:
+  - url: /v1
+    description: API v1 Base Path
+tags:
+  - name: auth
+    description: Authentication and Token Lifecycle
+  - name: users
+    description: User Management and Administration
+  - name: tasks
+    description: Task Management Capabilities
+  - name: translation
+    description: Translation Services
+  - name: catalog
+    description: Store Catalog and Products
+  - name: cart
+    description: Shopping Cart Management
+  - name: checkout
+    description: Checkout and Payment Operations
+  - name: orders
+    description: Order Management and Refund Requests
+  - name: profile
+    description: User Profile and Account Settings
+  - name: wishlist
+    description: Wishlist Management
+  - name: reviews
+    description: Product Reviews and Ratings
+  - name: notifications
+    description: Notification Center
+  - name: admin
+    description: Administrative System Management
+  - name: media
+    description: Media and File Upload Management
+  - name: content
+    description: Static Pages and Homepage Content
+  - name: importer
+    description: Data Import and Migration Utilities
+  - name: lead
+    description: Sales Leads and Contact Submissions
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register new user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Authenticate user and get tokens
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPairResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPairResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Logout and revoke refresh token
+      operationId: logoutUser
+      security:
+        - bearerAuth:
+            - "auth:logout"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Logout successful
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get current user profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users:
+    get:
+      tags:
+        - users
+      summary: List users with pagination
+      operationId: listUsers
+      security:
+        - bearerAuth:
+            - "users:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Users list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users/admin:
+    post:
+      tags:
+        - users
+      summary: Create admin user account
+      operationId: createAdminUser
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminUserRequest'
+      responses:
+        '201':
+          description: Admin user created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users/profile:
+    get:
+      tags:
+        - users
+      summary: Get authenticated user profile
+      operationId: getMyProfile
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    put:
+      tags:
+        - users
+      summary: Update user profile
+      operationId: updateMyProfile
+      security:
+        - bearerAuth:
+            - "profile:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID
+      operationId: getUserByID
+      security:
+        - bearerAuth:
+            - "users:read"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users/{id}/lock:
+    post:
+      tags:
+        - users
+      summary: Lock user account
+      operationId: lockUser
+      security:
+        - bearerAuth:
+            - "users:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User locked successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /users/{id}/unlock:
+    post:
+      tags:
+        - users
+      summary: Unlock user account
+      operationId: unlockUser
+      security:
+        - bearerAuth:
+            - "users:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User unlocked successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /tasks:
+    get:
+      tags:
+        - tasks
+      summary: List tasks for authenticated user
+      operationId: listTasks
+      security:
+        - bearerAuth:
+            - "tasks:read"
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Tasks list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - tasks
+      summary: Create new task
+      operationId: createTask
+      security:
+        - bearerAuth:
+            - "tasks:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /tasks/{id}:
+    get:
+      tags:
+        - tasks
+      summary: Get task by ID
+      operationId: getTaskByID
+      security:
+        - bearerAuth:
+            - "tasks:read"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    put:
+      tags:
+        - tasks
+      summary: Update task
+      operationId: updateTask
+      security:
+        - bearerAuth:
+            - "tasks:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    delete:
+      tags:
+        - tasks
+      summary: Delete task
+      operationId: deleteTask
+      security:
+        - bearerAuth:
+            - "tasks:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Task deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /tasks/{id}/transition:
+    post:
+      tags:
+        - tasks
+      summary: Transition task status
+      operationId: transitionTask
+      security:
+        - bearerAuth:
+            - "tasks:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionTaskRequest'
+      responses:
+        '200':
+          description: Task status transitioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntityResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /translation/do:
+    post:
+      tags:
+        - translation
+      summary: Translate text content
+      operationId: translateText
+      security:
+        - bearerAuth:
+            - "translation:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranslationRequest'
+      responses:
+        '200':
+          description: Translation performed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /translation/history:
+    get:
+      tags:
+        - translation
+      summary: Get user translation history
+      operationId: getTranslationHistory
+      security:
+        - bearerAuth:
+            - "translation:read"
+      responses:
+        '200':
+          description: Translation history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationHistoryResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/products:
+    get:
+      tags:
+        - catalog
+      summary: List catalog products
+      operationId: listProducts
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Products list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - catalog
+      summary: Create new catalog product
+      operationId: createProduct
+      security:
+        - bearerAuth:
+            - "catalog:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/products/{id}:
+    get:
+      tags:
+        - catalog
+      summary: Get catalog product by ID
+      operationId: getProductByID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    put:
+      tags:
+        - catalog
+      summary: Update catalog product
+      operationId: updateProduct
+      security:
+        - bearerAuth:
+            - "catalog:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    delete:
+      tags:
+        - catalog
+      summary: Delete catalog product
+      operationId: deleteProduct
+      security:
+        - bearerAuth:
+            - "catalog:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Product deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/categories:
+    get:
+      tags:
+        - catalog
+      summary: List catalog categories
+      operationId: listCategories
+      responses:
+        '200':
+          description: Categories list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - catalog
+      summary: Create catalog category
+      operationId: createCategory
+      security:
+        - bearerAuth:
+            - "catalog:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/tags:
+    get:
+      tags:
+        - catalog
+      summary: List catalog tags
+      operationId: listTags
+      responses:
+        '200':
+          description: Tags list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - catalog
+      summary: Create catalog tag
+      operationId: createTag
+      security:
+        - bearerAuth:
+            - "catalog:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+      responses:
+        '201':
+          description: Tag created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /cart:
+    get:
+      tags:
+        - cart
+      summary: Get user shopping cart
+      operationId: getMyCart
+      security:
+        - bearerAuth:
+            - "cart:read"
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    delete:
+      tags:
+        - cart
+      summary: Clear user shopping cart
+      operationId: clearCart
+      security:
+        - bearerAuth:
+            - "cart:write"
+      responses:
+        '204':
+          description: Cart cleared successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /cart/items:
+    post:
+      tags:
+        - cart
+      summary: Add item to shopping cart
+      operationId: addToCart
+      security:
+        - bearerAuth:
+            - "cart:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /cart/items/{itemId}:
+    put:
+      tags:
+        - cart
+      summary: Update cart item quantity
+      operationId: updateCartItem
+      security:
+        - bearerAuth:
+            - "cart:write"
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Cart item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    delete:
+      tags:
+        - cart
+      summary: Remove item from shopping cart
+      operationId: removeCartItem
+      security:
+        - bearerAuth:
+            - "cart:write"
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart item removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/preview:
+    post:
+      tags:
+        - checkout
+      summary: Preview checkout calculations
+      operationId: previewCheckout
+      security:
+        - bearerAuth:
+            - "checkout:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutPreviewRequest'
+      responses:
+        '200':
+          description: Preview calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/orders:
+    post:
+      tags:
+        - checkout
+      summary: Create checkout order
+      operationId: createCheckoutOrder
+      security:
+        - bearerAuth:
+            - "checkout:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCheckoutOrderRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/orders/{orderId}/payment-params:
+    post:
+      tags:
+        - checkout
+      summary: Get payment initialization parameters
+      operationId: getPaymentParams
+      security:
+        - bearerAuth:
+            - "checkout:write"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment parameters generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentParamsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/payment-notify:
+    post:
+      tags:
+        - checkout
+      summary: Payment provider webhook notification
+      operationId: paymentNotify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        '200':
+          description: Payment notification processed successfully
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/orders/{orderId}/payment-status:
+    get:
+      tags:
+        - checkout
+      summary: Get payment status of checkout order
+      operationId: getPaymentStatus
+      security:
+        - bearerAuth:
+            - "checkout:read"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutOrderResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /orders:
+    get:
+      tags:
+        - orders
+      summary: List user orders
+      operationId: listOrders
+      security:
+        - bearerAuth:
+            - "orders:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Orders list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /orders/{id}:
+    get:
+      tags:
+        - orders
+      summary: Get order details by ID
+      operationId: getOrderByID
+      security:
+        - bearerAuth:
+            - "orders:read"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /orders/{id}/refund:
+    post:
+      tags:
+        - orders
+      summary: Request order refund
+      operationId: requestOrderRefund
+      security:
+        - bearerAuth:
+            - "orders:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequestPayload'
+      responses:
+        '200':
+          description: Refund request submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntityResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /account/profile:
+    get:
+      tags:
+        - profile
+      summary: Get account profile details
+      operationId: getAccountProfile
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Account profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    put:
+      tags:
+        - profile
+      summary: Update account profile details
+      operationId: updateAccountProfile
+      security:
+        - bearerAuth:
+            - "profile:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountProfileRequest'
+      responses:
+        '200':
+          description: Account profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/dashboard/stats:
+    get:
+      tags:
+        - admin
+      summary: Get administrative dashboard statistics
+      operationId: getAdminDashboardStats
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardStatsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/audit-logs:
+    get:
+      tags:
+        - admin
+      summary: List system audit logs
+      operationId: listAdminAuditLogs
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Audit logs list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAuditLogListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /media/upload:
+    post:
+      tags:
+        - media
+      summary: Upload media file
+      operationId: uploadMedia
+      security:
+        - bearerAuth:
+            - "media:write"
+      responses:
+        '201':
+          description: Media file uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /media/{id}:
+    delete:
+      tags:
+        - media
+      summary: Delete media file
+      operationId: deleteMedia
+      security:
+        - bearerAuth:
+            - "media:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Media file deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /content/pages/{slug}:
+    get:
+      tags:
+        - content
+      summary: Get static page by slug
+      operationId: getStaticPage
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Static page retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticPageResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /homepage/config:
+    get:
+      tags:
+        - content
+      summary: Get homepage config
+      operationId: getHomepageConfig
+      responses:
+        '200':
+          description: Homepage config retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageConfigResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /importer/execute:
+    post:
+      tags:
+        - importer
+      summary: Execute bulk data import
+      operationId: executeImport
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportExecuteRequest'
+      responses:
+        '200':
+          description: Data import executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportExecuteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /notifications:
+    get:
+      tags:
+        - notifications
+      summary: List user notifications
+      operationId: listNotifications
+      security:
+        - bearerAuth:
+            - "notifications:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Notifications list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /notifications/read-all:
+    post:
+      tags:
+        - notifications
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      security:
+        - bearerAuth:
+            - "notifications:write"
+      responses:
+        '200':
+          description: All notifications marked read
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /wishlist:
+    get:
+      tags:
+        - wishlist
+      summary: Get user wishlist
+      operationId: getMyWishlist
+      security:
+        - bearerAuth:
+            - "wishlist:read"
+      responses:
+        '200':
+          description: Wishlist retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /wishlist/items:
+    post:
+      tags:
+        - wishlist
+      summary: Add product item to wishlist
+      operationId: addToWishlist
+      security:
+        - bearerAuth:
+            - "wishlist:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToWishlistRequest'
+      responses:
+        '200':
+          description: Item added to wishlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /wishlist/items/{productId}:
+    delete:
+      tags:
+        - wishlist
+      summary: Remove product item from wishlist
+      operationId: removeFromWishlist
+      security:
+        - bearerAuth:
+            - "wishlist:write"
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed from wishlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /leads:
+    post:
+      tags:
+        - lead
+      summary: Submit new sales lead or contact request
+      operationId: submitLead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitLeadRequest'
+      responses:
+        '201':
+          description: Lead submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    get:
+      tags:
+        - lead
+      summary: List leads with pagination
+      operationId: listLeads
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Leads list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer JWT authentication header
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          example: john@example.com
+        password:
+          type: string
+          example: secret123
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: john@example.com
+        password:
+          type: string
+          example: secret123
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          example: token-uuid
+        refresh_token:
+          type: string
+          x-go-name: LegacyRefreshToken
+          example: token-uuid
+    CreateAdminUserRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          example: adminuser
+        email:
+          type: string
+          example: admin@example.com
+        password:
+          type: string
+          example: secret123
+        role:
+          type: string
+          example: Admin
+    UpdateProfileRequest:
+      type: object
+      required:
+        - displayName
+      properties:
+        displayName:
+          type: string
+          example: John Doe
+    UserResponse:
+      type: object
+      required:
+        - id
+        - username
+        - email
+      properties:
+        id:
+          type: string
+          example: user-123
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          example: Subscriber
+        is_admin:
+          type: boolean
+          example: false
+        is_blocked:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+    UserListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        total:
+          type: integer
+          example: 42
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          example: Complete migration task
+        description:
+          type: string
+          example: Implement task capability endpoints
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Updated task title
+        description:
+          type: string
+          example: Updated task description
+    TransitionTaskRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: COMPLETED
+    TaskResponse:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - user_id
+      properties:
+        id:
+          type: string
+          example: task-101
+        title:
+          type: string
+          example: Complete migration task
+        description:
+          type: string
+          example: Implement task capability endpoints
+        status:
+          type: string
+          example: IN_PROGRESS
+        user_id:
+          type: string
+          example: user-123
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TaskListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResponse'
+        total:
+          type: integer
+          example: 5
+    TranslationRequest:
+      type: object
+      required:
+        - source
+        - target
+        - text
+      properties:
+        source:
+          type: string
+          example: en
+        target:
+          type: string
+          example: vi
+        text:
+          type: string
+          example: Hello world
+    TranslationResponse:
+      type: object
+      required:
+        - source
+        - target
+        - text
+        - translation
+      properties:
+        source:
+          type: string
+          example: en
+        target:
+          type: string
+          example: vi
+        text:
+          type: string
+          example: Hello world
+        translation:
+          type: string
+          example: Xin chào thế giới
+    TranslationHistoryResponse:
+      type: object
+      required:
+        - history
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranslationResponse'
+    ProductRequest:
+      type: object
+      required:
+        - title
+        - price
+      properties:
+        title:
+          type: string
+          example: Grip T-Shirt
+        slug:
+          type: string
+          example: grip-t-shirt
+        description:
+          type: string
+          example: Premium cotton t-shirt
+        price:
+          type: integer
+          example: 2500
+        stock:
+          type: integer
+          example: 100
+        sku:
+          type: string
+          example: GRIP-TSHIRT-01
+        category_id:
+          type: string
+          example: cat-10
+        image_url:
+          type: string
+          example: https://example.com/item.png
+    ProductResponse:
+      type: object
+      required:
+        - id
+        - title
+        - price
+      properties:
+        id:
+          type: string
+          example: prd-100
+        title:
+          type: string
+          example: Grip T-Shirt
+        slug:
+          type: string
+          example: grip-t-shirt
+        description:
+          type: string
+          example: Premium cotton t-shirt
+        price:
+          type: integer
+          example: 2500
+        stock:
+          type: integer
+          example: 100
+        sku:
+          type: string
+          example: GRIP-TSHIRT-01
+        category_id:
+          type: string
+          example: cat-10
+        image_url:
+          type: string
+          example: https://example.com/item.png
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ProductListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+        total:
+          type: integer
+          example: 10
+    CategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Apparel
+        slug:
+          type: string
+          example: apparel
+    CategoryResponse:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          example: cat-10
+        name:
+          type: string
+          example: Apparel
+        slug:
+          type: string
+          example: apparel
+    TagRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: New
+        slug:
+          type: string
+          example: new
+    TagResponse:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          example: tag-1
+        name:
+          type: string
+          example: New
+        slug:
+          type: string
+          example: new
+    AddToCartRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+        quantity:
+          type: integer
+          example: 2
+    UpdateCartItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          example: 3
+    CartItemResponse:
+      type: object
+      required:
+        - id
+        - product_id
+        - quantity
+        - unit_price
+      properties:
+        id:
+          type: string
+          example: item-1
+        product_id:
+          type: string
+          example: prd-100
+        quantity:
+          type: integer
+          example: 2
+        unit_price:
+          type: integer
+          example: 2500
+        blocked:
+          type: boolean
+          example: false
+    CartResponse:
+      type: object
+      required:
+        - id
+        - status
+        - items
+      properties:
+        id:
+          type: string
+          example: cart-55
+        session_id:
+          type: string
+          example: sess-abc
+        status:
+          type: string
+          example: active
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemResponse'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CheckoutPreviewRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+        quantity:
+          type: integer
+          example: 2
+    CheckoutPreviewResponse:
+      type: object
+      required:
+        - subtotal
+        - total
+      properties:
+        subtotal:
+          type: integer
+          example: 5000
+        shipping_fee:
+          type: integer
+          example: 500
+        tax:
+          type: integer
+          example: 200
+        total:
+          type: integer
+          example: 5700
+    CreateCheckoutOrderRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+        - email
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+        quantity:
+          type: integer
+          example: 2
+        email:
+          type: string
+          example: customer@example.com
+    CheckoutOrderResponse:
+      type: object
+      required:
+        - id
+        - order_sn
+        - status
+        - total_amount
+      properties:
+        id:
+          type: string
+          example: ord-500
+        order_sn:
+          type: string
+          example: SN20260805001
+        status:
+          type: string
+          example: pending
+        total_amount:
+          type: integer
+          example: 5700
+        email:
+          type: string
+          example: customer@example.com
+        created_at:
+          type: string
+          format: date-time
+    PaymentParamsResponse:
+      type: object
+      required:
+        - pay_url
+      properties:
+        pay_url:
+          type: string
+          example: https://payment-gateway.example.com/pay
+        params:
+          type: object
+          additionalProperties:
+            type: string
+    OrderResponse:
+      type: object
+      required:
+        - id
+        - order_sn
+        - status
+        - total_amount
+      properties:
+        id:
+          type: string
+          example: ord-500
+        order_sn:
+          type: string
+          example: SN20260805001
+        status:
+          type: string
+          example: completed
+        total_amount:
+          type: integer
+          example: 5700
+        email:
+          type: string
+          example: customer@example.com
+        created_at:
+          type: string
+          format: date-time
+    OrderListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        total:
+          type: integer
+          example: 5
+    RefundRequestPayload:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          example: Wrong item delivered
+    RefundResponse:
+      type: object
+      required:
+        - id
+        - order_id
+        - reason
+        - status
+      properties:
+        id:
+          type: integer
+          example: 10
+        order_id:
+          type: string
+          example: ord-500
+        reason:
+          type: string
+          example: Wrong item delivered
+        status:
+          type: string
+          example: pending
+        created_at:
+          type: string
+          format: date-time
+    AccountProfileResponse:
+      type: object
+      required:
+        - id
+        - username
+        - email
+      properties:
+        id:
+          type: string
+          example: user-123
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          example: john@example.com
+        display_name:
+          type: string
+          example: John Doe
+        desktop_notifications_enabled:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+    UpdateAccountProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: john@example.com
+        display_name:
+          type: string
+          example: John Doe
+        desktop_notifications_enabled:
+          type: boolean
+          example: true
+    AdminDashboardStatsResponse:
+      type: object
+      required:
+        - total_users
+        - total_orders
+        - total_revenue
+        - total_products
+      properties:
+        total_users:
+          type: integer
+          example: 150
+        total_orders:
+          type: integer
+          example: 320
+        total_revenue:
+          type: integer
+          example: 150000
+        total_products:
+          type: integer
+          example: 45
+    AdminAuditLogResponse:
+      type: object
+      required:
+        - id
+        - action
+      properties:
+        id:
+          type: string
+          example: log-1001
+        user_id:
+          type: string
+          example: usr-1
+        action:
+          type: string
+          example: USER_LOCKED
+        resource:
+          type: string
+          example: usr-50
+        created_at:
+          type: string
+          format: date-time
+    AdminAuditLogListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminAuditLogResponse'
+        total:
+          type: integer
+          example: 100
+    MediaUploadResponse:
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          type: string
+          example: med-900
+        url:
+          type: string
+          example: https://cdn.example.com/uploads/file.png
+        filename:
+          type: string
+          example: file.png
+        created_at:
+          type: string
+          format: date-time
+    StaticPageResponse:
+      type: object
+      required:
+        - id
+        - slug
+        - title
+      properties:
+        id:
+          type: string
+          example: page-1
+        slug:
+          type: string
+          example: about-us
+        title:
+          type: string
+          example: About Us
+        content:
+          type: string
+          example: Welcome to Go-Grip shop!
+        created_at:
+          type: string
+          format: date-time
+    HomepageConfigResponse:
+      type: object
+      properties:
+        banner_url:
+          type: string
+          example: https://example.com/banner.png
+        featured_product_ids:
+          type: array
+          items:
+            type: string
+        meta_title:
+          type: string
+          example: Go-Grip Store
+    ImportItemPayload:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          example: product
+        data:
+          type: object
+          additionalProperties: true
+    ImportExecuteRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItemPayload'
+    ImportExecuteResponse:
+      type: object
+      required:
+        - imported
+        - failed_count
+      properties:
+        imported:
+          type: integer
+          example: 10
+        failed_count:
+          type: integer
+          example: 0
+    NotificationResponse:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: integer
+          example: 101
+        title:
+          type: string
+          example: Order Shipped
+        body:
+          type: string
+          example: Your order #100 has been dispatched.
+        is_read:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+    NotificationListResponse:
+      type: object
+      required:
+        - items
+        - total
+        - unread_count
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        total:
+          type: integer
+          example: 5
+        unread_count:
+          type: integer
+          example: 2
+    WishlistItemResponse:
+      type: object
+      required:
+        - product_id
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+        created_at:
+          type: string
+          format: date-time
+    WishlistResponse:
+      type: object
+      required:
+        - id
+        - user_id
+        - items
+      properties:
+        id:
+          type: string
+          example: wish-10
+        user_id:
+          type: string
+          example: usr-1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishlistItemResponse'
+    AddToWishlistRequest:
+      type: object
+      required:
+        - product_id
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+    SubmitLeadRequest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          example: jane@company.com
+        phone:
+          type: string
+          example: "+1234567890"
+        company:
+          type: string
+          example: Acme Corp
+        message:
+          type: string
+          example: Interested in enterprise plan
+    LeadResponse:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          example: lead-1
+        name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          example: jane@company.com
+        phone:
+          type: string
+          example: "+1234567890"
+        company:
+          type: string
+          example: Acme Corp
+        message:
+          type: string
+          example: Interested in enterprise plan
+        created_at:
+          type: string
+          format: date-time
+    LeadListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeadResponse'
+        total:
+          type: integer
+          example: 12
+    TokenPairResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+      properties:
+        accessToken:
+          type: string
+          example: jwt-access-token
+        refreshToken:
+          type: string
+          example: jwt-refresh-token
+        user:
+          $ref: '#/components/schemas/UserResponse'
+    ErrorDetail:
+      type: object
+      required:
+        - field
+        - issue
+      properties:
+        field:
+          type: string
+          example: email
+        issue:
+          type: string
+          example: must be a valid email address
+    ErrorPayload:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: INVALID_INPUT
+        message:
+          type: string
+          example: Data validation failed
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          oneOf:
+            - type: string
+              example: invalid request body
+            - $ref: '#/components/schemas/ErrorPayload'
+  responses:
+    BadRequestResponse:
+      description: Bad Request / Invalid Input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedResponse:
+      description: Unauthorized / Missing or Invalid Token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenResponse:
+      description: Forbidden / Insufficient Privileges
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundResponse:
+      description: Resource Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictResponse:
+      description: Resource State Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableEntityResponse:
+      description: Unprocessable Entity / Domain Business Rule Violation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequestsResponse:
+      description: Rate Limit Exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalErrorResponse:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
