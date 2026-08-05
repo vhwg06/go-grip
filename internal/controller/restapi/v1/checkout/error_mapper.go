@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 )
 
 // mapCheckoutError maps domain errors specific to Checkout capability
@@ -15,7 +16,7 @@ func mapCheckoutError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) {
+	if errors.Is(err, ordermodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "ORDER_NOT_FOUND",
@@ -24,7 +25,7 @@ func mapCheckoutError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrPaymentFailed) || errors.Is(err, entity.ErrPaymentInvalidSign) {
+	if errors.Is(err, ordermodule.ErrPaymentInvalidSign) || errors.Is(err, entity.ErrPaymentFailed) || errors.Is(err, entity.ErrPaymentInvalidSign) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "PAYMENT_FAILED",
@@ -33,7 +34,7 @@ func mapCheckoutError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, ordermodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

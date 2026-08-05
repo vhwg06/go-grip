@@ -25,7 +25,9 @@ import (
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/usecase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
@@ -40,11 +42,11 @@ type Server struct {
 	catalogUC   catalogmodule.CatalogUseCase
 	catalogBase catalogbase.UseCase
 	authUC      usermodule.AuthUseCase
-	checkoutUC  usecase.Checkout
-	ordersUC    usecase.Orders
+	checkoutUC  ordermodule.CheckoutUseCase
+	ordersUC    ordermodule.OrdersUseCase
 	profileUC   usermodule.ProfileUseCase
 	adminUC     usermodule.AdminUseCase
-	wishlistUC  usecase.Wishlist
+	wishlistUC  wishlistmodule.WishlistUseCase
 	notifyUC    usecase.NotificationCenter
 	mediaUC     mediamodule.MediaUseCase
 	homepageUC  usecase.Homepage
@@ -63,11 +65,11 @@ func NewServer(
 	catalogUC catalogmodule.CatalogUseCase,
 	catalogBase catalogbase.UseCase,
 	authUC usermodule.AuthUseCase,
-	checkoutUC usecase.Checkout,
-	ordersUC usecase.Orders,
+	checkoutUC ordermodule.CheckoutUseCase,
+	ordersUC ordermodule.OrdersUseCase,
 	profileUC usermodule.ProfileUseCase,
 	adminUC usermodule.AdminUseCase,
-	wishlistUC usecase.Wishlist,
+	wishlistUC wishlistmodule.WishlistUseCase,
 	notifyUC usecase.NotificationCenter,
 	mediaUC mediamodule.MediaUseCase,
 	homepageUC usecase.Homepage,

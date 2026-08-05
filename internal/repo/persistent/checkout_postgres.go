@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -21,13 +21,20 @@ func NewCheckoutRepo(pg *postgres.Postgres) *CheckoutRepo {
 	return &CheckoutRepo{Postgres: pg}
 }
 
-var _ repo.CheckoutRepository = (*CheckoutRepo)(nil)
+var _ ordermodule.CheckoutRepo = (*CheckoutRepo)(nil)
 
-func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor entity.Actor, order entity.Order) (entity.Order, error) {
-	orderModel := models.EntityToOrder(order)
-	orderModel.UserID = actor.UserID
-	orderModel.Username = actor.Username
-	orderModel.Status = string(entity.OrderStatusPending)
+func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor usermodule.Actor, order ordermodule.Order) (ordermodule.Order, error) {
+	orderModel := models.Order{
+		OrderID:     order.ID,
+		ProductID:   order.ProductID,
+		ProductName: order.ProductName,
+		Quantity:    order.Quantity,
+		Amount:      int64(order.Amount),
+		UserID:      actor.UserID,
+		Username:    actor.Username,
+		Email:       order.Email,
+		Status:      string(ordermodule.OrderStatusPending),
+	}
 	now := time.Now().UTC()
 	orderModel.CreatedAt = now
 	orderModel.UpdatedAt = now
@@ -55,7 +62,7 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 		}
 
 		if product.StockCount-product.LockedCount < order.Quantity {
-			return entity.ErrOutOfStock
+			return ordermodule.ErrOutOfStock
 		}
 
 		if err := tx.Model(&models.Product{}).
@@ -69,17 +76,17 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ent
 		}
 		return nil
 	}); err != nil {
-		return entity.Order{}, err
+		return ordermodule.Order{}, err
 	}
 
-	return models.OrderToEntity(orderModel), nil
+	return models.OrderToModule(orderModel), nil
 }
 
 func currentLockedCount(tx *gorm.DB, productID string) (int, error) {
 	var pendingOrders int
 	if err := tx.Model(&models.Order{}).
 		Where("product_id = ?", productID).
-		Where("status = ?", string(entity.OrderStatusPending)).
+		Where("status = ?", string(ordermodule.OrderStatusPending)).
 		Select("COALESCE(SUM(quantity), 0)").
 		Scan(&pendingOrders).Error; err != nil {
 		return 0, err
@@ -88,7 +95,7 @@ func currentLockedCount(tx *gorm.DB, productID string) (int, error) {
 	return pendingOrders, nil
 }
 
-func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment) error {
+func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment ordermodule.Payment) error {
 	processedAt := time.Time{}
 	if payment.ProcessedAt != nil {
 		processedAt = *payment.ProcessedAt
@@ -122,7 +129,7 @@ func (r *CheckoutRepo) AttachPayment(ctx context.Context, payment entity.Payment
 	return nil
 }
 
-func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error {
+func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, status ordermodule.OrderStatus) error {
 	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		var order models.Order
 		if err := tx.Where("order_id = ?", orderID).First(&order).Error; err != nil {
@@ -136,16 +143,16 @@ func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, st
 			return nil
 		}
 
-		currentStatus := entity.OrderStatus(order.Status)
+		currentStatus := ordermodule.OrderStatus(order.Status)
 		now := time.Now().UTC()
 		updates := map[string]any{
 			"status":     string(status),
 			"updated_at": now,
 		}
-		if status == entity.OrderStatusPaid {
+		if status == ordermodule.OrderStatusPaid {
 			updates["paid_at"] = now
 		}
-		if status == entity.OrderStatusDelivered {
+		if status == ordermodule.OrderStatusDelivered {
 			updates["delivered_at"] = now
 		}
 
@@ -154,8 +161,8 @@ func (r *CheckoutRepo) UpdateOrderStatus(ctx context.Context, orderID string, st
 		}
 
 		// Adjust stock count, locked count, and sold count
-		if status == entity.OrderStatusPaid || status == entity.OrderStatusDelivered {
-			if currentStatus == entity.OrderStatusPending {
+		if status == ordermodule.OrderStatusPaid || status == ordermodule.OrderStatusDelivered {
+			if currentStatus == ordermodule.OrderStatusPending {
 				if err := tx.Model(&models.Product{}).Where("id = ?", order.ProductID).
 					Updates(map[string]any{
 						"locked_count": gorm.Expr("locked_count - ?", order.Quantity),

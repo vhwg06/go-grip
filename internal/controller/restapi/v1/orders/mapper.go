@@ -2,11 +2,11 @@ package orders
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 )
 
-// toOrderResponse maps entity.Order to openapi.OrderResponse DTO.
-func toOrderResponse(o entity.Order) openapi.OrderResponse {
+// toOrderResponse maps ordermodule.Order to openapi.OrderResponse DTO.
+func toOrderResponse(o ordermodule.Order) openapi.OrderResponse {
 	totalInt := int(o.Amount)
 	statusStr := string(o.Status)
 	email := o.Email
@@ -21,8 +21,8 @@ func toOrderResponse(o entity.Order) openapi.OrderResponse {
 	}
 }
 
-// toOrderListResponse maps []entity.Order and total count to openapi.OrderListResponse DTO.
-func toOrderListResponse(orders []entity.Order, total int) openapi.OrderListResponse {
+// toOrderListResponse maps []ordermodule.Order and total count to openapi.OrderListResponse DTO.
+func toOrderListResponse(orders []ordermodule.Order, total int) openapi.OrderListResponse {
 	items := make([]openapi.OrderResponse, len(orders))
 	for i, o := range orders {
 		items[i] = toOrderResponse(o)
@@ -34,8 +34,8 @@ func toOrderListResponse(orders []entity.Order, total int) openapi.OrderListResp
 	}
 }
 
-// toRefundResponse maps entity.RefundRequest to openapi.RefundResponse DTO.
-func toRefundResponse(r entity.RefundRequest) openapi.RefundResponse {
+// toRefundResponse maps ordermodule.RefundRequest to openapi.RefundResponse DTO.
+func toRefundResponse(r ordermodule.RefundRequest) openapi.RefundResponse {
 	idInt := int(r.ID)
 	statusStr := string(r.Status)
 	return openapi.RefundResponse{

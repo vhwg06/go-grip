@@ -18,15 +18,14 @@ import (
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/repo/persistent"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	adminuc "github.com/evrone/go-clean-template/internal/usecase/admin"
-	"github.com/evrone/go-clean-template/internal/usecase/checkout"
 	"github.com/evrone/go-clean-template/internal/usecase/content"
 	"github.com/evrone/go-clean-template/internal/usecase/notification"
-	"github.com/evrone/go-clean-template/internal/usecase/orders"
-	"github.com/evrone/go-clean-template/internal/usecase/wishlist"
 	"github.com/evrone/go-clean-template/pkg/httpserver"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
@@ -49,12 +48,12 @@ type useCases struct {
 	catalog     catalogmodule.CatalogUseCase
 	catalogBase catalogbase.UseCase
 	auth        usermodule.AuthUseCase
-	checkout    *checkout.UseCase
-	orders      *orders.UseCase
+	checkout    ordermodule.CheckoutUseCase
+	orders      ordermodule.OrdersUseCase
 	profile     usermodule.ProfileUseCase
 	admin       usermodule.AdminUseCase
 	maintenance *adminuc.MaintenanceUseCase
-	wishlist    *wishlist.UseCase
+	wishlist    wishlistmodule.WishlistUseCase
 	notify      *notification.CenterUseCase
 	media       mediamodule.MediaUseCase
 	homepage    *content.HomepageUseCase
@@ -95,7 +94,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	epayVerifier := webapi.NewEpayVerifier(cfg.Payment.SecretKey)
 	adminNotifier := webapi.NewNoopAdminNotifier()
 
-	checkoutUC := checkout.New(gripCheckoutRepo, gripOrderRepo)
+	checkoutUC := ordermodule.NewCheckoutUseCase(gripCheckoutRepo, gripOrderRepo)
 	checkoutUC.SetPaymentVerifier(epayVerifier)
 
 	var mediaStorage mediamodule.MediaStorageProvider
@@ -122,11 +121,11 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		catalogBase: catalogBaseUseCase,
 		auth:        usermodule.NewAuthUseCase(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
 		checkout:    checkoutUC,
-		orders:      orders.New(gripOrderRepo),
+		orders:      ordermodule.NewOrdersUseCase(gripOrderRepo),
 		profile:     usermodule.NewProfileUseCase(profileRepo),
 		admin:       usermodule.NewAdminUseCase(adminRepo, adminNotifier, cfg.Admin.Users),
 		maintenance: adminuc.NewMaintenance(maintenanceRepo, 5*time.Minute),
-		wishlist:    wishlist.New(wishlistRepo, gripOrderRepo),
+		wishlist:    wishlistmodule.NewWishlistUseCase(wishlistRepo, gripOrderRepo),
 		notify:      notification.NewCenter(notificationRepo),
 		media: mediamodule.NewMediaUseCase(mediaRepo, mediaStorage, mediamodule.Config{
 			MaxBytes: cfg.Ecommerce.MediaMaxBytes,

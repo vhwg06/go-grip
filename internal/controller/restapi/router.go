@@ -16,7 +16,9 @@ import (
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/usecase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
@@ -52,7 +54,7 @@ const selfContainedDocsHTML = `<!DOCTYPE html>
 </html>`
 
 // NewRouter registers strict OpenAPI 3.0 routes and global middlewares.
-func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, catalog catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, auth usermodule.AuthUseCase, checkout usecase.Checkout, orders usecase.Orders, profile usermodule.ProfileUseCase, admin usermodule.AdminUseCase, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media mediamodule.MediaUseCase, homepage usecase.Homepage, cart cartmodule.CartUseCase, lead leadmodule.LeadUseCase, content usecase.Content, importer importermodule.ImporterUseCase, jwtManager *jwt.Manager, l logger.Interface) {
+func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, catalog catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, auth usermodule.AuthUseCase, checkout ordermodule.CheckoutUseCase, orders ordermodule.OrdersUseCase, profile usermodule.ProfileUseCase, admin usermodule.AdminUseCase, wishlist wishlistmodule.WishlistUseCase, notify usecase.NotificationCenter, media mediamodule.MediaUseCase, homepage usecase.Homepage, cart cartmodule.CartUseCase, lead leadmodule.LeadUseCase, content usecase.Content, importer importermodule.ImporterUseCase, jwtManager *jwt.Manager, l logger.Interface) {
 	// Options
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))

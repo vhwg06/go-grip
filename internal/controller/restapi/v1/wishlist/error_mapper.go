@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 )
 
 // mapWishlistError maps domain errors specific to Wishlist capability
@@ -15,7 +16,7 @@ func mapWishlistError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, wishlistmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "WISHLIST_ITEM_NOT_FOUND",
@@ -24,7 +25,7 @@ func mapWishlistError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrUnauthorized) {
+	if errors.Is(err, wishlistmodule.ErrUnauthorized) || errors.Is(err, entity.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",

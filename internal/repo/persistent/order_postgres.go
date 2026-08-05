@@ -128,3 +128,75 @@ func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund *ordermo
 		return nil
 	})
 }
+
+type LegacyOrderRepoAdapter struct {
+	Repo *GripOrderRepo
+}
+
+func NewLegacyOrderRepoAdapter(r *GripOrderRepo) *LegacyOrderRepoAdapter {
+	return &LegacyOrderRepoAdapter{Repo: r}
+}
+
+func (a *LegacyOrderRepoAdapter) ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error) {
+	if a.Repo == nil {
+		return nil, 0, nil
+	}
+	orders, total, err := a.Repo.ListOrdersByOwner(ctx, userID, email, pagination.Pagination(page))
+	if err != nil {
+		return nil, 0, err
+	}
+	res := make([]entity.Order, len(orders))
+	for i, o := range orders {
+		res[i] = entity.Order{
+			ID:          o.ID,
+			ProductID:   o.ProductID,
+			ProductName: o.ProductName,
+			Amount:      entity.Amount(o.Amount),
+			Status:      entity.OrderStatus(o.Status),
+		}
+	}
+	return res, total, nil
+}
+
+func (a *LegacyOrderRepoAdapter) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
+	if a.Repo == nil {
+		return entity.Order{}, entity.ErrOrderNotFound
+	}
+	o, err := a.Repo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return entity.Order{}, err
+	}
+	return entity.Order{
+		ID:          o.ID,
+		ProductID:   o.ProductID,
+		ProductName: o.ProductName,
+		Amount:      entity.Amount(o.Amount),
+		Status:      entity.OrderStatus(o.Status),
+		UserID:      o.UserID,
+	}, nil
+}
+
+func (a *LegacyOrderRepoAdapter) CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error {
+	if a.Repo == nil {
+		return nil
+	}
+	return a.Repo.CancelPendingOrder(ctx, usermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, orderID)
+}
+
+func (a *LegacyOrderRepoAdapter) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
+	if a.Repo == nil {
+		return nil
+	}
+	r := ordermodule.RefundRequest{
+		OrderID:  refund.OrderID,
+		UserID:   refund.UserID,
+		Username: refund.Username,
+		Reason:   refund.Reason,
+		Status:   ordermodule.RefundStatus(refund.Status),
+	}
+	if err := a.Repo.SubmitRefundRequest(ctx, &r); err != nil {
+		return err
+	}
+	refund.ID = r.ID
+	return nil
+}

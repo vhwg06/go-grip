@@ -2,12 +2,11 @@ package checkout
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 )
 
-// toCheckoutPreviewResponse maps usecase.AmountBreakdown to openapi.CheckoutPreviewResponse DTO.
-func toCheckoutPreviewResponse(b usecase.AmountBreakdown) openapi.CheckoutPreviewResponse {
+// toCheckoutPreviewResponse maps ordermodule.AmountBreakdown to openapi.CheckoutPreviewResponse DTO.
+func toCheckoutPreviewResponse(b ordermodule.AmountBreakdown) openapi.CheckoutPreviewResponse {
 	subtotalInt := int(b.Subtotal)
 	totalInt := int(b.FinalPrice)
 	zero := 0
@@ -20,8 +19,8 @@ func toCheckoutPreviewResponse(b usecase.AmountBreakdown) openapi.CheckoutPrevie
 	}
 }
 
-// toCheckoutOrderResponse maps entity.Order to openapi.CheckoutOrderResponse DTO.
-func toCheckoutOrderResponse(o entity.Order) openapi.CheckoutOrderResponse {
+// toCheckoutOrderResponse maps ordermodule.Order to openapi.CheckoutOrderResponse DTO.
+func toCheckoutOrderResponse(o ordermodule.Order) openapi.CheckoutOrderResponse {
 	totalInt := int(o.Amount)
 	statusStr := string(o.Status)
 	email := o.Email
@@ -36,8 +35,8 @@ func toCheckoutOrderResponse(o entity.Order) openapi.CheckoutOrderResponse {
 	}
 }
 
-// toPaymentParamsResponse maps usecase.PaymentParams to openapi.PaymentParamsResponse DTO.
-func toPaymentParamsResponse(p usecase.PaymentParams) openapi.PaymentParamsResponse {
+// toPaymentParamsResponse maps ordermodule.PaymentParams to openapi.PaymentParamsResponse DTO.
+func toPaymentParamsResponse(p ordermodule.PaymentParams) openapi.PaymentParamsResponse {
 	var paramsMap *map[string]string
 	if p.Fields != nil {
 		fieldsMap := make(map[string]string, len(p.Fields))

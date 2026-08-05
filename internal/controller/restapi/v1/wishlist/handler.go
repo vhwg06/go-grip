@@ -4,19 +4,20 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Wishlist capability.
 type Handler struct {
-	wishlistUC usecase.Wishlist
+	wishlistUC wishlistmodule.WishlistUseCase
 	logger     logger.Interface
 }
 
 // NewHandler constructs a new Wishlist vertical handler instance.
-func NewHandler(wishlistUC usecase.Wishlist, l logger.Interface) *Handler {
+func NewHandler(wishlistUC wishlistmodule.WishlistUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		wishlistUC: wishlistUC,
 		logger:     l,
@@ -25,8 +26,8 @@ func NewHandler(wishlistUC usecase.Wishlist, l logger.Interface) *Handler {
 
 // GetMyWishlist handles GET /wishlist
 func (h *Handler) GetMyWishlist(ctx context.Context, request openapi.GetMyWishlistRequestObject) (openapi.GetMyWishlistResponseObject, error) {
-	actor := entity.Actor{UserID: "usr-1"}
-	items, _, err := h.wishlistUC.List(ctx, entity.Pagination{Limit: 100})
+	actor := usermodule.Actor{UserID: "usr-1"}
+	items, _, err := h.wishlistUC.List(ctx, pagination.Pagination{Limit: 100})
 	if err != nil {
 		status, errResp := mapWishlistError(err)
 		switch status {
@@ -49,7 +50,7 @@ func (h *Handler) AddToWishlist(ctx context.Context, request openapi.AddToWishli
 		return openapi.AddToWishlist400JSONResponse{}, nil
 	}
 
-	actor := entity.Actor{UserID: "usr-1"}
+	actor := usermodule.Actor{UserID: "usr-1"}
 	item, err := h.wishlistUC.Create(ctx, actor, request.Body.ProductId, "")
 	if err != nil {
 		status, errResp := mapWishlistError(err)
@@ -65,14 +66,14 @@ func (h *Handler) AddToWishlist(ctx context.Context, request openapi.AddToWishli
 		}
 	}
 
-	wishlistDTO := toWishlistResponse(actor.UserID, []entity.WishlistItem{item})
+	wishlistDTO := toWishlistResponse(actor.UserID, []wishlistmodule.WishlistItem{item})
 	return openapi.AddToWishlist200JSONResponse(wishlistDTO), nil
 }
 
 // RemoveFromWishlist handles DELETE /wishlist/items/{productId}
 func (h *Handler) RemoveFromWishlist(ctx context.Context, request openapi.RemoveFromWishlistRequestObject) (openapi.RemoveFromWishlistResponseObject, error) {
-	actor := entity.Actor{UserID: "usr-1"}
-	items, _, err := h.wishlistUC.List(ctx, entity.Pagination{Limit: 100})
+	actor := usermodule.Actor{UserID: "usr-1"}
+	items, _, err := h.wishlistUC.List(ctx, pagination.Pagination{Limit: 100})
 	if err != nil {
 		status, errResp := mapWishlistError(err)
 		switch status {

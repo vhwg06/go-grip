@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
 )
@@ -20,9 +20,9 @@ func NewWishlistRepo(pg *postgres.Postgres) *WishlistRepo {
 	return &WishlistRepo{Postgres: pg}
 }
 
-var _ repo.WishlistRepository = (*WishlistRepo)(nil)
+var _ wishlistmodule.WishlistRepo = (*WishlistRepo)(nil)
 
-func (r *WishlistRepo) ListWishlistItems(ctx context.Context, page entity.Pagination) ([]entity.WishlistItem, int, error) {
+func (r *WishlistRepo) ListWishlistItems(ctx context.Context, page pagination.Pagination) ([]wishlistmodule.WishlistItem, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.WishlistItem{})
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -34,9 +34,9 @@ func (r *WishlistRepo) ListWishlistItems(ctx context.Context, page entity.Pagina
 		return nil, 0, fmt.Errorf("WishlistRepo.ListWishlistItems(find): %w", err)
 	}
 
-	items := make([]entity.WishlistItem, 0, len(rows))
+	items := make([]wishlistmodule.WishlistItem, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, entity.WishlistItem{
+		items = append(items, wishlistmodule.WishlistItem{
 			ID:          row.ID,
 			Title:       row.Title,
 			Description: row.Description,
@@ -50,7 +50,7 @@ func (r *WishlistRepo) ListWishlistItems(ctx context.Context, page entity.Pagina
 	return items, int(total), nil
 }
 
-func (r *WishlistRepo) StoreWishlistItem(ctx context.Context, item entity.WishlistItem) (entity.WishlistItem, error) {
+func (r *WishlistRepo) StoreWishlistItem(ctx context.Context, item wishlistmodule.WishlistItem) (wishlistmodule.WishlistItem, error) {
 	model := models.WishlistItem{
 		Title:       item.Title,
 		Description: item.Description,
@@ -61,7 +61,7 @@ func (r *WishlistRepo) StoreWishlistItem(ctx context.Context, item entity.Wishli
 		UpdatedAt:   time.Now().UTC(),
 	}
 	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
-		return entity.WishlistItem{}, fmt.Errorf("WishlistRepo.StoreWishlistItem: %w", err)
+		return wishlistmodule.WishlistItem{}, fmt.Errorf("WishlistRepo.StoreWishlistItem: %w", err)
 	}
 
 	item.ID = model.ID
@@ -70,7 +70,7 @@ func (r *WishlistRepo) StoreWishlistItem(ctx context.Context, item entity.Wishli
 	return item, nil
 }
 
-func (r *WishlistRepo) UpdateWishlistItem(ctx context.Context, item entity.WishlistItem) (entity.WishlistItem, error) {
+func (r *WishlistRepo) UpdateWishlistItem(ctx context.Context, item wishlistmodule.WishlistItem) (wishlistmodule.WishlistItem, error) {
 	if err := r.Gorm.WithContext(ctx).
 		Model(&models.WishlistItem{}).
 		Where("id = ?", item.ID).
@@ -79,7 +79,7 @@ func (r *WishlistRepo) UpdateWishlistItem(ctx context.Context, item entity.Wishl
 			"description": item.Description,
 			"updated_at":  time.Now().UTC(),
 		}).Error; err != nil {
-		return entity.WishlistItem{}, fmt.Errorf("WishlistRepo.UpdateWishlistItem: %w", err)
+		return wishlistmodule.WishlistItem{}, fmt.Errorf("WishlistRepo.UpdateWishlistItem: %w", err)
 	}
 	return item, nil
 }
@@ -126,7 +126,7 @@ func (r *WishlistRepo) ToggleWishlistVote(ctx context.Context, itemID int64, use
 	return added, nil
 }
 
-func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (entity.Review, error) {
+func (r *WishlistRepo) StoreReview(ctx context.Context, review wishlistmodule.Review) (wishlistmodule.Review, error) {
 	model := models.Review{
 		ProductID: review.ProductID,
 		OrderID:   review.OrderID,
@@ -134,7 +134,7 @@ func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (e
 		Username:  review.Username,
 		Rating:    review.Rating,
 		Comment:   review.Comment,
-		Status:    string(entity.ReviewStatusPending),
+		Status:    string(wishlistmodule.ReviewStatusPending),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	}
@@ -167,29 +167,29 @@ func (r *WishlistRepo) StoreReview(ctx context.Context, review entity.Review) (e
 		return nil
 	})
 	if err != nil {
-		return entity.Review{}, err
+		return wishlistmodule.Review{}, err
 	}
 
 	review.ID = model.ID
 	review.CreatedAt = model.CreatedAt
 	review.UpdatedAt = model.UpdatedAt
-	review.Status = entity.ReviewStatus(model.Status)
+	review.Status = wishlistmodule.ReviewStatus(model.Status)
 	return review, nil
 }
 
-func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]entity.Review, error) {
+func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]wishlistmodule.Review, error) {
 	var rows []models.Review
 	if err := r.Gorm.WithContext(ctx).
 		Where("product_id = ?", productID).
-		Where("status IN ?", []string{string(entity.ReviewStatusApproved), string(entity.ReviewStatusFeatured)}).
+		Where("status IN ?", []string{string(wishlistmodule.ReviewStatusApproved), string(wishlistmodule.ReviewStatusFeatured)}).
 		Order("CASE WHEN status = 'FEATURED' THEN 0 ELSE 1 END, created_at DESC").
 		Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("WishlistRepo.ListReviews: %w", err)
 	}
 
-	reviews := make([]entity.Review, 0, len(rows))
+	reviews := make([]wishlistmodule.Review, 0, len(rows))
 	for _, row := range rows {
-		reviews = append(reviews, entity.Review{
+		reviews = append(reviews, wishlistmodule.Review{
 			ID:        row.ID,
 			ProductID: row.ProductID,
 			OrderID:   row.OrderID,
@@ -197,7 +197,7 @@ func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]ent
 			Username:  row.Username,
 			Rating:    row.Rating,
 			Comment:   row.Comment,
-			Status:    entity.ReviewStatus(row.Status),
+			Status:    wishlistmodule.ReviewStatus(row.Status),
 			CreatedAt: row.CreatedAt,
 			UpdatedAt: row.UpdatedAt,
 		})

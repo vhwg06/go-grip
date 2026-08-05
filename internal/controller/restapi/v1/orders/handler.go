@@ -4,32 +4,33 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Orders capability.
 type Handler struct {
-	ordersUC usecase.Orders
+	ordersUC ordermodule.OrdersUseCase
 	logger   logger.Interface
 }
 
 // NewHandler constructs a new Orders vertical handler instance.
-func NewHandler(ordersUC usecase.Orders, l logger.Interface) *Handler {
+func NewHandler(ordersUC ordermodule.OrdersUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		ordersUC: ordersUC,
 		logger:   l,
 	}
 }
 
-func getActor(ctx context.Context) entity.Actor {
+func getActor(ctx context.Context) usermodule.Actor {
 	if val := ctx.Value("actor"); val != nil {
-		if a, ok := val.(entity.Actor); ok {
+		if a, ok := val.(usermodule.Actor); ok {
 			return a
 		}
 	}
-	return entity.Actor{}
+	return usermodule.Actor{}
 }
 
 // ListOrders handles GET /orders
@@ -44,12 +45,13 @@ func (h *Handler) ListOrders(ctx context.Context, request openapi.ListOrdersRequ
 		offset = *request.Params.Offset
 	}
 
-	page := entity.Pagination{
+	page := pagination.Pagination{
 		Limit:  limit,
 		Offset: offset,
 	}
+	email := ""
 
-	orders, total, err := h.ordersUC.List(ctx, actor, "", page)
+	orderList, total, err := h.ordersUC.List(ctx, actor, email, page)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {
@@ -62,14 +64,14 @@ func (h *Handler) ListOrders(ctx context.Context, request openapi.ListOrdersRequ
 		}
 	}
 
-	listDTO := toOrderListResponse(orders, total)
-	return openapi.ListOrders200JSONResponse(listDTO), nil
+	res := toOrderListResponse(orderList, total)
+	return openapi.ListOrders200JSONResponse(res), nil
 }
 
 // GetOrderByID handles GET /orders/{id}
 func (h *Handler) GetOrderByID(ctx context.Context, request openapi.GetOrderByIDRequestObject) (openapi.GetOrderByIDResponseObject, error) {
 	actor := getActor(ctx)
-	order, err := h.ordersUC.Get(ctx, actor, request.Id)
+	orderEntity, err := h.ordersUC.Get(ctx, actor, request.Id)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {
@@ -86,18 +88,19 @@ func (h *Handler) GetOrderByID(ctx context.Context, request openapi.GetOrderByID
 		}
 	}
 
-	orderDTO := toOrderResponse(order)
-	return openapi.GetOrderByID200JSONResponse(orderDTO), nil
+	res := toOrderResponse(orderEntity)
+	return openapi.GetOrderByID200JSONResponse(res), nil
 }
 
 // RequestOrderRefund handles POST /orders/{id}/refund
 func (h *Handler) RequestOrderRefund(ctx context.Context, request openapi.RequestOrderRefundRequestObject) (openapi.RequestOrderRefundResponseObject, error) {
-	if request.Body == nil {
-		return openapi.RequestOrderRefund400JSONResponse{}, nil
+	actor := getActor(ctx)
+	reason := ""
+	if request.Body != nil {
+		reason = request.Body.Reason
 	}
 
-	actor := getActor(ctx)
-	rf, err := h.ordersUC.RequestRefund(ctx, actor, request.Id, request.Body.Reason)
+	refundEntity, err := h.ordersUC.RequestRefund(ctx, actor, request.Id, reason)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {
@@ -112,14 +115,12 @@ func (h *Handler) RequestOrderRefund(ctx context.Context, request openapi.Reques
 				NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp),
 			}, nil
 		case 422:
-			return openapi.RequestOrderRefund422JSONResponse{
-				UnprocessableEntityResponseJSONResponse: openapi.UnprocessableEntityResponseJSONResponse(errResp),
-			}, nil
+			return openapi.RequestOrderRefund422JSONResponse{}, nil
 		default:
 			return openapi.RequestOrderRefund500JSONResponse{}, nil
 		}
 	}
 
-	rfDTO := toRefundResponse(rf)
-	return openapi.RequestOrderRefund200JSONResponse(rfDTO), nil
+	res := toRefundResponse(refundEntity)
+	return openapi.RequestOrderRefund200JSONResponse(res), nil
 }
