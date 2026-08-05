@@ -816,11 +816,38 @@ paths:
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /checkout/orders/{orderId}/payment-params:
-    post:
+    get:
       tags:
         - checkout
       summary: Get payment initialization parameters
       operationId: getPaymentParams
+      security:
+        - bearerAuth:
+            - "checkout:read"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment parameters generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentParamsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - checkout
+      summary: Get payment initialization parameters
+      operationId: postPaymentParams
       security:
         - bearerAuth:
             - "checkout:write"
@@ -841,6 +868,20 @@ paths:
           $ref: '#/components/responses/UnauthorizedResponse'
         '404':
           $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/payment-orders:
+    post:
+      tags:
+        - checkout
+      summary: Create payment order
+      operationId: createPaymentOrder
+      security:
+        - bearerAuth:
+            - "checkout:write"
+      responses:
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /checkout/payment-notify:

@@ -108,4 +108,6 @@ func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, cat
 	openapi.RegisterHandlersWithOptions(app, strictHandler, openapi.FiberServerOptions{
 		BaseURL: "/v1",
 	})
+
+	v1.RegisterAdminCatalogRoutes(app, catalogBase)
 }

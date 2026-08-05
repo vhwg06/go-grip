@@ -100,11 +100,14 @@ func (h *Handler) PreviewCheckout(ctx context.Context, request openapi.PreviewCh
 
 // CreateCheckoutOrder handles POST /checkout/orders
 func (h *Handler) CreateCheckoutOrder(ctx context.Context, request openapi.CreateCheckoutOrderRequestObject) (openapi.CreateCheckoutOrderResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.CreateCheckoutOrder401JSONResponse{}, nil
+	}
 	if request.Body == nil {
 		return openapi.CreateCheckoutOrder400JSONResponse{}, nil
 	}
 
-	actor := getActor(ctx)
 	productID := request.Body.ProductId
 	quantity := 1
 	if request.Body.Quantity > 0 {
@@ -134,6 +137,10 @@ func (h *Handler) CreateCheckoutOrder(ctx context.Context, request openapi.Creat
 // GetPaymentParams handles GET /checkout/orders/{orderId}/payment-params
 func (h *Handler) GetPaymentParams(ctx context.Context, request openapi.GetPaymentParamsRequestObject) (openapi.GetPaymentParamsResponseObject, error) {
 	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.GetPaymentParams401JSONResponse{}, nil
+	}
+
 	params, err := h.checkoutUC.PaymentParams(ctx, actor, request.OrderId)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
@@ -153,6 +160,44 @@ func (h *Handler) GetPaymentParams(ctx context.Context, request openapi.GetPayme
 
 	res := toPaymentParamsResponse(params)
 	return openapi.GetPaymentParams200JSONResponse(res), nil
+}
+
+// PostPaymentParams handles POST /checkout/orders/{orderId}/payment-params
+func (h *Handler) PostPaymentParams(ctx context.Context, request openapi.PostPaymentParamsRequestObject) (openapi.PostPaymentParamsResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.PostPaymentParams401JSONResponse{}, nil
+	}
+
+	params, err := h.checkoutUC.PaymentParams(ctx, actor, request.OrderId)
+	if err != nil {
+		status, errResp := mapCheckoutError(err)
+		switch status {
+		case 401:
+			return openapi.PostPaymentParams401JSONResponse{
+				UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp),
+			}, nil
+		case 404:
+			return openapi.PostPaymentParams404JSONResponse{
+				NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp),
+			}, nil
+		default:
+			return openapi.PostPaymentParams500JSONResponse{}, nil
+		}
+	}
+
+	res := toPaymentParamsResponse(params)
+	return openapi.PostPaymentParams200JSONResponse(res), nil
+}
+
+// CreatePaymentOrder handles POST /checkout/payment-orders
+func (h *Handler) CreatePaymentOrder(ctx context.Context, request openapi.CreatePaymentOrderRequestObject) (openapi.CreatePaymentOrderResponseObject, error) {
+	_ = request
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.CreatePaymentOrder401JSONResponse{}, nil
+	}
+	return openapi.CreatePaymentOrder500JSONResponse{}, nil
 }
 
 // PaymentNotify handles POST /checkout/notify
@@ -175,6 +220,11 @@ func (h *Handler) PaymentNotify(ctx context.Context, request openapi.PaymentNoti
 
 // GetPaymentStatus handles GET /checkout/orders/{orderId}/status
 func (h *Handler) GetPaymentStatus(ctx context.Context, request openapi.GetPaymentStatusRequestObject) (openapi.GetPaymentStatusResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.GetPaymentStatus401JSONResponse{}, nil
+	}
+
 	orderEntity, err := h.checkoutUC.PaymentStatus(ctx, request.OrderId)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)

@@ -276,6 +276,14 @@ func (s *Server) GetPaymentParams(ctx context.Context, request openapi.GetPaymen
 	return s.checkoutHandler().GetPaymentParams(ctx, request)
 }
 
+func (s *Server) PostPaymentParams(ctx context.Context, request openapi.PostPaymentParamsRequestObject) (openapi.PostPaymentParamsResponseObject, error) {
+	return s.checkoutHandler().PostPaymentParams(ctx, request)
+}
+
+func (s *Server) CreatePaymentOrder(ctx context.Context, request openapi.CreatePaymentOrderRequestObject) (openapi.CreatePaymentOrderResponseObject, error) {
+	return s.checkoutHandler().CreatePaymentOrder(ctx, request)
+}
+
 func (s *Server) PaymentNotify(ctx context.Context, request openapi.PaymentNotifyRequestObject) (openapi.PaymentNotifyResponseObject, error) {
 	return s.checkoutHandler().PaymentNotify(ctx, request)
 }
