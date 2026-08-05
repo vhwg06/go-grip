@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"github.com/google/uuid"
@@ -23,42 +22,52 @@ func NewAuthRepo(pg *postgres.Postgres) *AuthRepo {
 	return &AuthRepo{Postgres: pg}
 }
 
-var _ repo.AuthRepository = (*AuthRepo)(nil)
-
-func (r *AuthRepo) GetUserByID(ctx context.Context, userID string) (entity.User, error) {
+func (r *AuthRepo) GetUserByID(ctx context.Context, userID string) (usermodule.User, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return usermodule.User{}, usermodule.ErrNotFound
+	}
 	var row models.User
 	if err := r.Gorm.WithContext(ctx).Where("id = ?", userID).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.User{}, entity.ErrUserNotFound
+			return usermodule.User{}, usermodule.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("AuthRepo.GetUserByID: %w", err)
+		return usermodule.User{}, fmt.Errorf("AuthRepo.GetUserByID: %w", err)
 	}
-	return models.UserToEntity(row), nil
+	return models.UserToModule(row), nil
 }
 
-func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (entity.User, error) {
+func (r *AuthRepo) GetUserByEmail(ctx context.Context, email string) (usermodule.User, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return usermodule.User{}, usermodule.ErrNotFound
+	}
 	var row models.User
 	if err := r.Gorm.WithContext(ctx).Where("LOWER(email) = LOWER(?)", email).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.User{}, entity.ErrUserNotFound
+			return usermodule.User{}, usermodule.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("AuthRepo.GetUserByEmail: %w", err)
+		return usermodule.User{}, fmt.Errorf("AuthRepo.GetUserByEmail: %w", err)
 	}
-	return models.UserToEntity(row), nil
+	return models.UserToModule(row), nil
 }
 
-func (r *AuthRepo) GetUserByUsername(ctx context.Context, username string) (entity.User, error) {
+func (r *AuthRepo) GetUserByUsername(ctx context.Context, username string) (usermodule.User, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return usermodule.User{}, usermodule.ErrNotFound
+	}
 	var row models.User
 	if err := r.Gorm.WithContext(ctx).Where("LOWER(username) = LOWER(?)", username).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.User{}, entity.ErrUserNotFound
+			return usermodule.User{}, usermodule.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("AuthRepo.GetUserByUsername: %w", err)
+		return usermodule.User{}, fmt.Errorf("AuthRepo.GetUserByUsername: %w", err)
 	}
-	return models.UserToEntity(row), nil
+	return models.UserToModule(row), nil
 }
 
-func (r *AuthRepo) UpsertUser(ctx context.Context, user entity.User) (entity.User, error) {
+func (r *AuthRepo) UpsertUser(ctx context.Context, user usermodule.User) (usermodule.User, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return user, nil
+	}
 	now := time.Now().UTC()
 
 	var resolved models.User
@@ -87,9 +96,9 @@ func (r *AuthRepo) UpsertUser(ctx context.Context, user entity.User) (entity.Use
 			user.ID = uuid.NewString()
 		}
 		if user.Status == "" {
-			user.Status = entity.UserStatusActive
+			user.Status = usermodule.UserStatusActive
 		}
-		model := models.EntityToUser(user)
+		model := models.ModuleToUser(user)
 		model.Status = string(user.Status)
 		model.CreatedAt = now
 		model.UpdatedAt = now
@@ -106,13 +115,13 @@ func (r *AuthRepo) UpsertUser(ctx context.Context, user entity.User) (entity.Use
 		return nil
 	})
 	if err != nil {
-		return entity.User{}, err
+		return usermodule.User{}, err
 	}
 
-	return models.UserToEntity(resolved), nil
+	return models.UserToModule(resolved), nil
 }
 
-func (r *AuthRepo) updateExistingUser(tx *gorm.DB, existing *models.User, incoming entity.User, now time.Time) error {
+func (r *AuthRepo) updateExistingUser(tx *gorm.DB, existing *models.User, incoming usermodule.User, now time.Time) error {
 	if incoming.Provider != "" {
 		existing.Provider = incoming.Provider
 	}
@@ -134,7 +143,10 @@ func (r *AuthRepo) updateExistingUser(tx *gorm.DB, existing *models.User, incomi
 	return nil
 }
 
-func (r *AuthRepo) StoreRefreshSession(ctx context.Context, session entity.RefreshSession) error {
+func (r *AuthRepo) StoreRefreshSession(ctx context.Context, session usermodule.RefreshSession) error {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil
+	}
 	model := models.RefreshSession{
 		ID:        session.ID,
 		UserID:    session.UserID,
@@ -152,7 +164,6 @@ func (r *AuthRepo) StoreRefreshSession(ctx context.Context, session entity.Refre
 
 	// Also update last_login_at for the user
 	if err := r.Gorm.WithContext(ctx).Model(&models.User{}).Where("id = ?", session.UserID).Update("last_login_at", time.Now().UTC()).Error; err != nil {
-		// Log error but don't fail the request
 		fmt.Printf("AuthRepo.StoreRefreshSession: failed to update last_login_at: %v\n", err)
 	}
 
@@ -160,6 +171,9 @@ func (r *AuthRepo) StoreRefreshSession(ctx context.Context, session entity.Refre
 }
 
 func (r *AuthRepo) RevokeRefreshSession(ctx context.Context, tokenID string) error {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil
+	}
 	err := r.Gorm.WithContext(ctx).
 		Model(&models.RefreshSession{}).
 		Where("token_id = ?", tokenID).
@@ -171,16 +185,19 @@ func (r *AuthRepo) RevokeRefreshSession(ctx context.Context, tokenID string) err
 	return nil
 }
 
-func (r *AuthRepo) GetRefreshSession(ctx context.Context, tokenID string) (entity.RefreshSession, error) {
+func (r *AuthRepo) GetRefreshSession(ctx context.Context, tokenID string) (usermodule.RefreshSession, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return usermodule.RefreshSession{}, usermodule.ErrUnauthorized
+	}
 	var model models.RefreshSession
 	if err := r.Gorm.WithContext(ctx).Where("token_id = ?", tokenID).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.RefreshSession{}, entity.ErrUnauthorized
+			return usermodule.RefreshSession{}, usermodule.ErrUnauthorized
 		}
-		return entity.RefreshSession{}, fmt.Errorf("AuthRepo.GetRefreshSession: %w", err)
+		return usermodule.RefreshSession{}, fmt.Errorf("AuthRepo.GetRefreshSession: %w", err)
 	}
 
-	return entity.RefreshSession{
+	return usermodule.RefreshSession{
 		ID:        model.ID,
 		UserID:    model.UserID,
 		TokenID:   model.TokenID,

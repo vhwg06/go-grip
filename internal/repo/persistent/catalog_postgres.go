@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
@@ -18,12 +18,13 @@ func NewGripCatalogRepo(pg *postgres.Postgres) *GripCatalogRepo {
 	return &GripCatalogRepo{Postgres: pg}
 }
 
-var _ repo.CatalogRepository = (*GripCatalogRepo)(nil)
-
-func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor entity.Actor, filter repo.ProductFilter) ([]entity.Product, int, error) {
-	threshold := actor.TrustLevel
-	if threshold < 0 {
-		threshold = -1
+func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor usermodule.Actor, filter catalogmodule.ProductRepoFilter) ([]catalogmodule.Product, int, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil, 0, nil
+	}
+	threshold := 0
+	if actor.IsAdmin {
+		threshold = 100
 	}
 
 	query := r.Gorm.WithContext(ctx).Model(&models.Product{}).
@@ -76,18 +77,21 @@ func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor entity.
 		return nil, 0, fmt.Errorf("GripCatalogRepo.ListVisibleProducts: find: %w", err)
 	}
 
-	products := make([]entity.Product, 0, len(rows))
+	products := make([]catalogmodule.Product, 0, len(rows))
 	for _, row := range rows {
-		products = append(products, models.ProductToEntity(row))
+		products = append(products, models.ProductToModule(row))
 	}
 
 	return products, int(total), nil
 }
 
-func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor entity.Actor, productID string) (entity.Product, error) {
-	threshold := actor.TrustLevel
-	if threshold < 0 {
-		threshold = -1
+func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor usermodule.Actor, productID string) (catalogmodule.Product, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return catalogmodule.Product{}, catalogmodule.ErrNotFound
+	}
+	threshold := 0
+	if actor.IsAdmin {
+		threshold = 100
 	}
 
 	var row models.Product
@@ -96,33 +100,36 @@ func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor entity.Ac
 		Where("is_active = ?", true).
 		Where("visibility_level <= ?", threshold).
 		First(&row).Error; err != nil {
-		return entity.Product{}, fmt.Errorf("GripCatalogRepo.GetVisibleProduct: %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("GripCatalogRepo.GetVisibleProduct: %w", err)
 	}
 
-	entityProduct := models.ProductToEntity(row)
+	prod := models.ProductToModule(row)
 
 	var detailRows []models.ProductDetail
 	if err := r.Gorm.WithContext(ctx).
 		Where("product_id = ?", productID).
 		Order("sort_order ASC, id ASC").
 		Find(&detailRows).Error; err == nil {
-		entityProduct.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+		prod.Specs = make([]catalogmodule.ProductSpecItem, 0, len(detailRows))
 		for _, detail := range detailRows {
 			switch detail.Key {
 			case "sku":
-				entityProduct.SKU = detail.Value
+				prod.SKU = detail.Value
 			case "brand":
-				entityProduct.Brand = detail.Value
+				prod.Brand = detail.Value
 			default:
-				entityProduct.Specs = append(entityProduct.Specs, models.DetailToEntity(detail))
+				prod.Specs = append(prod.Specs, catalogmodule.ProductSpecItem{Key: detail.Key, Value: detail.Value})
 			}
 		}
 	}
 
-	return entityProduct, nil
+	return prod, nil
 }
 
-func (r *GripCatalogRepo) ListCategories(ctx context.Context) ([]entity.Category, error) {
+func (r *GripCatalogRepo) ListCategories(ctx context.Context) ([]catalogmodule.Category, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil, nil
+	}
 	var rows []models.Category
 	if err := r.Gorm.WithContext(ctx).
 		Order("sort_order ASC, name ASC").
@@ -130,15 +137,18 @@ func (r *GripCatalogRepo) ListCategories(ctx context.Context) ([]entity.Category
 		return nil, fmt.Errorf("GripCatalogRepo.ListCategories: %w", err)
 	}
 
-	categories := make([]entity.Category, 0, len(rows))
+	categories := make([]catalogmodule.Category, 0, len(rows))
 	for _, row := range rows {
-		categories = append(categories, models.CategoryToEntity(row))
+		categories = append(categories, models.CategoryToModule(row))
 	}
 
 	return categories, nil
 }
 
-func (r *GripCatalogRepo) ListSettings(ctx context.Context) ([]entity.Setting, error) {
+func (r *GripCatalogRepo) ListSettings(ctx context.Context) ([]catalogmodule.Setting, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil, nil
+	}
 	var rows []models.Setting
 	if err := r.Gorm.WithContext(ctx).
 		Order("key ASC").
@@ -146,21 +156,24 @@ func (r *GripCatalogRepo) ListSettings(ctx context.Context) ([]entity.Setting, e
 		return nil, fmt.Errorf("GripCatalogRepo.ListSettings: %w", err)
 	}
 
-	settings := make([]entity.Setting, 0, len(rows))
+	settings := make([]catalogmodule.Setting, 0, len(rows))
 	for _, row := range rows {
-		settings = append(settings, models.SettingToEntity(row))
+		settings = append(settings, models.SettingToModule(row))
 	}
 
 	return settings, nil
 }
 
-func (r *GripCatalogRepo) GetSetting(ctx context.Context, key string) (entity.Setting, error) {
+func (r *GripCatalogRepo) GetSetting(ctx context.Context, key string) (catalogmodule.Setting, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return catalogmodule.Setting{}, catalogmodule.ErrNotFound
+	}
 	var row models.Setting
 	if err := r.Gorm.WithContext(ctx).
 		Where("key = ?", key).
 		First(&row).Error; err != nil {
-		return entity.Setting{}, fmt.Errorf("GripCatalogRepo.GetSetting: %w", err)
+		return catalogmodule.Setting{}, fmt.Errorf("GripCatalogRepo.GetSetting: %w", err)
 	}
 
-	return models.SettingToEntity(row), nil
+	return models.SettingToModule(row), nil
 }

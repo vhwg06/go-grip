@@ -2,11 +2,11 @@ package catalog
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 )
 
-// toProductResponse maps entity.Product to openapi.ProductResponse.
-func toProductResponse(p entity.Product) openapi.ProductResponse {
+// toProductResponse maps catalogmodule.Product to openapi.ProductResponse.
+func toProductResponse(p catalogmodule.Product) openapi.ProductResponse {
 	priceInt := int(p.Price)
 	stock := p.StockCount
 	desc := p.Description
@@ -30,8 +30,8 @@ func toProductResponse(p entity.Product) openapi.ProductResponse {
 	}
 }
 
-// toProductListResponse maps []entity.Product and total count to openapi.ProductListResponse.
-func toProductListResponse(products []entity.Product, total int) openapi.ProductListResponse {
+// toProductListResponse maps []catalogmodule.Product and total count to openapi.ProductListResponse.
+func toProductListResponse(products []catalogmodule.Product, total int) openapi.ProductListResponse {
 	items := make([]openapi.ProductResponse, len(products))
 	for i, p := range products {
 		items[i] = toProductResponse(p)
@@ -42,8 +42,8 @@ func toProductListResponse(products []entity.Product, total int) openapi.Product
 	}
 }
 
-// toCategoryResponse maps entity.Category to openapi.CategoryResponse.
-func toCategoryResponse(c entity.Category) openapi.CategoryResponse {
+// toCategoryResponse maps catalogmodule.Category to openapi.CategoryResponse.
+func toCategoryResponse(c catalogmodule.Category) openapi.CategoryResponse {
 	slug := c.Name
 	return openapi.CategoryResponse{
 		Id:   c.ID,
@@ -52,8 +52,8 @@ func toCategoryResponse(c entity.Category) openapi.CategoryResponse {
 	}
 }
 
-// toCategoryListResponse maps []entity.Category to []openapi.CategoryResponse.
-func toCategoryListResponse(categories []entity.Category) []openapi.CategoryResponse {
+// toCategoryListResponse maps []catalogmodule.Category to []openapi.CategoryResponse.
+func toCategoryListResponse(categories []catalogmodule.Category) []openapi.CategoryResponse {
 	res := make([]openapi.CategoryResponse, len(categories))
 	for i, c := range categories {
 		res[i] = toCategoryResponse(c)
@@ -61,8 +61,8 @@ func toCategoryListResponse(categories []entity.Category) []openapi.CategoryResp
 	return res
 }
 
-// toTagResponse maps entity.Tag to openapi.TagResponse.
-func toTagResponse(t entity.Tag) openapi.TagResponse {
+// toTagResponse maps catalogmodule.Tag to openapi.TagResponse.
+func toTagResponse(t catalogmodule.Tag) openapi.TagResponse {
 	slug := t.Name
 	return openapi.TagResponse{
 		Id:   t.ID,
@@ -71,8 +71,8 @@ func toTagResponse(t entity.Tag) openapi.TagResponse {
 	}
 }
 
-// toTagListResponse maps []entity.Tag to []openapi.TagResponse.
-func toTagListResponse(tags []entity.Tag) []openapi.TagResponse {
+// toTagListResponse maps []catalogmodule.Tag to []openapi.TagResponse.
+func toTagListResponse(tags []catalogmodule.Tag) []openapi.TagResponse {
 	res := make([]openapi.TagResponse, len(tags))
 	for i, t := range tags {
 		res[i] = toTagResponse(t)

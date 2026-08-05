@@ -11,23 +11,21 @@ import (
 
 	"github.com/evrone/go-clean-template/config"
 	"github.com/evrone/go-clean-template/internal/controller/restapi"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
+	"github.com/evrone/go-clean-template/internal/entity"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
-	"github.com/evrone/go-clean-template/internal/usecase"
 	adminuc "github.com/evrone/go-clean-template/internal/usecase/admin"
-	"github.com/evrone/go-clean-template/internal/usecase/auth"
-	"github.com/evrone/go-clean-template/internal/usecase/cart"
-	"github.com/evrone/go-clean-template/internal/usecase/catalog"
-	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/evrone/go-clean-template/internal/usecase/checkout"
 	"github.com/evrone/go-clean-template/internal/usecase/content"
-	"github.com/evrone/go-clean-template/internal/usecase/importer"
-	"github.com/evrone/go-clean-template/internal/usecase/lead"
-	"github.com/evrone/go-clean-template/internal/usecase/media"
 	"github.com/evrone/go-clean-template/internal/usecase/notification"
 	"github.com/evrone/go-clean-template/internal/usecase/orders"
-	"github.com/evrone/go-clean-template/internal/usecase/profile"
-	"github.com/evrone/go-clean-template/internal/usecase/user"
 	"github.com/evrone/go-clean-template/internal/usecase/wishlist"
 	"github.com/evrone/go-clean-template/pkg/httpserver"
 	"github.com/evrone/go-clean-template/pkg/jwt"
@@ -35,24 +33,35 @@ import (
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
+type cartNotificationAdapter struct {
+	uc *notification.UseCase
+}
+
+func (a cartNotificationAdapter) Dispatch(ctx context.Context, channel, to, subject string) error {
+	if a.uc == nil {
+		return nil
+	}
+	return a.uc.Dispatch(ctx, entity.Notification{Channel: channel, To: to, Subject: subject})
+}
+
 type useCases struct {
-	user        *user.UseCase
-	catalog     *catalog.UseCase
+	user        usermodule.UserUseCase
+	catalog     catalogmodule.CatalogUseCase
 	catalogBase catalogbase.UseCase
-	auth        *auth.UseCase
+	auth        usermodule.AuthUseCase
 	checkout    *checkout.UseCase
 	orders      *orders.UseCase
-	profile     *profile.UseCase
-	admin       *adminuc.UseCase
+	profile     usermodule.ProfileUseCase
+	admin       usermodule.AdminUseCase
 	maintenance *adminuc.MaintenanceUseCase
 	wishlist    *wishlist.UseCase
 	notify      *notification.CenterUseCase
-	media       *media.UseCase
+	media       mediamodule.MediaUseCase
 	homepage    *content.HomepageUseCase
-	cart        *cart.UseCase
-	lead        *lead.UseCase
+	cart        cartmodule.CartUseCase
+	lead        leadmodule.LeadUseCase
 	content     *content.UseCase
-	importer    *importer.UseCase
+	importer    importermodule.ImporterUseCase
 }
 
 type servers struct {
@@ -89,7 +98,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	checkoutUC := checkout.New(gripCheckoutRepo, gripOrderRepo)
 	checkoutUC.SetPaymentVerifier(epayVerifier)
 
-	var mediaStorage usecase.MediaStorage
+	var mediaStorage mediamodule.MediaStorageProvider
 	if cfg.R2.AccountID != "" && cfg.R2.AccessKeyID != "" && cfg.R2.SecretKey != "" && cfg.R2.BucketName != "" {
 		mediaStorage = webapi.NewR2Storage(
 			cfg.R2.AccountID,
@@ -102,31 +111,31 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		mediaStorage = webapi.NewLocalStorage(cfg.App.BaseURL)
 	}
 
-	catalogUseCase := catalog.NewWithGrip(catalogRepo, gripCatalogRepo)
+	catalogUseCase := catalogmodule.NewCatalogUseCase(catalogRepo, gripCatalogRepo)
 	catalogBaseRepositories := persistent.NewCatalogRepositories(pg)
 	catalogBaseUnitOfWork := persistent.NewUnitOfWork(pg)
 	catalogBaseUseCase := catalogbase.New(catalogBaseRepositories, catalogBaseUnitOfWork)
 
 	return useCases{
-		user:        user.New(userRepo, jwtManager),
+		user:        usermodule.NewUserUseCase(userRepo, jwtManager),
 		catalog:     catalogUseCase,
 		catalogBase: catalogBaseUseCase,
-		auth:        auth.New(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
+		auth:        usermodule.NewAuthUseCase(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
 		checkout:    checkoutUC,
 		orders:      orders.New(gripOrderRepo),
-		profile:     profile.New(profileRepo, 10),
-		admin:       adminuc.New(adminRepo, adminNotifier, cfg.Admin.Users),
+		profile:     usermodule.NewProfileUseCase(profileRepo),
+		admin:       usermodule.NewAdminUseCase(adminRepo, adminNotifier, cfg.Admin.Users),
 		maintenance: adminuc.NewMaintenance(maintenanceRepo, 5*time.Minute),
 		wishlist:    wishlist.New(wishlistRepo, gripOrderRepo),
 		notify:      notification.NewCenter(notificationRepo),
-		media: media.New(mediaRepo, mediaStorage, media.Config{
+		media: mediamodule.NewMediaUseCase(mediaRepo, mediaStorage, mediamodule.Config{
 			MaxBytes: cfg.Ecommerce.MediaMaxBytes,
 		}),
 		homepage: content.NewHomepage(homepageRepo, supportRepo),
-		cart:     cart.New(cartRepo, orderRepo, notificationUseCase),
-		lead:     lead.New(leadRepo),
+		cart:     cartmodule.NewCartUseCase(cartRepo, orderRepo, cartNotificationAdapter{notificationUseCase}),
+		lead:     leadmodule.NewLeadUseCase(leadRepo),
 		content:  content.New(contentRepo),
-		importer: importer.New(importRepo, cfg.Ecommerce.InitialImportMax),
+		importer: importermodule.NewImporterUseCase(importRepo, cfg.Ecommerce.InitialImportMax),
 	}
 }
 

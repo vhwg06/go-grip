@@ -19,8 +19,14 @@ import (
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/profile"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/user"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/wishlist"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/usecase"
-	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
@@ -30,22 +36,22 @@ var _ openapi.StrictServerInterface = (*Server)(nil)
 // Server is the delivery layer composition root for OpenAPI generated handlers.
 type Server struct {
 	cfg         *config.Config
-	userUC      usecase.User
-	catalogUC   usecase.Catalog
+	userUC      usermodule.UserUseCase
+	catalogUC   catalogmodule.CatalogUseCase
 	catalogBase catalogbase.UseCase
-	authUC      usecase.Auth
+	authUC      usermodule.AuthUseCase
 	checkoutUC  usecase.Checkout
 	ordersUC    usecase.Orders
-	profileUC   usecase.Profile
-	adminUC     usecase.Admin
+	profileUC   usermodule.ProfileUseCase
+	adminUC     usermodule.AdminUseCase
 	wishlistUC  usecase.Wishlist
 	notifyUC    usecase.NotificationCenter
-	mediaUC     usecase.Media
+	mediaUC     mediamodule.MediaUseCase
 	homepageUC  usecase.Homepage
-	cartUC      usecase.Cart
-	leadUC      usecase.Lead
+	cartUC      cartmodule.CartUseCase
+	leadUC      leadmodule.LeadUseCase
 	contentUC   usecase.Content
-	importerUC  usecase.Importer
+	importerUC  importermodule.ImporterUseCase
 	jwtManager  *jwt.Manager
 	logger      logger.Interface
 }
@@ -53,22 +59,22 @@ type Server struct {
 // NewServer constructs the OpenAPI Server composition root.
 func NewServer(
 	cfg *config.Config,
-	userUC usecase.User,
-	catalogUC usecase.Catalog,
+	userUC usermodule.UserUseCase,
+	catalogUC catalogmodule.CatalogUseCase,
 	catalogBase catalogbase.UseCase,
-	authUC usecase.Auth,
+	authUC usermodule.AuthUseCase,
 	checkoutUC usecase.Checkout,
 	ordersUC usecase.Orders,
-	profileUC usecase.Profile,
-	adminUC usecase.Admin,
+	profileUC usermodule.ProfileUseCase,
+	adminUC usermodule.AdminUseCase,
 	wishlistUC usecase.Wishlist,
 	notifyUC usecase.NotificationCenter,
-	mediaUC usecase.Media,
+	mediaUC mediamodule.MediaUseCase,
 	homepageUC usecase.Homepage,
-	cartUC usecase.Cart,
-	leadUC usecase.Lead,
+	cartUC cartmodule.CartUseCase,
+	leadUC leadmodule.LeadUseCase,
 	contentUC usecase.Content,
-	importerUC usecase.Importer,
+	importerUC importermodule.ImporterUseCase,
 	jwtManager *jwt.Manager,
 	l logger.Interface,
 ) *Server {

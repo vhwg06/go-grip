@@ -2,11 +2,11 @@ package auth
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
-// toUserResponse maps a domain entity.User to an openapi.UserResponse DTO.
-func toUserResponse(u entity.User) openapi.UserResponse {
+// toUserResponse maps a domain usermodule.User to an openapi.UserResponse DTO.
+func toUserResponse(u usermodule.User) openapi.UserResponse {
 	role := string(u.Role)
 	return openapi.UserResponse{
 		Id:        u.ID,
@@ -20,8 +20,8 @@ func toUserResponse(u entity.User) openapi.UserResponse {
 }
 
 // toTokenPairResponse maps tokens and user entity to an openapi.TokenPairResponse DTO.
-func toTokenPairResponse(accessToken, refreshToken string, user entity.User) openapi.TokenPairResponse {
-	userDTO := toUserResponse(user)
+func toTokenPairResponse(accessToken, refreshToken string, u usermodule.User) openapi.TokenPairResponse {
+	userDTO := toUserResponse(u)
 	return openapi.TokenPairResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,

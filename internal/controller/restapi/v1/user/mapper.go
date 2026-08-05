@@ -2,11 +2,11 @@ package user
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
-// toUserResponse maps domain entity.User to openapi.UserResponse DTO.
-func toUserResponse(u entity.User) openapi.UserResponse {
+// toUserResponse maps usermodule.User to openapi.UserResponse DTO.
+func toUserResponse(u usermodule.User) openapi.UserResponse {
 	role := string(u.Role)
 	return openapi.UserResponse{
 		Id:        u.ID,
@@ -19,8 +19,8 @@ func toUserResponse(u entity.User) openapi.UserResponse {
 	}
 }
 
-// toUserListResponse maps a slice of domain entity.User and total count to openapi.UserListResponse.
-func toUserListResponse(users []entity.User, total int) openapi.UserListResponse {
+// toUserListResponse maps a slice of usermodule.User and total count to openapi.UserListResponse.
+func toUserListResponse(users []usermodule.User, total int) openapi.UserListResponse {
 	items := make([]openapi.UserResponse, len(users))
 	for i, u := range users {
 		items[i] = toUserResponse(u)

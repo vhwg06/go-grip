@@ -2,11 +2,11 @@ package importer
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 )
 
-// toImportExecuteResponse maps entity.ImportResult to openapi.ImportExecuteResponse DTO.
-func toImportExecuteResponse(res entity.ImportResult) openapi.ImportExecuteResponse {
+// toImportExecuteResponse maps importermodule.ImportResult to openapi.ImportExecuteResponse DTO.
+func toImportExecuteResponse(res importermodule.ImportResult) openapi.ImportExecuteResponse {
 	return openapi.ImportExecuteResponse{
 		Imported:    res.Imported,
 		FailedCount: len(res.Failed),

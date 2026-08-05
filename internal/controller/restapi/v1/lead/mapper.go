@@ -2,11 +2,11 @@ package lead
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 )
 
-// toLeadResponse maps entity.LeadSubmission to openapi.LeadResponse DTO.
-func toLeadResponse(l entity.LeadSubmission) openapi.LeadResponse {
+// toLeadResponse maps leadmodule.LeadSubmission to openapi.LeadResponse DTO.
+func toLeadResponse(l leadmodule.LeadSubmission) openapi.LeadResponse {
 	phone := l.CustomerPhone
 	email := l.CustomerEmail
 	msg := l.Message
@@ -21,8 +21,8 @@ func toLeadResponse(l entity.LeadSubmission) openapi.LeadResponse {
 	}
 }
 
-// toLeadListResponse maps []entity.LeadSubmission to openapi.LeadListResponse DTO.
-func toLeadListResponse(leads []entity.LeadSubmission, total int) openapi.LeadListResponse {
+// toLeadListResponse maps []leadmodule.LeadSubmission to openapi.LeadListResponse DTO.
+func toLeadListResponse(leads []leadmodule.LeadSubmission, total int) openapi.LeadListResponse {
 	items := make([]openapi.LeadResponse, len(leads))
 	for i, l := range leads {
 		items[i] = toLeadResponse(l)

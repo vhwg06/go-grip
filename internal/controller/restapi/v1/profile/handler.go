@@ -5,31 +5,34 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Profile capability.
 type Handler struct {
-	profileUC usecase.Profile
+	profileUC usermodule.ProfileUseCase
 	logger    logger.Interface
 }
 
 // NewHandler constructs a new Profile vertical handler instance.
-func NewHandler(profileUC usecase.Profile, l logger.Interface) *Handler {
+func NewHandler(profileUC usermodule.ProfileUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		profileUC: profileUC,
 		logger:    l,
 	}
 }
 
-func getActor(ctx context.Context) entity.Actor {
+func getActor(ctx context.Context) usermodule.Actor {
 	if val := ctx.Value("actor"); val != nil {
 		if a, ok := val.(entity.Actor); ok {
+			return usermodule.Actor{UserID: a.UserID, Username: a.Username, IsAdmin: a.IsAdmin}
+		}
+		if a, ok := val.(usermodule.Actor); ok {
 			return a
 		}
 	}
-	return entity.Actor{}
+	return usermodule.Actor{}
 }
 
 // GetAccountProfile handles GET /account/profile

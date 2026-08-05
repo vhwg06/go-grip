@@ -5,31 +5,35 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Admin capability.
 type Handler struct {
-	adminUC usecase.Admin
+	adminUC usermodule.AdminUseCase
 	logger  logger.Interface
 }
 
 // NewHandler constructs a new Admin vertical handler instance.
-func NewHandler(adminUC usecase.Admin, l logger.Interface) *Handler {
+func NewHandler(adminUC usermodule.AdminUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		adminUC: adminUC,
 		logger:  l,
 	}
 }
 
-func getActor(ctx context.Context) entity.Actor {
+func getActor(ctx context.Context) usermodule.Actor {
 	if val := ctx.Value("actor"); val != nil {
 		if a, ok := val.(entity.Actor); ok {
+			return usermodule.Actor{UserID: a.UserID, Username: a.Username, IsAdmin: a.IsAdmin}
+		}
+		if a, ok := val.(usermodule.Actor); ok {
 			return a
 		}
 	}
-	return entity.Actor{}
+	return usermodule.Actor{}
 }
 
 // GetAdminDashboardStats handles GET /admin/dashboard/stats
@@ -37,7 +41,7 @@ func (h *Handler) GetAdminDashboardStats(ctx context.Context, request openapi.Ge
 	actor := getActor(ctx)
 
 	// Fetch users and orders counts as summary stats
-	page := entity.Pagination{Limit: 1, Offset: 0}
+	page := pagination.Pagination{Limit: 1, Offset: 0}
 	_, userCount, err := h.adminUC.ListUsers(ctx, actor, page)
 	if err != nil {
 		status, errResp := mapAdminError(err)

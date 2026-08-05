@@ -4,19 +4,18 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Lead capability.
 type Handler struct {
-	leadUC usecase.Lead
+	leadUC leadmodule.LeadUseCase
 	logger logger.Interface
 }
 
 // NewHandler constructs a new Lead vertical handler instance.
-func NewHandler(leadUC usecase.Lead, l logger.Interface) *Handler {
+func NewHandler(leadUC leadmodule.LeadUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		leadUC: leadUC,
 		logger: l,
@@ -38,7 +37,7 @@ func (h *Handler) SubmitLead(ctx context.Context, request openapi.SubmitLeadRequ
 		msg = *request.Body.Message
 	}
 
-	sub := entity.LeadSubmission{
+	sub := leadmodule.LeadSubmission{
 		CustomerName:  request.Body.Name,
 		CustomerEmail: request.Body.Email,
 		CustomerPhone: phone,
@@ -62,7 +61,7 @@ func (h *Handler) SubmitLead(ctx context.Context, request openapi.SubmitLeadRequ
 
 // ListLeads handles GET /leads
 func (h *Handler) ListLeads(ctx context.Context, request openapi.ListLeadsRequestObject) (openapi.ListLeadsResponseObject, error) {
-	lead, err := h.leadUC.Get(ctx, "lead-1")
+	leadItem, err := h.leadUC.Get(ctx, "lead-1")
 	if err != nil {
 		status, errResp := mapLeadError(err)
 		switch status {
@@ -79,6 +78,6 @@ func (h *Handler) ListLeads(ctx context.Context, request openapi.ListLeadsReques
 		}
 	}
 
-	listDTO := toLeadListResponse([]entity.LeadSubmission{lead}, 1)
+	listDTO := toLeadListResponse([]leadmodule.LeadSubmission{leadItem}, 1)
 	return openapi.ListLeads200JSONResponse(listDTO), nil
 }

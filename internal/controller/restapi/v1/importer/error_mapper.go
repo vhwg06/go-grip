@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 )
 
 // mapImporterError maps domain errors specific to Importer capability
@@ -24,7 +25,7 @@ func mapImporterError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusForbidden, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, importermodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

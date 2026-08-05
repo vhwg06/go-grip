@@ -33,18 +33,6 @@ type (
 		ListTags(ctx context.Context) ([]entity.Tag, error)
 	}
 
-	Media interface {
-		Store(ctx context.Context, media entity.MediaAsset) (entity.MediaAsset, error)
-		List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error)
-		Delete(ctx context.Context, id string) error
-		GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (uploadURL string, publicURL string, fileID string, err error)
-	}
-
-	MediaStorage interface {
-		GeneratePresignedURL(ctx context.Context, fileName string, contentType string) (uploadURL string, publicURL string, fileID string, err error)
-		Delete(ctx context.Context, key string) error
-	}
-
 	Homepage interface {
 		StoreBlock(ctx context.Context, block entity.HomepageBlock) (entity.HomepageBlock, error)
 		ListBlocks(ctx context.Context, activeOnly bool) ([]entity.HomepageBlock, error)
@@ -63,11 +51,6 @@ type (
 		SubmitOrder(ctx context.Context, order entity.OrderRequest) (entity.OrderRequest, error)
 	}
 
-	Lead interface {
-		Submit(ctx context.Context, lead entity.LeadSubmission) (entity.LeadSubmission, error)
-		Get(ctx context.Context, id string) (entity.LeadSubmission, error)
-	}
-
 	Content interface {
 		CreateArticle(ctx context.Context, article entity.ContentArticle) (entity.ContentArticle, error)
 		UpdateArticle(ctx context.Context, article entity.ContentArticle) (entity.ContentArticle, error)
@@ -82,10 +65,6 @@ type (
 
 	Notification interface {
 		Dispatch(ctx context.Context, notification entity.Notification) error
-	}
-
-	Importer interface {
-		Import(ctx context.Context, items []entity.ImportItem) (entity.ImportResult, error)
 	}
 
 	Auth interface {

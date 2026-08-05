@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -16,20 +16,20 @@ import (
 type CartRepo struct {
 	*postgres.Postgres
 	mu          sync.RWMutex
-	items       map[string]entity.Cart
+	items       map[string]cartmodule.Cart
 	useInMemory bool
 }
 
 func NewCartRepo(pg *postgres.Postgres) *CartRepo {
 	repo := &CartRepo{
 		Postgres:    pg,
-		items:       map[string]entity.Cart{},
+		items:       map[string]cartmodule.Cart{},
 		useInMemory: pg == nil || pg.Gorm == nil,
 	}
 	return repo
 }
 
-func (r *CartRepo) Store(ctx context.Context, cart *entity.Cart) error {
+func (r *CartRepo) Store(ctx context.Context, cart *cartmodule.Cart) error {
 	if r.useInMemory {
 		_ = ctx
 		r.mu.Lock()
@@ -65,45 +65,45 @@ func (r *CartRepo) Store(ctx context.Context, cart *entity.Cart) error {
 	return nil
 }
 
-func (r *CartRepo) GetBySession(ctx context.Context, sessionID string) (entity.Cart, error) {
+func (r *CartRepo) GetBySession(ctx context.Context, sessionID string) (cartmodule.Cart, error) {
 	if r.useInMemory {
 		_ = ctx
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		cart, ok := r.items[sessionID]
+		c, ok := r.items[sessionID]
 		if !ok {
-			return entity.Cart{}, entity.ErrNotFound
+			return cartmodule.Cart{}, cartmodule.ErrNotFound
 		}
-		return cart, nil
+		return c, nil
 	}
 
 	var cartModel models.Cart
 	if err := r.Gorm.WithContext(ctx).Where("session_id = ?", sessionID).First(&cartModel).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return entity.Cart{}, entity.ErrNotFound
+			return cartmodule.Cart{}, cartmodule.ErrNotFound
 		}
-		return entity.Cart{}, fmt.Errorf("CartRepo.GetBySession(cart): %w", err)
+		return cartmodule.Cart{}, fmt.Errorf("CartRepo.GetBySession(cart): %w", err)
 	}
 
 	var itemModels []models.CartItem
 	if err := r.Gorm.WithContext(ctx).Where("cart_id = ?", cartModel.ID).Order("created_at ASC").Find(&itemModels).Error; err != nil {
-		return entity.Cart{}, fmt.Errorf("CartRepo.GetBySession(items): %w", err)
+		return cartmodule.Cart{}, fmt.Errorf("CartRepo.GetBySession(items): %w", err)
 	}
 
-	cart := entity.Cart{
+	c := cartmodule.Cart{
 		ID:        cartModel.ID,
 		SessionID: cartModel.SessionID,
-		Status:    entity.CartStatus(cartModel.Status),
+		Status:    cartmodule.CartStatus(cartModel.Status),
 		CreatedAt: cartModel.CreatedAt,
 		UpdatedAt: cartModel.UpdatedAt,
-		Items:     make([]entity.CartItem, 0, len(itemModels)),
+		Items:     make([]cartmodule.CartItem, 0, len(itemModels)),
 	}
 	for _, item := range itemModels {
 		snapshot := map[string]any{}
 		if item.ProductSnapshot != "" {
 			_ = json.Unmarshal([]byte(item.ProductSnapshot), &snapshot)
 		}
-		cart.Items = append(cart.Items, entity.CartItem{
+		c.Items = append(c.Items, cartmodule.CartItem{
 			ID:              item.ID,
 			CartID:          item.CartID,
 			ProductID:       item.ProductID,
@@ -114,17 +114,17 @@ func (r *CartRepo) GetBySession(ctx context.Context, sessionID string) (entity.C
 		})
 	}
 
-	return cart, nil
+	return c, nil
 }
 
-func (r *CartRepo) AddItem(ctx context.Context, sessionID string, item *entity.CartItem) error {
+func (r *CartRepo) AddItem(ctx context.Context, sessionID string, item *cartmodule.CartItem) error {
 	if r.useInMemory {
 		_ = ctx
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		cart := r.items[sessionID]
-		cart.Items = append(cart.Items, *item)
-		r.items[sessionID] = cart
+		c := r.items[sessionID]
+		c.Items = append(c.Items, *item)
+		r.items[sessionID] = c
 		return nil
 	}
 
@@ -193,13 +193,13 @@ func (r *CartRepo) UpdateItem(ctx context.Context, sessionID, itemID string, qua
 		_ = ctx
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		cart := r.items[sessionID]
-		for i := range cart.Items {
-			if cart.Items[i].ID == itemID {
-				cart.Items[i].Quantity = quantity
+		c := r.items[sessionID]
+		for i := range c.Items {
+			if c.Items[i].ID == itemID {
+				c.Items[i].Quantity = quantity
 			}
 		}
-		r.items[sessionID] = cart
+		r.items[sessionID] = c
 		return nil
 	}
 
@@ -224,15 +224,15 @@ func (r *CartRepo) RemoveItem(ctx context.Context, sessionID, itemID string) err
 		_ = ctx
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		cart := r.items[sessionID]
-		next := cart.Items[:0]
-		for _, item := range cart.Items {
+		c := r.items[sessionID]
+		next := c.Items[:0]
+		for _, item := range c.Items {
 			if item.ID != itemID {
 				next = append(next, item)
 			}
 		}
-		cart.Items = next
-		r.items[sessionID] = cart
+		c.Items = next
+		r.items[sessionID] = c
 		return nil
 	}
 
@@ -253,27 +253,27 @@ func (r *CartRepo) Convert(ctx context.Context, cartID string) error {
 		_ = ctx
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		for sessionID, cart := range r.items {
-			if cart.ID == cartID {
-				cart.Status = entity.CartStatusConverted
-				r.items[sessionID] = cart
+		for sessionID, c := range r.items {
+			if c.ID == cartID {
+				c.Status = cartmodule.CartStatusConverted
+				r.items[sessionID] = c
 				return nil
 			}
 		}
-		return entity.ErrNotFound
+		return cartmodule.ErrNotFound
 	}
 
 	result := r.Gorm.WithContext(ctx).Model(&models.Cart{}).
 		Where("id = ?", cartID).
 		Updates(map[string]any{
-			"status":     string(entity.CartStatusConverted),
+			"status":     string(cartmodule.CartStatusConverted),
 			"updated_at": time.Now().UTC(),
 		})
 	if result.Error != nil {
 		return fmt.Errorf("CartRepo.Convert: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return entity.ErrNotFound
+		return cartmodule.ErrNotFound
 	}
 	return nil
 }

@@ -5,23 +5,28 @@ import (
 	"sync"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
 type CatalogRepo struct {
 	*postgres.Postgres
 	mu         sync.RWMutex
-	products   map[string]entity.Product
-	categories map[string]entity.Category
-	tags       map[string]entity.Tag
+	products   map[string]catalogmodule.Product
+	categories map[string]catalogmodule.Category
+	tags       map[string]catalogmodule.Tag
 }
 
 func NewCatalogRepo(pg *postgres.Postgres) *CatalogRepo {
-	return &CatalogRepo{Postgres: pg, products: map[string]entity.Product{}, categories: map[string]entity.Category{}, tags: map[string]entity.Tag{}}
+	return &CatalogRepo{
+		Postgres:   pg,
+		products:   map[string]catalogmodule.Product{},
+		categories: map[string]catalogmodule.Category{},
+		tags:       map[string]catalogmodule.Tag{},
+	}
 }
 
-func (r *CatalogRepo) StoreProduct(ctx context.Context, product *entity.Product) error {
+func (r *CatalogRepo) StoreProduct(ctx context.Context, product *catalogmodule.Product) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -34,22 +39,22 @@ func (r *CatalogRepo) StoreProduct(ctx context.Context, product *entity.Product)
 	return nil
 }
 
-func (r *CatalogRepo) GetProduct(ctx context.Context, id string) (entity.Product, error) {
+func (r *CatalogRepo) GetProduct(ctx context.Context, id string) (catalogmodule.Product, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	product, ok := r.products[id]
 	if !ok {
-		return entity.Product{}, entity.ErrNotFound
+		return catalogmodule.Product{}, catalogmodule.ErrNotFound
 	}
 	return product, nil
 }
 
-func (r *CatalogRepo) ListProducts(ctx context.Context, filter repo.ProductFilter) ([]entity.Product, int, error) {
+func (r *CatalogRepo) ListProducts(ctx context.Context, filter catalogmodule.ProductRepoFilter) ([]catalogmodule.Product, int, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]entity.Product, 0, len(r.products))
+	items := make([]catalogmodule.Product, 0, len(r.products))
 	for _, product := range r.products {
 		if filter.Category != "" && product.CategoryID != filter.Category {
 			continue
@@ -68,12 +73,12 @@ func (r *CatalogRepo) ListProducts(ctx context.Context, filter repo.ProductFilte
 	return items, len(items), nil
 }
 
-func (r *CatalogRepo) UpdateProduct(ctx context.Context, product *entity.Product) error {
+func (r *CatalogRepo) UpdateProduct(ctx context.Context, product *catalogmodule.Product) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.products[product.ID]; !ok {
-		return entity.ErrNotFound
+		return catalogmodule.ErrNotFound
 	}
 	r.products[product.ID] = *product
 	return nil
@@ -87,7 +92,7 @@ func (r *CatalogRepo) DeleteProduct(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *CatalogRepo) StoreCategory(ctx context.Context, category *entity.Category) error {
+func (r *CatalogRepo) StoreCategory(ctx context.Context, category *catalogmodule.Category) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -95,18 +100,18 @@ func (r *CatalogRepo) StoreCategory(ctx context.Context, category *entity.Catego
 	return nil
 }
 
-func (r *CatalogRepo) ListCategories(ctx context.Context) ([]entity.Category, error) {
+func (r *CatalogRepo) ListCategories(ctx context.Context) ([]catalogmodule.Category, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]entity.Category, 0, len(r.categories))
+	items := make([]catalogmodule.Category, 0, len(r.categories))
 	for _, category := range r.categories {
 		items = append(items, category)
 	}
 	return items, nil
 }
 
-func (r *CatalogRepo) StoreTag(ctx context.Context, tag *entity.Tag) error {
+func (r *CatalogRepo) StoreTag(ctx context.Context, tag *catalogmodule.Tag) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -114,11 +119,11 @@ func (r *CatalogRepo) StoreTag(ctx context.Context, tag *entity.Tag) error {
 	return nil
 }
 
-func (r *CatalogRepo) ListTags(ctx context.Context) ([]entity.Tag, error) {
+func (r *CatalogRepo) ListTags(ctx context.Context) ([]catalogmodule.Tag, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]entity.Tag, 0, len(r.tags))
+	items := make([]catalogmodule.Tag, 0, len(r.tags))
 	for _, tag := range r.tags {
 		items = append(items, tag)
 	}

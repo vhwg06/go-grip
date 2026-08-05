@@ -5,18 +5,18 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the User capability.
 type Handler struct {
-	userUC usecase.User
+	userUC usermodule.UserUseCase
 	logger logger.Interface
 }
 
 // NewHandler constructs a new User vertical handler instance.
-func NewHandler(userUC usecase.User, l logger.Interface) *Handler {
+func NewHandler(userUC usermodule.UserUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		userUC: userUC,
 		logger: l,
@@ -117,9 +117,9 @@ func (h *Handler) CreateAdminUser(ctx context.Context, request openapi.CreateAdm
 	}
 
 	actor := getActor(ctx)
-	role := entity.RoleAdministrator
+	role := usermodule.RoleAdministrator
 	if request.Body.Role != nil && *request.Body.Role != "" {
-		role = entity.RoleName(*request.Body.Role)
+		role = usermodule.RoleName(*request.Body.Role)
 	}
 
 	user, err := h.userUC.CreateAdminUser(ctx, actor.UserID, request.Body.Username, request.Body.Email, request.Body.Password, role)

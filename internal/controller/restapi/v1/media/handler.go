@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Media capability.
 type Handler struct {
-	mediaUC usecase.Media
+	mediaUC mediamodule.MediaUseCase
 	logger  logger.Interface
 }
 
 // NewHandler constructs a new Media vertical handler instance.
-func NewHandler(mediaUC usecase.Media, l logger.Interface) *Handler {
+func NewHandler(mediaUC mediamodule.MediaUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		mediaUC: mediaUC,
 		logger:  l,

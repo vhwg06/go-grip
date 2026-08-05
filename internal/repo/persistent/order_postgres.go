@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
 )
@@ -21,9 +23,10 @@ func NewGripOrderRepo(pg *postgres.Postgres) *GripOrderRepo {
 	return &GripOrderRepo{Postgres: pg}
 }
 
-var _ repo.OrderRepository = (*GripOrderRepo)(nil)
-
-func (r *GripOrderRepo) ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error) {
+func (r *GripOrderRepo) ListOrdersByOwner(ctx context.Context, userID, email string, page pagination.Pagination) ([]ordermodule.Order, int, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil, 0, nil
+	}
 	query := r.Gorm.WithContext(ctx).Model(&models.Order{})
 	if userID != "" && email != "" {
 		query = query.Where("user_id = ? OR email = ?", userID, email)
@@ -44,40 +47,44 @@ func (r *GripOrderRepo) ListOrdersByOwner(ctx context.Context, userID, email str
 		return nil, 0, fmt.Errorf("GripOrderRepo.ListOrdersByOwner: find: %w", err)
 	}
 
-	orders := make([]entity.Order, 0, len(rows))
+	orders := make([]ordermodule.Order, 0, len(rows))
 	for _, row := range rows {
-		order := models.OrderToEntity(row)
-		orders = append(orders, order)
+		orders = append(orders, models.OrderToModule(row))
 	}
 	return orders, int(total), nil
 }
 
-func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
+func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (ordermodule.Order, error) {
+	if r.Postgres == nil || r.Gorm == nil {
+		return ordermodule.Order{}, ordermodule.ErrNotFound
+	}
 	var row models.Order
 	if err := r.Gorm.WithContext(ctx).Where("order_id = ?", orderID).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Order{}, entity.ErrOrderNotFound
+			return ordermodule.Order{}, ordermodule.ErrNotFound
 		}
-		return entity.Order{}, fmt.Errorf("GripOrderRepo.GetOrderByID: %w", err)
+		return ordermodule.Order{}, fmt.Errorf("GripOrderRepo.GetOrderByID: %w", err)
 	}
-	order := models.OrderToEntity(row)
-	return order, nil
+	return models.OrderToModule(row), nil
 }
 
-func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error {
+func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor usermodule.Actor, orderID string) error {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil
+	}
 	current, err := r.GetOrderByID(ctx, orderID)
 	if err != nil {
 		return err
 	}
 	if actor.UserID != "" && current.UserID != "" && current.UserID != actor.UserID && !actor.IsAdmin {
-		return entity.ErrForbidden
+		return ordermodule.ErrForbidden
 	}
 
 	result := r.Gorm.WithContext(ctx).
 		Model(&models.Order{}).
-		Where("order_id = ? AND status = ?", orderID, string(entity.OrderStatusPending)).
+		Where("order_id = ? AND status = ?", orderID, string(ordermodule.OrderStatusPending)).
 		Updates(map[string]any{
-			"status":     string(entity.OrderStatusCancelled),
+			"status":     string(ordermodule.OrderStatusCancelled),
 			"updated_at": time.Now().UTC(),
 		})
 	if result.Error != nil {
@@ -89,7 +96,10 @@ func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor entity.Act
 	return nil
 }
 
-func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
+func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund *ordermodule.RefundRequest) error {
+	if r.Postgres == nil || r.Gorm == nil {
+		return nil
+	}
 	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		model := models.RefundRequest{
 			OrderID:       refund.OrderID,
@@ -110,7 +120,7 @@ func (r *GripOrderRepo) SubmitRefundRequest(ctx context.Context, refund *entity.
 		if err := tx.Model(&models.Order{}).
 			Where("order_id = ?", refund.OrderID).
 			Updates(map[string]any{
-				"status":     string(entity.OrderStatusRefundPending),
+				"status":     string(ordermodule.OrderStatusRefundPending),
 				"updated_at": time.Now().UTC(),
 			}).Error; err != nil {
 			return fmt.Errorf("GripOrderRepo.SubmitRefundRequest(update order): %w", err)

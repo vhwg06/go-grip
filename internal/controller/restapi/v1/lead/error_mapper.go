@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 )
 
 // mapLeadError maps domain errors specific to Lead capability
@@ -13,6 +14,15 @@ import (
 func mapLeadError(err error) (int, openapi.ErrorResponse) {
 	if err == nil {
 		return http.StatusOK, openapi.ErrorResponse{}
+	}
+
+	if errors.Is(err, leadmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+		resp := openapi.ErrorResponse{}
+		resp.Error.FromErrorPayload(openapi.ErrorPayload{
+			Code:    "LEAD_NOT_FOUND",
+			Message: "Lead submission not found",
+		})
+		return http.StatusNotFound, resp
 	}
 
 	if errors.Is(err, entity.ErrInvalidInput) {

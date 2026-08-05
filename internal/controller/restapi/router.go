@@ -10,8 +10,14 @@ import (
 	_ "github.com/evrone/go-clean-template/docs" // Swagger docs.
 	"github.com/evrone/go-clean-template/internal/controller/restapi/middleware"
 	v1 "github.com/evrone/go-clean-template/internal/controller/restapi/v1"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
+	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/usecase"
-	"github.com/evrone/go-clean-template/internal/usecase/catalogbase"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -46,7 +52,7 @@ const selfContainedDocsHTML = `<!DOCTYPE html>
 </html>`
 
 // NewRouter registers strict OpenAPI 3.0 routes and global middlewares.
-func NewRouter(app *fiber.App, cfg *config.Config, u usecase.User, catalog usecase.Catalog, catalogBase catalogbase.UseCase, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, admin usecase.Admin, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
+func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, catalog catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, auth usermodule.AuthUseCase, checkout usecase.Checkout, orders usecase.Orders, profile usermodule.ProfileUseCase, admin usermodule.AdminUseCase, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media mediamodule.MediaUseCase, homepage usecase.Homepage, cart cartmodule.CartUseCase, lead leadmodule.LeadUseCase, content usecase.Content, importer importermodule.ImporterUseCase, jwtManager *jwt.Manager, l logger.Interface) {
 	// Options
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))

@@ -2,11 +2,11 @@ package cart
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 )
 
-// toCartItemResponse maps entity.CartItem to openapi.CartItemResponse DTO.
-func toCartItemResponse(item entity.CartItem) openapi.CartItemResponse {
+// toCartItemResponse maps cartmodule.CartItem to openapi.CartItemResponse DTO.
+func toCartItemResponse(item cartmodule.CartItem) openapi.CartItemResponse {
 	priceInt := int(item.UnitPrice)
 	blocked := item.Blocked
 	return openapi.CartItemResponse{
@@ -18,8 +18,8 @@ func toCartItemResponse(item entity.CartItem) openapi.CartItemResponse {
 	}
 }
 
-// toCartResponse maps entity.Cart to openapi.CartResponse DTO.
-func toCartResponse(c entity.Cart) openapi.CartResponse {
+// toCartResponse maps cartmodule.Cart to openapi.CartResponse DTO.
+func toCartResponse(c cartmodule.Cart) openapi.CartResponse {
 	itemsDTO := make([]openapi.CartItemResponse, len(c.Items))
 	for i, item := range c.Items {
 		itemsDTO[i] = toCartItemResponse(item)

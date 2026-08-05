@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Catalog capability.
 type Handler struct {
-	catalogUC usecase.Catalog
+	catalogUC catalogmodule.CatalogUseCase
 	logger    logger.Interface
 }
 
 // NewHandler constructs a new Catalog vertical handler instance.
-func NewHandler(catalogUC usecase.Catalog, l logger.Interface) *Handler {
+func NewHandler(catalogUC catalogmodule.CatalogUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		catalogUC: catalogUC,
 		logger:    l,
@@ -34,8 +34,8 @@ func (h *Handler) ListProducts(ctx context.Context, request openapi.ListProducts
 		offset = *request.Params.Offset
 	}
 
-	filter := entity.ProductFilter{
-		Pagination: entity.Pagination{
+	filter := catalogmodule.ProductFilter{
+		Pagination: pagination.Pagination{
 			Limit:  limit,
 			Offset: offset,
 		},
@@ -68,7 +68,7 @@ func (h *Handler) CreateProduct(ctx context.Context, request openapi.CreateProdu
 		return openapi.CreateProduct400JSONResponse{}, nil
 	}
 
-	p := entity.Product{
+	p := catalogmodule.Product{
 		Title: request.Body.Title,
 		Price: int64(request.Body.Price),
 	}
@@ -140,7 +140,7 @@ func (h *Handler) UpdateProduct(ctx context.Context, request openapi.UpdateProdu
 		return openapi.UpdateProduct400JSONResponse{}, nil
 	}
 
-	p := entity.Product{
+	p := catalogmodule.Product{
 		ID:    request.Id,
 		Title: request.Body.Title,
 		Price: int64(request.Body.Price),
@@ -237,7 +237,7 @@ func (h *Handler) CreateCategory(ctx context.Context, request openapi.CreateCate
 		return openapi.CreateCategory400JSONResponse{}, nil
 	}
 
-	cat := entity.Category{
+	cat := catalogmodule.Category{
 		Name: request.Body.Name,
 	}
 
@@ -287,7 +287,7 @@ func (h *Handler) CreateTag(ctx context.Context, request openapi.CreateTagReques
 		return openapi.CreateTag400JSONResponse{}, nil
 	}
 
-	t := entity.Tag{
+	t := catalogmodule.Tag{
 		Name: request.Body.Name,
 	}
 

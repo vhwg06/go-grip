@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 )
 
 // mapCartError maps domain errors specific to Cart capability
@@ -15,7 +16,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, cartmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "ITEM_NOT_FOUND",
@@ -24,7 +25,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrCartBlocked) {
+	if errors.Is(err, cartmodule.ErrCartBlocked) || errors.Is(err, entity.ErrCartBlocked) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "CART_BLOCKED",
@@ -42,7 +43,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, cartmodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

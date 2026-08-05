@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 )
 
 // mapCatalogError maps domain errors specific to Catalog capability
@@ -15,7 +16,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, catalogmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "PRODUCT_NOT_FOUND",
@@ -33,7 +34,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusConflict, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, catalogmodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

@@ -54,13 +54,6 @@ type (
 		Offset   uint64
 	}
 
-	MediaRepo interface {
-		Store(ctx context.Context, media *entity.MediaAsset) error
-		Get(ctx context.Context, id string) (entity.MediaAsset, error)
-		List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error)
-		Delete(ctx context.Context, id string) error
-	}
-
 	SEORepo interface {
 		Store(ctx context.Context, meta *entity.SeoMetadata) error
 		GetByOwner(ctx context.Context, ownerType, ownerID string) (entity.SeoMetadata, error)
@@ -90,12 +83,6 @@ type (
 	OrderRequestRepo interface {
 		Store(ctx context.Context, order *entity.OrderRequest) error
 	}
-
-	LeadRepo interface {
-		Store(ctx context.Context, lead *entity.LeadSubmission) error
-		Get(ctx context.Context, id string) (entity.LeadSubmission, error)
-	}
-
 	ContentRepo interface {
 		StoreArticle(ctx context.Context, article *entity.ContentArticle) error
 		UpdateArticle(ctx context.Context, article *entity.ContentArticle) error
@@ -107,12 +94,6 @@ type (
 		GetPageBySlug(ctx context.Context, slug string) (entity.StaticPage, error)
 		PublishDue(ctx context.Context) (int, error)
 	}
-
-	ImportRepo interface {
-		StoreImportedProduct(ctx context.Context, product *entity.Product) error
-		StoreImportedPost(ctx context.Context, article *entity.ContentArticle) error
-	}
-
 	AuthRepository interface {
 		GetUserByID(ctx context.Context, userID string) (entity.User, error)
 		GetUserByEmail(ctx context.Context, email string) (entity.User, error)

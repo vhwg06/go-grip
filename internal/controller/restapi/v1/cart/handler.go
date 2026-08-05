@@ -5,18 +5,18 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Cart capability.
 type Handler struct {
-	cartUC usecase.Cart
+	cartUC cartmodule.CartUseCase
 	logger logger.Interface
 }
 
 // NewHandler constructs a new Cart vertical handler instance.
-func NewHandler(cartUC usecase.Cart, l logger.Interface) *Handler {
+func NewHandler(cartUC cartmodule.CartUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		cartUC: cartUC,
 		logger: l,

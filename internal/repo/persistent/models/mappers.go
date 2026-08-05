@@ -4,7 +4,119 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
+
+func OrderToModule(m Order) ordermodule.Order {
+	return ordermodule.Order{
+		ID:               m.OrderID,
+		ProductID:        m.ProductID,
+		ProductName:      m.ProductName,
+		Amount:           ordermodule.Amount(m.Amount),
+		Email:            m.Email,
+		Status:           ordermodule.OrderStatus(m.Status),
+		TradeNo:          m.TradeNo,
+		UserID:           m.UserID,
+		Username:         m.Username,
+		Payee:            m.Payee,
+		Quantity:         m.Quantity,
+		CurrentPaymentID: m.CurrentPaymentID,
+		StatusText:       m.StatusText,
+		StatusColor:      m.StatusColor,
+		PaidAt:           nullableTime(m.PaidAt),
+		DeliveredAt:      nullableTime(m.DeliveredAt),
+		CreatedAt:        m.CreatedAt,
+		UpdatedAt:        m.UpdatedAt,
+	}
+}
+
+func ModuleToOrder(e ordermodule.Order) Order {
+	return Order{
+		OrderID:          e.ID,
+		ProductID:        e.ProductID,
+		ProductName:      e.ProductName,
+		Amount:           int64(e.Amount),
+		Email:            e.Email,
+		Status:           string(e.Status),
+		TradeNo:          e.TradeNo,
+		UserID:           e.UserID,
+		Username:         e.Username,
+		Payee:            e.Payee,
+		Quantity:         e.Quantity,
+		CurrentPaymentID: e.CurrentPaymentID,
+		StatusText:       e.StatusText,
+		StatusColor:      e.StatusColor,
+		PaidAt:           denullTime(e.PaidAt),
+		DeliveredAt:      denullTime(e.DeliveredAt),
+		CreatedAt:        e.CreatedAt,
+		UpdatedAt:        e.UpdatedAt,
+	}
+}
+
+func ProductToModule(m Product) catalogmodule.Product {
+	var images []string
+	var comparePrice *int64
+	var introArticleID string
+	if m.Image != "" {
+		images = []string{m.Image}
+	} else {
+		images = []string{}
+	}
+	if m.CompareAtPrice > 0 {
+		value := m.CompareAtPrice
+		comparePrice = &value
+	}
+	if m.IntroArticleID != nil {
+		introArticleID = *m.IntroArticleID
+	}
+
+	return catalogmodule.Product{
+		ID:              m.ID,
+		Title:           m.Name,
+		SKU:             m.SKU,
+		Description:     m.Description,
+		Price:           m.Price,
+		ComparePrice:    comparePrice,
+		CategoryID:      m.Category,
+		ImageURL:        m.Image,
+		Images:          images,
+		IsHot:           m.IsHot,
+		IsActive:        m.IsActive,
+		SortOrder:       m.SortOrder,
+		PurchaseLimit:   m.PurchaseLimit,
+		PurchaseWarning: m.PurchaseWarning,
+		IntroArticleID:  introArticleID,
+		VisibilityLevel: m.VisibilityLevel,
+		StockCount:      m.StockCount,
+		LockedCount:     m.LockedCount,
+		SoldCount:       m.SoldCount,
+		Rating:          m.Rating,
+		ReviewCount:     m.ReviewCount,
+		CreatedAt:       m.CreatedAt,
+		UpdatedAt:       m.UpdatedAt,
+	}
+}
+
+func CategoryToModule(m Category) catalogmodule.Category {
+	return catalogmodule.Category{
+		ID:       m.ID,
+		Name:     m.Name,
+		ParentID: m.ParentID,
+		Position: m.SortOrder,
+		IsActive: m.IsActive,
+	}
+}
+
+func SettingToModule(m Setting) catalogmodule.Setting {
+	return catalogmodule.Setting{
+		Key:       m.Key,
+		Value:     m.Value,
+		UpdatedAt: m.UpdatedAt,
+	}
+}
 
 func UserToEntity(m User) entity.User {
 	return entity.User{
@@ -28,7 +140,50 @@ func UserToEntity(m User) entity.User {
 	}
 }
 
+func UserToModule(m User) usermodule.User {
+	return usermodule.User{
+		ID:                          m.ID,
+		Username:                    m.Username,
+		DisplayName:                 m.DisplayName,
+		Email:                       m.Email,
+		PasswordHash:                m.PasswordHash,
+		RoleID:                      m.RoleID,
+		Role:                        usermodule.RoleName(m.Role),
+		Status:                      usermodule.UserStatus(m.Status),
+		Provider:                    m.Provider,
+		ProviderID:                  m.ProviderID,
+		TrustLevel:                  m.TrustLevel,
+		IsAdmin:                     m.IsAdmin,
+		DesktopNotificationsEnabled: m.DesktopNotificationsEnabled,
+		LastLoginAt:                 nullableTime(m.LastLoginAt),
+		IsBlocked:                   m.Status == string(usermodule.UserStatusLocked),
+		CreatedAt:                   m.CreatedAt,
+		UpdatedAt:                   m.UpdatedAt,
+	}
+}
+
 func EntityToUser(e entity.User) User {
+	return User{
+		ID:                          e.ID,
+		Username:                    e.Username,
+		DisplayName:                 e.DisplayName,
+		Email:                       e.Email,
+		PasswordHash:                e.PasswordHash,
+		RoleID:                      e.RoleID,
+		Role:                        string(e.Role),
+		Status:                      string(e.Status),
+		Provider:                    e.Provider,
+		ProviderID:                  e.ProviderID,
+		TrustLevel:                  e.TrustLevel,
+		IsAdmin:                     e.IsAdmin,
+		DesktopNotificationsEnabled: e.DesktopNotificationsEnabled,
+		LastLoginAt:                 denullTime(e.LastLoginAt),
+		CreatedAt:                   e.CreatedAt,
+		UpdatedAt:                   e.UpdatedAt,
+	}
+}
+
+func ModuleToUser(e usermodule.User) User {
 	return User{
 		ID:                          e.ID,
 		Username:                    e.Username,
@@ -246,8 +401,8 @@ func denullTime(v *time.Time) time.Time {
 	return *v
 }
 
-func MediaAssetToEntity(m MediaAsset) entity.MediaAsset {
-	return entity.MediaAsset{
+func MediaAssetToModule(m MediaAsset) mediamodule.MediaAsset {
+	return mediamodule.MediaAsset{
 		ID:        m.ID,
 		FileName:  m.FileName,
 		MimeType:  m.MimeType,
@@ -260,7 +415,7 @@ func MediaAssetToEntity(m MediaAsset) entity.MediaAsset {
 	}
 }
 
-func EntityToMediaAsset(e entity.MediaAsset) MediaAsset {
+func ModuleToMediaAsset(e mediamodule.MediaAsset) MediaAsset {
 	return MediaAsset{
 		ID:        e.ID,
 		FileName:  e.FileName,

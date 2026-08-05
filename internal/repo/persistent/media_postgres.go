@@ -6,63 +6,64 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
 type MediaRepo struct {
 	*postgres.Postgres
 	mu    sync.RWMutex
-	items map[string]entity.MediaAsset
+	items map[string]mediamodule.MediaAsset
 }
 
 func NewMediaRepo(pg *postgres.Postgres) *MediaRepo {
-	return &MediaRepo{Postgres: pg, items: make(map[string]entity.MediaAsset)}
+	return &MediaRepo{Postgres: pg, items: make(map[string]mediamodule.MediaAsset)}
 }
 
-func (r *MediaRepo) Store(ctx context.Context, media *entity.MediaAsset) error {
+func (r *MediaRepo) Store(ctx context.Context, media *mediamodule.MediaAsset) error {
 	if r.Postgres == nil || r.Gorm == nil {
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		if r.items == nil {
-			r.items = make(map[string]entity.MediaAsset)
+			r.items = make(map[string]mediamodule.MediaAsset)
 		}
 		r.items[media.ID] = *media
 		return nil
 	}
 
-	model := models.EntityToMediaAsset(*media)
+	model := models.ModuleToMediaAsset(*media)
 	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
 		return fmt.Errorf("MediaRepo.Store: %w", err)
 	}
 	return nil
 }
 
-func (r *MediaRepo) Get(ctx context.Context, id string) (entity.MediaAsset, error) {
+func (r *MediaRepo) Get(ctx context.Context, id string) (mediamodule.MediaAsset, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		item, exists := r.items[id]
 		if !exists {
-			return entity.MediaAsset{}, fmt.Errorf("MediaRepo.Get: not found")
+			return mediamodule.MediaAsset{}, fmt.Errorf("MediaRepo.Get: not found")
 		}
 		return item, nil
 	}
 
 	var row models.MediaAsset
 	if err := r.Gorm.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return entity.MediaAsset{}, fmt.Errorf("MediaRepo.Get: %w", err)
+		return mediamodule.MediaAsset{}, fmt.Errorf("MediaRepo.Get: %w", err)
 	}
-	return models.MediaAssetToEntity(row), nil
+	return models.MediaAssetToModule(row), nil
 }
 
-func (r *MediaRepo) List(ctx context.Context, page entity.Pagination, q string) ([]entity.MediaAsset, int, error) {
+func (r *MediaRepo) List(ctx context.Context, page pagination.Pagination, q string) ([]mediamodule.MediaAsset, int, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		_ = page.Normalize()
 		r.mu.RLock()
 		defer r.mu.RUnlock()
-		items := make([]entity.MediaAsset, 0, len(r.items))
+		items := make([]mediamodule.MediaAsset, 0, len(r.items))
 		for _, item := range r.items {
 			if q == "" || strings.Contains(strings.ToLower(item.FileName), strings.ToLower(q)) {
 				items = append(items, item)
@@ -87,9 +88,9 @@ func (r *MediaRepo) List(ctx context.Context, page entity.Pagination, q string) 
 		return nil, 0, fmt.Errorf("MediaRepo.List(find): %w", err)
 	}
 
-	items := make([]entity.MediaAsset, 0, len(rows))
+	items := make([]mediamodule.MediaAsset, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, models.MediaAssetToEntity(row))
+		items = append(items, models.MediaAssetToModule(row))
 	}
 	return items, int(total), nil
 }

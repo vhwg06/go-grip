@@ -5,19 +5,19 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Auth capability.
 type Handler struct {
-	authUC usecase.Auth
-	userUC usecase.User
+	authUC usermodule.AuthUseCase
+	userUC usermodule.UserUseCase
 	logger logger.Interface
 }
 
 // NewHandler constructs a new Auth vertical handler instance.
-func NewHandler(authUC usecase.Auth, userUC usecase.User, l logger.Interface) *Handler {
+func NewHandler(authUC usermodule.AuthUseCase, userUC usermodule.UserUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		authUC: authUC,
 		userUC: userUC,
@@ -108,8 +108,20 @@ func (h *Handler) RefreshToken(ctx context.Context, request openapi.RefreshToken
 		}
 	}
 
-	tokenPairDTO := toTokenPairResponse(accessToken, refreshToken, entity.User{})
+	tokenPairDTO := toTokenPairResponse(accessToken, refreshToken, usermodule.User{})
 	return openapi.RefreshToken200JSONResponse(tokenPairDTO), nil
+}
+
+func getActor(ctx context.Context) usermodule.Actor {
+	if val := ctx.Value("actor"); val != nil {
+		if a, ok := val.(entity.Actor); ok {
+			return usermodule.Actor{UserID: a.UserID, Username: a.Username, IsAdmin: a.IsAdmin}
+		}
+		if a, ok := val.(usermodule.Actor); ok {
+			return a
+		}
+	}
+	return usermodule.Actor{}
 }
 
 // LogoutUser handles POST /auth/logout
@@ -126,12 +138,7 @@ func (h *Handler) LogoutUser(ctx context.Context, request openapi.LogoutUserRequ
 		token = *request.Body.LegacyRefreshToken
 	}
 
-	var actor entity.Actor
-	if val := ctx.Value("actor"); val != nil {
-		if a, ok := val.(entity.Actor); ok {
-			actor = a
-		}
-	}
+	actor := getActor(ctx)
 
 	err := h.authUC.Logout(ctx, actor, token)
 	if err != nil {
@@ -153,12 +160,7 @@ func (h *Handler) LogoutUser(ctx context.Context, request openapi.LogoutUserRequ
 
 // GetCurrentUser handles GET /auth/me
 func (h *Handler) GetCurrentUser(ctx context.Context, request openapi.GetCurrentUserRequestObject) (openapi.GetCurrentUserResponseObject, error) {
-	var actor entity.Actor
-	if val := ctx.Value("actor"); val != nil {
-		if a, ok := val.(entity.Actor); ok {
-			actor = a
-		}
-	}
+	actor := getActor(ctx)
 
 	user, err := h.authUC.Me(ctx, actor)
 	if err != nil {

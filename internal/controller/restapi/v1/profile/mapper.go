@@ -2,11 +2,11 @@ package profile
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
-// toAccountProfileResponse maps entity.User to openapi.AccountProfileResponse DTO.
-func toAccountProfileResponse(u entity.User) openapi.AccountProfileResponse {
+// toAccountProfileResponse maps usermodule.User to openapi.AccountProfileResponse DTO.
+func toAccountProfileResponse(u usermodule.User) openapi.AccountProfileResponse {
 	displayName := u.Username
 	desktopNotif := false
 	return openapi.AccountProfileResponse{

@@ -4,19 +4,18 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Importer capability.
 type Handler struct {
-	importerUC usecase.Importer
+	importerUC importermodule.ImporterUseCase
 	logger     logger.Interface
 }
 
 // NewHandler constructs a new Importer vertical handler instance.
-func NewHandler(importerUC usecase.Importer, l logger.Interface) *Handler {
+func NewHandler(importerUC importermodule.ImporterUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		importerUC: importerUC,
 		logger:     l,
@@ -29,14 +28,14 @@ func (h *Handler) ExecuteImport(ctx context.Context, request openapi.ExecuteImpo
 		return openapi.ExecuteImport400JSONResponse{}, nil
 	}
 
-	items := make([]entity.ImportItem, len(request.Body.Items))
+	items := make([]importermodule.ImportItem, len(request.Body.Items))
 	for i, item := range request.Body.Items {
 		var dataMap map[string]any
 		if item.Data != nil {
 			dataMap = *item.Data
 		}
-		items[i] = entity.ImportItem{
-			Type: entity.ImportItemType(item.Type),
+		items[i] = importermodule.ImportItem{
+			Type: importermodule.ImportItemType(item.Type),
 			Data: dataMap,
 		}
 	}
