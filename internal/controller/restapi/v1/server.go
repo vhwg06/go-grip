@@ -180,6 +180,155 @@ func (s *Server) ListAdminAuditLogs(ctx context.Context, request openapi.ListAdm
 	return s.adminHandler().ListAdminAuditLogs(ctx, request)
 }
 
+// Admin Orders
+func (s *Server) AdminListOrders(ctx context.Context, request openapi.AdminListOrdersRequestObject) (openapi.AdminListOrdersResponseObject, error) {
+	return s.adminHandler().AdminListOrders(ctx, request)
+}
+
+func (s *Server) AdminGetOrder(ctx context.Context, request openapi.AdminGetOrderRequestObject) (openapi.AdminGetOrderResponseObject, error) {
+	return s.adminHandler().AdminGetOrder(ctx, request)
+}
+
+func (s *Server) AdminUpdateOrder(ctx context.Context, request openapi.AdminUpdateOrderRequestObject) (openapi.AdminUpdateOrderResponseObject, error) {
+	return s.adminHandler().AdminUpdateOrder(ctx, request)
+}
+
+func (s *Server) AdminGetCollect(ctx context.Context, request openapi.AdminGetCollectRequestObject) (openapi.AdminGetCollectResponseObject, error) {
+	return s.adminHandler().AdminGetCollect(ctx, request)
+}
+
+// Admin Refunds
+func (s *Server) AdminListRefunds(ctx context.Context, request openapi.AdminListRefundsRequestObject) (openapi.AdminListRefundsResponseObject, error) {
+	return s.adminHandler().AdminListRefunds(ctx, request)
+}
+
+func (s *Server) AdminApproveRefund(ctx context.Context, request openapi.AdminApproveRefundRequestObject) (openapi.AdminApproveRefundResponseObject, error) {
+	return s.adminHandler().AdminApproveRefund(ctx, request)
+}
+
+func (s *Server) AdminRejectRefund(ctx context.Context, request openapi.AdminRejectRefundRequestObject) (openapi.AdminRejectRefundResponseObject, error) {
+	return s.adminHandler().AdminRejectRefund(ctx, request)
+}
+
+// Admin Reviews
+func (s *Server) AdminListReviews(ctx context.Context, request openapi.AdminListReviewsRequestObject) (openapi.AdminListReviewsResponseObject, error) {
+	return s.adminHandler().AdminListReviews(ctx, request)
+}
+
+func (s *Server) AdminPublishSelectedReviews(ctx context.Context, request openapi.AdminPublishSelectedReviewsRequestObject) (openapi.AdminPublishSelectedReviewsResponseObject, error) {
+	return s.adminHandler().AdminPublishSelectedReviews(ctx, request)
+}
+
+func (s *Server) AdminDeleteReview(ctx context.Context, request openapi.AdminDeleteReviewRequestObject) (openapi.AdminDeleteReviewResponseObject, error) {
+	return s.adminHandler().AdminDeleteReview(ctx, request)
+}
+
+func (s *Server) AdminApproveReview(ctx context.Context, request openapi.AdminApproveReviewRequestObject) (openapi.AdminApproveReviewResponseObject, error) {
+	return s.adminHandler().AdminApproveReview(ctx, request)
+}
+
+func (s *Server) AdminHideReview(ctx context.Context, request openapi.AdminHideReviewRequestObject) (openapi.AdminHideReviewResponseObject, error) {
+	return s.adminHandler().AdminHideReview(ctx, request)
+}
+
+func (s *Server) AdminFeatureReview(ctx context.Context, request openapi.AdminFeatureReviewRequestObject) (openapi.AdminFeatureReviewResponseObject, error) {
+	return s.adminHandler().AdminFeatureReview(ctx, request)
+}
+
+// Admin Users
+func (s *Server) AdminListUsers(ctx context.Context, request openapi.AdminListUsersRequestObject) (openapi.AdminListUsersResponseObject, error) {
+	return s.adminHandler().AdminListUsers(ctx, request)
+}
+
+func (s *Server) AdminBlockUser(ctx context.Context, request openapi.AdminBlockUserRequestObject) (openapi.AdminBlockUserResponseObject, error) {
+	return s.adminHandler().AdminBlockUser(ctx, request)
+}
+
+// Admin Settings
+func (s *Server) AdminGetSetting(ctx context.Context, request openapi.AdminGetSettingRequestObject) (openapi.AdminGetSettingResponseObject, error) {
+	return s.adminHandler().AdminGetSetting(ctx, request)
+}
+
+func (s *Server) AdminUpsertSetting(ctx context.Context, request openapi.AdminUpsertSettingRequestObject) (openapi.AdminUpsertSettingResponseObject, error) {
+	return s.adminHandler().AdminUpsertSetting(ctx, request)
+}
+
+func (s *Server) AdminGetStoreSettings(ctx context.Context, request openapi.AdminGetStoreSettingsRequestObject) (openapi.AdminGetStoreSettingsResponseObject, error) {
+	return s.adminHandler().AdminGetStoreSettings(ctx, request)
+}
+
+func (s *Server) AdminUpdateStoreSettingsBrand(ctx context.Context, request openapi.AdminUpdateStoreSettingsBrandRequestObject) (openapi.AdminUpdateStoreSettingsBrandResponseObject, error) {
+	return s.adminHandler().AdminUpdateStoreSettingsBrand(ctx, request)
+}
+
+func (s *Server) AdminUpdateStoreSettingsContact(ctx context.Context, request openapi.AdminUpdateStoreSettingsContactRequestObject) (openapi.AdminUpdateStoreSettingsContactResponseObject, error) {
+	return s.adminHandler().AdminUpdateStoreSettingsContact(ctx, request)
+}
+
+func (s *Server) AdminUpdateStoreSettingsFooter(ctx context.Context, request openapi.AdminUpdateStoreSettingsFooterRequestObject) (openapi.AdminUpdateStoreSettingsFooterResponseObject, error) {
+	return s.adminHandler().AdminUpdateStoreSettingsFooter(ctx, request)
+}
+
+func (s *Server) AdminUpdateStoreSettingsHomepage(ctx context.Context, request openapi.AdminUpdateStoreSettingsHomepageRequestObject) (openapi.AdminUpdateStoreSettingsHomepageResponseObject, error) {
+	return s.adminHandler().AdminUpdateStoreSettingsHomepage(ctx, request)
+}
+
+func (s *Server) AdminUpdateStoreSettingsFloatingSupport(ctx context.Context, request openapi.AdminUpdateStoreSettingsFloatingSupportRequestObject) (openapi.AdminUpdateStoreSettingsFloatingSupportResponseObject, error) {
+	return s.adminHandler().AdminUpdateStoreSettingsFloatingSupport(ctx, request)
+}
+
+// Admin Media
+func (s *Server) AdminListMedia(ctx context.Context, request openapi.AdminListMediaRequestObject) (openapi.AdminListMediaResponseObject, error) {
+	return s.adminHandler().AdminListMedia(ctx, request)
+}
+
+func (s *Server) AdminCreateMedia(ctx context.Context, request openapi.AdminCreateMediaRequestObject) (openapi.AdminCreateMediaResponseObject, error) {
+	return s.adminHandler().AdminCreateMedia(ctx, request)
+}
+
+func (s *Server) AdminGetPresignedUrl(ctx context.Context, request openapi.AdminGetPresignedUrlRequestObject) (openapi.AdminGetPresignedUrlResponseObject, error) {
+	return s.adminHandler().AdminGetPresignedUrl(ctx, request)
+}
+
+// Admin Banners & FAQs
+func (s *Server) AdminListBanners(ctx context.Context, request openapi.AdminListBannersRequestObject) (openapi.AdminListBannersResponseObject, error) {
+	return s.adminHandler().AdminListBanners(ctx, request)
+}
+
+func (s *Server) AdminSaveBanner(ctx context.Context, request openapi.AdminSaveBannerRequestObject) (openapi.AdminSaveBannerResponseObject, error) {
+	return s.adminHandler().AdminSaveBanner(ctx, request)
+}
+
+func (s *Server) AdminListFaqs(ctx context.Context, request openapi.AdminListFaqsRequestObject) (openapi.AdminListFaqsResponseObject, error) {
+	return s.adminHandler().AdminListFaqs(ctx, request)
+}
+
+func (s *Server) AdminSaveFaq(ctx context.Context, request openapi.AdminSaveFaqRequestObject) (openapi.AdminSaveFaqResponseObject, error) {
+	return s.adminHandler().AdminSaveFaq(ctx, request)
+}
+
+// Admin Messages & Notifications
+func (s *Server) AdminListMessages(ctx context.Context, request openapi.AdminListMessagesRequestObject) (openapi.AdminListMessagesResponseObject, error) {
+	return s.adminHandler().AdminListMessages(ctx, request)
+}
+
+func (s *Server) AdminBroadcastMessage(ctx context.Context, request openapi.AdminBroadcastMessageRequestObject) (openapi.AdminBroadcastMessageResponseObject, error) {
+	return s.adminHandler().AdminBroadcastMessage(ctx, request)
+}
+
+func (s *Server) AdminGetNotifications(ctx context.Context, request openapi.AdminGetNotificationsRequestObject) (openapi.AdminGetNotificationsResponseObject, error) {
+	return s.adminHandler().AdminGetNotifications(ctx, request)
+}
+
+// Admin Products & Categories
+func (s *Server) AdminListProducts(ctx context.Context, request openapi.AdminListProductsRequestObject) (openapi.AdminListProductsResponseObject, error) {
+	return s.adminHandler().AdminListProducts(ctx, request)
+}
+
+func (s *Server) AdminListCategories(ctx context.Context, request openapi.AdminListCategoriesRequestObject) (openapi.AdminListCategoriesResponseObject, error) {
+	return s.adminHandler().AdminListCategories(ctx, request)
+}
+
 // Auth Capability
 func (s *Server) RegisterUser(ctx context.Context, request openapi.RegisterUserRequestObject) (openapi.RegisterUserResponseObject, error) {
 	return s.authHandler().RegisterUser(ctx, request)
@@ -428,4 +577,93 @@ func (s *Server) AddToWishlist(ctx context.Context, request openapi.AddToWishlis
 
 func (s *Server) RemoveFromWishlist(ctx context.Context, request openapi.RemoveFromWishlistRequestObject) (openapi.RemoveFromWishlistResponseObject, error) {
 	return s.wishlistHandler().RemoveFromWishlist(ctx, request)
+}
+
+// Additional Checkout methods
+func (s *Server) CancelCheckoutOrder(ctx context.Context, request openapi.CancelCheckoutOrderRequestObject) (openapi.CancelCheckoutOrderResponseObject, error) {
+	return s.checkoutHandler().CancelCheckoutOrder(ctx, request)
+}
+
+func (s *Server) GetCheckoutOrderStatus(ctx context.Context, request openapi.GetCheckoutOrderStatusRequestObject) (openapi.GetCheckoutOrderStatusResponseObject, error) {
+	return s.checkoutHandler().GetCheckoutOrderStatus(ctx, request)
+}
+
+// Additional Content methods
+func (s *Server) GetPublicHomepage(ctx context.Context, request openapi.GetPublicHomepageRequestObject) (openapi.GetPublicHomepageResponseObject, error) {
+	return s.contentHandler().GetPublicHomepage(ctx, request)
+}
+
+func (s *Server) GetActiveFaqs(ctx context.Context, request openapi.GetActiveFaqsRequestObject) (openapi.GetActiveFaqsResponseObject, error) {
+	return s.contentHandler().GetActiveFaqs(ctx, request)
+}
+
+func (s *Server) ListContentArticles(ctx context.Context, request openapi.ListContentArticlesRequestObject) (openapi.ListContentArticlesResponseObject, error) {
+	return s.contentHandler().ListContentArticles(ctx, request)
+}
+
+func (s *Server) CreateContentArticle(ctx context.Context, request openapi.CreateContentArticleRequestObject) (openapi.CreateContentArticleResponseObject, error) {
+	return s.contentHandler().CreateContentArticle(ctx, request)
+}
+
+func (s *Server) ListContentPages(ctx context.Context, request openapi.ListContentPagesRequestObject) (openapi.ListContentPagesResponseObject, error) {
+	return s.contentHandler().ListContentPages(ctx, request)
+}
+
+func (s *Server) CreateContentPage(ctx context.Context, request openapi.CreateContentPageRequestObject) (openapi.CreateContentPageResponseObject, error) {
+	return s.contentHandler().CreateContentPage(ctx, request)
+}
+
+// Additional Profile methods
+func (s *Server) GetProfile(ctx context.Context, request openapi.GetProfileRequestObject) (openapi.GetProfileResponseObject, error) {
+	return s.profileHandler().GetProfile(ctx, request)
+}
+
+func (s *Server) GetUserProfile(ctx context.Context, request openapi.GetUserProfileRequestObject) (openapi.GetUserProfileResponseObject, error) {
+	return s.profileHandler().GetUserProfile(ctx, request)
+}
+
+func (s *Server) UpdateProfile(ctx context.Context, request openapi.UpdateProfileRequestObject) (openapi.UpdateProfileResponseObject, error) {
+	return s.profileHandler().UpdateProfile(ctx, request)
+}
+
+func (s *Server) UpdateProfileEmail(ctx context.Context, request openapi.UpdateProfileEmailRequestObject) (openapi.UpdateProfileEmailResponseObject, error) {
+	return s.profileHandler().UpdateProfileEmail(ctx, request)
+}
+
+func (s *Server) GetProfileSecurity(ctx context.Context, request openapi.GetProfileSecurityRequestObject) (openapi.GetProfileSecurityResponseObject, error) {
+	return s.profileHandler().GetProfileSecurity(ctx, request)
+}
+
+func (s *Server) GetProfileSessions(ctx context.Context, request openapi.GetProfileSessionsRequestObject) (openapi.GetProfileSessionsResponseObject, error) {
+	return s.profileHandler().GetProfileSessions(ctx, request)
+}
+
+func (s *Server) UpdateProfileNotifications(ctx context.Context, request openapi.UpdateProfileNotificationsRequestObject) (openapi.UpdateProfileNotificationsResponseObject, error) {
+	return s.profileHandler().UpdateProfileNotifications(ctx, request)
+}
+
+// Checkin methods (delegated to user handler)
+func (s *Server) DoCheckin(ctx context.Context, request openapi.DoCheckinRequestObject) (openapi.DoCheckinResponseObject, error) {
+	return s.userHandler().DoCheckin(ctx, request)
+}
+
+func (s *Server) GetCheckinStatus(ctx context.Context, request openapi.GetCheckinStatusRequestObject) (openapi.GetCheckinStatusResponseObject, error) {
+	return s.userHandler().GetCheckinStatus(ctx, request)
+}
+
+func (s *Server) GetCheckinStatusAlt(ctx context.Context, request openapi.GetCheckinStatusAltRequestObject) (openapi.GetCheckinStatusAltResponseObject, error) {
+	return s.userHandler().GetCheckinStatusAlt(ctx, request)
+}
+
+func (s *Server) GetUserCheckinStatus(ctx context.Context, request openapi.GetUserCheckinStatusRequestObject) (openapi.GetUserCheckinStatusResponseObject, error) {
+	return s.userHandler().GetUserCheckinStatus(ctx, request)
+}
+
+func (s *Server) GetUserCheckinStatusAlt(ctx context.Context, request openapi.GetUserCheckinStatusAltRequestObject) (openapi.GetUserCheckinStatusAltResponseObject, error) {
+	return s.userHandler().GetUserCheckinStatusAlt(ctx, request)
+}
+
+// Catalog additional method
+func (s *Server) ListCatalogProductModels(ctx context.Context, request openapi.ListCatalogProductModelsRequestObject) (openapi.ListCatalogProductModelsResponseObject, error) {
+	return s.catalogHandler().ListCatalogProductModels(ctx, request)
 }

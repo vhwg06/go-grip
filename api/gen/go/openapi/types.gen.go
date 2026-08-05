@@ -10,6 +10,30 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for AdminListRefundsParamsStatus.
+const (
+	All      AdminListRefundsParamsStatus = "all"
+	Approved AdminListRefundsParamsStatus = "approved"
+	Pending  AdminListRefundsParamsStatus = "pending"
+	Rejected AdminListRefundsParamsStatus = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the AdminListRefundsParamsStatus enum.
+func (e AdminListRefundsParamsStatus) Valid() bool {
+	switch e {
+	case All:
+		return true
+	case Approved:
+		return true
+	case Pending:
+		return true
+	case Rejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // AccountProfileResponse defines model for AccountProfileResponse.
 type AccountProfileResponse struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -69,6 +93,51 @@ type AdminAuditLogResponse struct {
 	UserId *string `json:"user_id,omitempty"`
 }
 
+// AdminBannerListResponse defines model for AdminBannerListResponse.
+type AdminBannerListResponse struct {
+	Items *[]AdminBannerResponse `json:"items,omitempty"`
+}
+
+// AdminBannerRequest defines model for AdminBannerRequest.
+type AdminBannerRequest struct {
+	Id        *string `json:"id,omitempty"`
+	ImageUrl  *string `json:"imageUrl,omitempty"`
+	IsActive  *bool   `json:"isActive,omitempty"`
+	LinkUrl   *string `json:"linkUrl,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
+	Title     *string `json:"title,omitempty"`
+}
+
+// AdminBannerResponse defines model for AdminBannerResponse.
+type AdminBannerResponse struct {
+	Id        *string `json:"id,omitempty"`
+	ImageUrl  *string `json:"imageUrl,omitempty"`
+	IsActive  *bool   `json:"isActive,omitempty"`
+	LinkUrl   *string `json:"linkUrl,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
+	Title     *string `json:"title,omitempty"`
+}
+
+// AdminBlockUserRequest defines model for AdminBlockUserRequest.
+type AdminBlockUserRequest struct {
+	Blocked bool `json:"blocked"`
+}
+
+// AdminBroadcastMessageRequest defines model for AdminBroadcastMessageRequest.
+type AdminBroadcastMessageRequest struct {
+	Body     string  `json:"body"`
+	ImageUrl *string `json:"imageUrl,omitempty"`
+	Title    string  `json:"title"`
+}
+
+// AdminBulkReviewRequest defines model for AdminBulkReviewRequest.
+type AdminBulkReviewRequest struct {
+	Ids []int64 `json:"ids"`
+}
+
+// AdminCollectResponse defines model for AdminCollectResponse.
+type AdminCollectResponse map[string]interface{}
+
 // AdminDashboardStatsResponse defines model for AdminDashboardStatsResponse.
 type AdminDashboardStatsResponse struct {
 	// TotalOrders Example: 320
@@ -82,6 +151,218 @@ type AdminDashboardStatsResponse struct {
 
 	// TotalUsers Example: 150
 	TotalUsers int `json:"total_users"`
+}
+
+// AdminFaqListResponse defines model for AdminFaqListResponse.
+type AdminFaqListResponse struct {
+	Items *[]AdminFaqResponse `json:"items,omitempty"`
+}
+
+// AdminFaqRequest defines model for AdminFaqRequest.
+type AdminFaqRequest struct {
+	Answer    *string `json:"answer,omitempty"`
+	Id        *string `json:"id,omitempty"`
+	IsActive  *bool   `json:"isActive,omitempty"`
+	Question  *string `json:"question,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
+}
+
+// AdminFaqResponse defines model for AdminFaqResponse.
+type AdminFaqResponse struct {
+	Answer    *string `json:"answer,omitempty"`
+	Id        *string `json:"id,omitempty"`
+	IsActive  *bool   `json:"isActive,omitempty"`
+	Question  *string `json:"question,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
+}
+
+// AdminMediaListResponse defines model for AdminMediaListResponse.
+type AdminMediaListResponse struct {
+	Items *[]AdminMediaResponse `json:"items,omitempty"`
+	Total *int                  `json:"total,omitempty"`
+}
+
+// AdminMediaResponse defines model for AdminMediaResponse.
+type AdminMediaResponse struct {
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	FileName  *string    `json:"fileName,omitempty"`
+	Id        *string    `json:"id,omitempty"`
+	MimeType  *string    `json:"mimeType,omitempty"`
+	Size      *int64     `json:"size,omitempty"`
+	Url       *string    `json:"url,omitempty"`
+}
+
+// AdminMessageListResponse defines model for AdminMessageListResponse.
+type AdminMessageListResponse struct {
+	Items *[]AdminMessageResponse `json:"items,omitempty"`
+}
+
+// AdminMessageResponse defines model for AdminMessageResponse.
+type AdminMessageResponse struct {
+	Body         *string    `json:"body,omitempty"`
+	CreatedAt    *time.Time `json:"createdAt,omitempty"`
+	Id           *int64     `json:"id,omitempty"`
+	TargetUserID *string    `json:"targetUserID,omitempty"`
+	Title        *string    `json:"title,omitempty"`
+	Type         *string    `json:"type,omitempty"`
+}
+
+// AdminNotificationStatusResponse defines model for AdminNotificationStatusResponse.
+type AdminNotificationStatusResponse map[string]interface{}
+
+// AdminOrderDetailResponse defines model for AdminOrderDetailResponse.
+type AdminOrderDetailResponse struct {
+	Address       *string    `json:"address,omitempty"`
+	Amount        *int64     `json:"amount,omitempty"`
+	CreatedAt     *time.Time `json:"createdAt,omitempty"`
+	Email         *string    `json:"email,omitempty"`
+	OrderId       *string    `json:"orderId,omitempty"`
+	PaymentMethod *string    `json:"paymentMethod,omitempty"`
+	ProductName   *string    `json:"productName,omitempty"`
+	Quantity      *int       `json:"quantity,omitempty"`
+	Status        *string    `json:"status,omitempty"`
+	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
+	UserId        *string    `json:"userId,omitempty"`
+	Username      *string    `json:"username,omitempty"`
+}
+
+// AdminOrderListResponse defines model for AdminOrderListResponse.
+type AdminOrderListResponse struct {
+	Items    *[]AdminOrderDetailResponse `json:"items,omitempty"`
+	Page     *int                        `json:"page,omitempty"`
+	PageSize *int                        `json:"pageSize,omitempty"`
+	Total    *int                        `json:"total,omitempty"`
+}
+
+// AdminPresignedUrlResponse defines model for AdminPresignedUrlResponse.
+type AdminPresignedUrlResponse struct {
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	Key       *string    `json:"key,omitempty"`
+	Url       *string    `json:"url,omitempty"`
+}
+
+// AdminProcessRefundRequest defines model for AdminProcessRefundRequest.
+type AdminProcessRefundRequest struct {
+	Note *string `json:"note,omitempty"`
+}
+
+// AdminProductListResponse defines model for AdminProductListResponse.
+type AdminProductListResponse struct {
+	Items *[]ProductResponse `json:"items,omitempty"`
+	Total *int               `json:"total,omitempty"`
+}
+
+// AdminRefundListResponse defines model for AdminRefundListResponse.
+type AdminRefundListResponse struct {
+	Items *[]AdminRefundResponse `json:"items,omitempty"`
+	Total *int                   `json:"total,omitempty"`
+}
+
+// AdminRefundResponse defines model for AdminRefundResponse.
+type AdminRefundResponse struct {
+	AdminNote     *string    `json:"adminNote,omitempty"`
+	AdminUsername *string    `json:"adminUsername,omitempty"`
+	Amount        *int64     `json:"amount,omitempty"`
+	CreatedAt     *time.Time `json:"createdAt,omitempty"`
+	Id            *int64     `json:"id,omitempty"`
+	OrderId       *string    `json:"orderId,omitempty"`
+	OrderStatus   *string    `json:"orderStatus,omitempty"`
+	ProcessedAt   *time.Time `json:"processedAt,omitempty"`
+	ProductName   *string    `json:"productName,omitempty"`
+	Reason        *string    `json:"reason,omitempty"`
+	Status        *string    `json:"status,omitempty"`
+	TradeNo       *string    `json:"tradeNo,omitempty"`
+	UserId        *string    `json:"userId,omitempty"`
+	Username      *string    `json:"username,omitempty"`
+}
+
+// AdminReviewListResponse defines model for AdminReviewListResponse.
+type AdminReviewListResponse struct {
+	Items *[]AdminReviewResponse `json:"items,omitempty"`
+	Stats *ReviewModerationStats `json:"stats,omitempty"`
+	Total *int                   `json:"total,omitempty"`
+}
+
+// AdminReviewResponse defines model for AdminReviewResponse.
+type AdminReviewResponse struct {
+	Comment            *string    `json:"comment,omitempty"`
+	CreatedAt          *time.Time `json:"createdAt,omitempty"`
+	Id                 *int64     `json:"id,omitempty"`
+	IsVerifiedPurchase *bool      `json:"isVerifiedPurchase,omitempty"`
+	ProductId          *string    `json:"productId,omitempty"`
+	ProductName        *string    `json:"productName,omitempty"`
+	Rating             *int       `json:"rating,omitempty"`
+	Status             *string    `json:"status,omitempty"`
+	UserId             *string    `json:"userId,omitempty"`
+	Username           *string    `json:"username,omitempty"`
+}
+
+// AdminSettingResponse defines model for AdminSettingResponse.
+type AdminSettingResponse struct {
+	Key       *string    `json:"key,omitempty"`
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
+	Value     *string    `json:"value,omitempty"`
+}
+
+// AdminStoreSettingsResponse defines model for AdminStoreSettingsResponse.
+type AdminStoreSettingsResponse map[string]interface{}
+
+// AdminUpdateOrderRequest defines model for AdminUpdateOrderRequest.
+type AdminUpdateOrderRequest struct {
+	Status *string `json:"status,omitempty"`
+}
+
+// AdminUpsertSettingRequest defines model for AdminUpsertSettingRequest.
+type AdminUpsertSettingRequest struct {
+	Value string `json:"value"`
+}
+
+// AdminUserListResponse defines model for AdminUserListResponse.
+type AdminUserListResponse struct {
+	Items    *[]AdminUserResponse `json:"items,omitempty"`
+	Page     *int                 `json:"page,omitempty"`
+	PageSize *int                 `json:"pageSize,omitempty"`
+	Total    *int                 `json:"total,omitempty"`
+}
+
+// AdminUserResponse defines model for AdminUserResponse.
+type AdminUserResponse struct {
+	CreatedAt   *time.Time `json:"createdAt,omitempty"`
+	DisplayName *string    `json:"displayName,omitempty"`
+	Email       *string    `json:"email,omitempty"`
+	Id          *string    `json:"id,omitempty"`
+	IsAdmin     *bool      `json:"isAdmin,omitempty"`
+	OrderCount  *int       `json:"orderCount,omitempty"`
+	RefundCount *int       `json:"refundCount,omitempty"`
+	ReviewCount *int       `json:"reviewCount,omitempty"`
+	Role        *string    `json:"role,omitempty"`
+	Status      *string    `json:"status,omitempty"`
+	Username    *string    `json:"username,omitempty"`
+}
+
+// ArticleListResponse defines model for ArticleListResponse.
+type ArticleListResponse struct {
+	Items *[]ArticleResponse `json:"items,omitempty"`
+	Total *int               `json:"total,omitempty"`
+}
+
+// ArticleRequest defines model for ArticleRequest.
+type ArticleRequest struct {
+	Body   string  `json:"body"`
+	Slug   *string `json:"slug,omitempty"`
+	Status *string `json:"status,omitempty"`
+	Title  string  `json:"title"`
+}
+
+// ArticleResponse defines model for ArticleResponse.
+type ArticleResponse struct {
+	Body        *string    `json:"body,omitempty"`
+	CreatedAt   *time.Time `json:"createdAt,omitempty"`
+	Id          *string    `json:"id,omitempty"`
+	PublishedAt *time.Time `json:"publishedAt,omitempty"`
+	Slug        *string    `json:"slug,omitempty"`
+	Status      *string    `json:"status,omitempty"`
+	Title       *string    `json:"title,omitempty"`
 }
 
 // CartItemResponse defines model for CartItemResponse.
@@ -137,6 +418,13 @@ type CategoryResponse struct {
 
 	// Slug Example: apparel
 	Slug *string `json:"slug,omitempty"`
+}
+
+// CheckinStatusResponse defines model for CheckinStatusResponse.
+type CheckinStatusResponse struct {
+	CheckedIn     *bool      `json:"checkedIn,omitempty"`
+	LastCheckinAt *time.Time `json:"lastCheckinAt,omitempty"`
+	Streak        *int       `json:"streak,omitempty"`
 }
 
 // CheckoutOrderResponse defines model for CheckoutOrderResponse.
@@ -472,6 +760,40 @@ type ProductResponse struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
+// ProfileSecurityResponse defines model for ProfileSecurityResponse.
+type ProfileSecurityResponse struct {
+	Email       *string `json:"email,omitempty"`
+	HasPassword *bool   `json:"hasPassword,omitempty"`
+}
+
+// ProfileSessionListResponse defines model for ProfileSessionListResponse.
+type ProfileSessionListResponse struct {
+	Items *[]ProfileSessionResponse `json:"items,omitempty"`
+}
+
+// ProfileSessionResponse defines model for ProfileSessionResponse.
+type ProfileSessionResponse struct {
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	Id        *string    `json:"id,omitempty"`
+	Ip        *string    `json:"ip,omitempty"`
+	UserAgent *string    `json:"userAgent,omitempty"`
+}
+
+// PublicFaqListResponse defines model for PublicFaqListResponse.
+type PublicFaqListResponse struct {
+	Items *[]AdminFaqResponse `json:"items,omitempty"`
+}
+
+// PublicHomepageResponse defines model for PublicHomepageResponse.
+type PublicHomepageResponse map[string]interface{}
+
+// PublicProductModelListResponse defines model for PublicProductModelListResponse.
+type PublicProductModelListResponse struct {
+	Items *[]map[string]interface{} `json:"items,omitempty"`
+	Total *int                      `json:"total,omitempty"`
+}
+
 // RefreshRequest defines model for RefreshRequest.
 type RefreshRequest struct {
 	// RefreshToken Example: token-uuid
@@ -516,6 +838,13 @@ type RegisterRequest struct {
 	Username string `json:"username"`
 }
 
+// ReviewModerationStats defines model for ReviewModerationStats.
+type ReviewModerationStats struct {
+	Featured *int `json:"featured,omitempty"`
+	Hidden   *int `json:"hidden,omitempty"`
+	Pending  *int `json:"pending,omitempty"`
+}
+
 // ReviewResponse defines model for ReviewResponse.
 type ReviewResponse struct {
 	// Content Example: Great product!
@@ -533,6 +862,13 @@ type ReviewResponse struct {
 
 	// UserId Example: usr-1
 	UserId *string `json:"user_id,omitempty"`
+}
+
+// StaticPageRequest defines model for StaticPageRequest.
+type StaticPageRequest struct {
+	Body  string `json:"body"`
+	Slug  string `json:"slug"`
+	Title string `json:"title"`
 }
 
 // StaticPageResponse defines model for StaticPageResponse.
@@ -624,6 +960,11 @@ type UpdateCartItemRequest struct {
 	Quantity int `json:"quantity"`
 }
 
+// UpdateProfileEmailRequest defines model for UpdateProfileEmailRequest.
+type UpdateProfileEmailRequest struct {
+	Email string `json:"email"`
+}
+
 // UpdateProfileRequest defines model for UpdateProfileRequest.
 type UpdateProfileRequest struct {
 	// DisplayName Example: John Doe
@@ -706,6 +1047,80 @@ type ListAdminAuditLogsParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// AdminListMediaParams defines parameters for AdminListMedia.
+type AdminListMediaParams struct {
+	Page     *int `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// AdminCreateMediaJSONBody defines parameters for AdminCreateMedia.
+type AdminCreateMediaJSONBody map[string]interface{}
+
+// AdminGetPresignedUrlParams defines parameters for AdminGetPresignedUrl.
+type AdminGetPresignedUrlParams struct {
+	FileName    string  `form:"fileName" json:"fileName"`
+	ContentType *string `form:"contentType,omitempty" json:"contentType,omitempty"`
+}
+
+// AdminListOrdersParams defines parameters for AdminListOrders.
+type AdminListOrdersParams struct {
+	Q        *string `form:"q,omitempty" json:"q,omitempty"`
+	Status   *string `form:"status,omitempty" json:"status,omitempty"`
+	Page     *int    `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int    `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// AdminListProductsParams defines parameters for AdminListProducts.
+type AdminListProductsParams struct {
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// AdminListRefundsParams defines parameters for AdminListRefunds.
+type AdminListRefundsParams struct {
+	Status *AdminListRefundsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// AdminListRefundsParamsStatus defines parameters for AdminListRefunds.
+type AdminListRefundsParamsStatus string
+
+// AdminListReviewsParams defines parameters for AdminListReviews.
+type AdminListReviewsParams struct {
+	Q        *string `form:"q,omitempty" json:"q,omitempty"`
+	Status   *string `form:"status,omitempty" json:"status,omitempty"`
+	Page     *int    `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int    `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// AdminUpdateStoreSettingsBrandJSONBody defines parameters for AdminUpdateStoreSettingsBrand.
+type AdminUpdateStoreSettingsBrandJSONBody map[string]interface{}
+
+// AdminUpdateStoreSettingsContactJSONBody defines parameters for AdminUpdateStoreSettingsContact.
+type AdminUpdateStoreSettingsContactJSONBody map[string]interface{}
+
+// AdminUpdateStoreSettingsFloatingSupportJSONBody defines parameters for AdminUpdateStoreSettingsFloatingSupport.
+type AdminUpdateStoreSettingsFloatingSupportJSONBody map[string]interface{}
+
+// AdminUpdateStoreSettingsFooterJSONBody defines parameters for AdminUpdateStoreSettingsFooter.
+type AdminUpdateStoreSettingsFooterJSONBody map[string]interface{}
+
+// AdminUpdateStoreSettingsHomepageJSONBody defines parameters for AdminUpdateStoreSettingsHomepage.
+type AdminUpdateStoreSettingsHomepageJSONBody map[string]interface{}
+
+// AdminListUsersParams defines parameters for AdminListUsers.
+type AdminListUsersParams struct {
+	Q        *string `form:"q,omitempty" json:"q,omitempty"`
+	Page     *int    `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int    `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// ListCatalogProductModelsParams defines parameters for ListCatalogProductModels.
+type ListCatalogProductModelsParams struct {
+	MinPrice *int `form:"minPrice,omitempty" json:"minPrice,omitempty"`
+	MaxPrice *int `form:"maxPrice,omitempty" json:"maxPrice,omitempty"`
+	Limit    *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListProductsParams defines parameters for ListProducts.
 type ListProductsParams struct {
 	CategoryId *string `form:"category_id,omitempty" json:"category_id,omitempty"`
@@ -721,6 +1136,12 @@ type PaymentNotifyJSONBody map[string]string
 type GetCheckoutPreviewParams struct {
 	ProductId *string `form:"product_id,omitempty" json:"product_id,omitempty"`
 	Quantity  *int    `form:"quantity,omitempty" json:"quantity,omitempty"`
+}
+
+// ListContentArticlesParams defines parameters for ListContentArticles.
+type ListContentArticlesParams struct {
+	Page     *int `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
 
 // ListLeadsParams defines parameters for ListLeads.
@@ -741,6 +1162,9 @@ type ListOrdersParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// UpdateProfileNotificationsJSONBody defines parameters for UpdateProfileNotifications.
+type UpdateProfileNotificationsJSONBody map[string]interface{}
+
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -749,6 +1173,51 @@ type ListUsersParams struct {
 
 // UpdateAccountProfileJSONRequestBody defines body for UpdateAccountProfile for application/json ContentType.
 type UpdateAccountProfileJSONRequestBody = UpdateAccountProfileRequest
+
+// AdminSaveBannerJSONRequestBody defines body for AdminSaveBanner for application/json ContentType.
+type AdminSaveBannerJSONRequestBody = AdminBannerRequest
+
+// AdminSaveFaqJSONRequestBody defines body for AdminSaveFaq for application/json ContentType.
+type AdminSaveFaqJSONRequestBody = AdminFaqRequest
+
+// AdminCreateMediaJSONRequestBody defines body for AdminCreateMedia for application/json ContentType.
+type AdminCreateMediaJSONRequestBody AdminCreateMediaJSONBody
+
+// AdminBroadcastMessageJSONRequestBody defines body for AdminBroadcastMessage for application/json ContentType.
+type AdminBroadcastMessageJSONRequestBody = AdminBroadcastMessageRequest
+
+// AdminUpdateOrderJSONRequestBody defines body for AdminUpdateOrder for application/json ContentType.
+type AdminUpdateOrderJSONRequestBody = AdminUpdateOrderRequest
+
+// AdminApproveRefundJSONRequestBody defines body for AdminApproveRefund for application/json ContentType.
+type AdminApproveRefundJSONRequestBody = AdminProcessRefundRequest
+
+// AdminRejectRefundJSONRequestBody defines body for AdminRejectRefund for application/json ContentType.
+type AdminRejectRefundJSONRequestBody = AdminProcessRefundRequest
+
+// AdminPublishSelectedReviewsJSONRequestBody defines body for AdminPublishSelectedReviews for application/json ContentType.
+type AdminPublishSelectedReviewsJSONRequestBody = AdminBulkReviewRequest
+
+// AdminUpsertSettingJSONRequestBody defines body for AdminUpsertSetting for application/json ContentType.
+type AdminUpsertSettingJSONRequestBody = AdminUpsertSettingRequest
+
+// AdminUpdateStoreSettingsBrandJSONRequestBody defines body for AdminUpdateStoreSettingsBrand for application/json ContentType.
+type AdminUpdateStoreSettingsBrandJSONRequestBody AdminUpdateStoreSettingsBrandJSONBody
+
+// AdminUpdateStoreSettingsContactJSONRequestBody defines body for AdminUpdateStoreSettingsContact for application/json ContentType.
+type AdminUpdateStoreSettingsContactJSONRequestBody AdminUpdateStoreSettingsContactJSONBody
+
+// AdminUpdateStoreSettingsFloatingSupportJSONRequestBody defines body for AdminUpdateStoreSettingsFloatingSupport for application/json ContentType.
+type AdminUpdateStoreSettingsFloatingSupportJSONRequestBody AdminUpdateStoreSettingsFloatingSupportJSONBody
+
+// AdminUpdateStoreSettingsFooterJSONRequestBody defines body for AdminUpdateStoreSettingsFooter for application/json ContentType.
+type AdminUpdateStoreSettingsFooterJSONRequestBody AdminUpdateStoreSettingsFooterJSONBody
+
+// AdminUpdateStoreSettingsHomepageJSONRequestBody defines body for AdminUpdateStoreSettingsHomepage for application/json ContentType.
+type AdminUpdateStoreSettingsHomepageJSONRequestBody AdminUpdateStoreSettingsHomepageJSONBody
+
+// AdminBlockUserJSONRequestBody defines body for AdminBlockUser for application/json ContentType.
+type AdminBlockUserJSONRequestBody = AdminBlockUserRequest
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = LoginRequest
@@ -789,6 +1258,12 @@ type PaymentNotifyJSONRequestBody PaymentNotifyJSONBody
 // PreviewCheckoutJSONRequestBody defines body for PreviewCheckout for application/json ContentType.
 type PreviewCheckoutJSONRequestBody = CheckoutPreviewRequest
 
+// CreateContentArticleJSONRequestBody defines body for CreateContentArticle for application/json ContentType.
+type CreateContentArticleJSONRequestBody = ArticleRequest
+
+// CreateContentPageJSONRequestBody defines body for CreateContentPage for application/json ContentType.
+type CreateContentPageJSONRequestBody = StaticPageRequest
+
 // ExecuteImportJSONRequestBody defines body for ExecuteImport for application/json ContentType.
 type ExecuteImportJSONRequestBody = ImportExecuteRequest
 
@@ -797,6 +1272,15 @@ type SubmitLeadJSONRequestBody = SubmitLeadRequest
 
 // RequestOrderRefundJSONRequestBody defines body for RequestOrderRefund for application/json ContentType.
 type RequestOrderRefundJSONRequestBody = RefundRequestPayload
+
+// UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
+type UpdateProfileJSONRequestBody = UpdateAccountProfileRequest
+
+// UpdateProfileEmailJSONRequestBody defines body for UpdateProfileEmail for application/json ContentType.
+type UpdateProfileEmailJSONRequestBody = UpdateProfileEmailRequest
+
+// UpdateProfileNotificationsJSONRequestBody defines body for UpdateProfileNotifications for application/json ContentType.
+type UpdateProfileNotificationsJSONRequestBody UpdateProfileNotificationsJSONBody
 
 // CreateReviewJSONRequestBody defines body for CreateReview for application/json ContentType.
 type CreateReviewJSONRequestBody = CreateReviewRequest

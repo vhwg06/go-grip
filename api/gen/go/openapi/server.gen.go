@@ -8,7 +8,9 @@ import (
 	"compress/flate"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"path"
 	"strings"
@@ -29,9 +31,114 @@ type ServerInterface interface {
 	// ListAdminAuditLogs List system audit logs
 	// (GET /admin/audit-logs)
 	ListAdminAuditLogs(c *fiber.Ctx, params ListAdminAuditLogsParams) error
+	// AdminListBanners List banners (admin)
+	// (GET /admin/banners)
+	AdminListBanners(c *fiber.Ctx) error
+	// AdminSaveBanner Create or update a banner
+	// (POST /admin/banners)
+	AdminSaveBanner(c *fiber.Ctx) error
+	// AdminListCategories List categories (admin legacy)
+	// (GET /admin/categories)
+	AdminListCategories(c *fiber.Ctx) error
+	// AdminGetCollect Get admin collect/aggregate view
+	// (GET /admin/collect)
+	AdminGetCollect(c *fiber.Ctx) error
 	// GetAdminDashboardStats Get administrative dashboard statistics
 	// (GET /admin/dashboard/stats)
 	GetAdminDashboardStats(c *fiber.Ctx) error
+	// AdminListFaqs List FAQs (admin)
+	// (GET /admin/faqs)
+	AdminListFaqs(c *fiber.Ctx) error
+	// AdminSaveFaq Create or update a FAQ
+	// (POST /admin/faqs)
+	AdminSaveFaq(c *fiber.Ctx) error
+	// AdminListMedia List media files (admin)
+	// (GET /admin/media)
+	AdminListMedia(c *fiber.Ctx, params AdminListMediaParams) error
+	// AdminCreateMedia Create a media record (admin)
+	// (POST /admin/media)
+	AdminCreateMedia(c *fiber.Ctx) error
+	// AdminGetPresignedUrl Get presigned URL for media upload
+	// (GET /admin/media/presigned)
+	AdminGetPresignedUrl(c *fiber.Ctx, params AdminGetPresignedUrlParams) error
+	// AdminListMessages List admin broadcast messages
+	// (GET /admin/messages)
+	AdminListMessages(c *fiber.Ctx) error
+	// AdminBroadcastMessage Send a broadcast message to all users
+	// (POST /admin/messages/broadcast)
+	AdminBroadcastMessage(c *fiber.Ctx) error
+	// AdminGetNotifications Get outbound notification readiness status
+	// (GET /admin/notifications)
+	AdminGetNotifications(c *fiber.Ctx) error
+	// AdminListOrders List all orders (admin queue)
+	// (GET /admin/orders)
+	AdminListOrders(c *fiber.Ctx, params AdminListOrdersParams) error
+	// AdminGetOrder Get admin order detail
+	// (GET /admin/orders/{orderId})
+	AdminGetOrder(c *fiber.Ctx, orderId string) error
+	// AdminUpdateOrder Update order status (admin transition)
+	// (PATCH /admin/orders/{orderId})
+	AdminUpdateOrder(c *fiber.Ctx, orderId string) error
+	// AdminListProducts List all products (admin legacy)
+	// (GET /admin/products)
+	AdminListProducts(c *fiber.Ctx, params AdminListProductsParams) error
+	// AdminListRefunds List refund requests (admin)
+	// (GET /admin/refunds)
+	AdminListRefunds(c *fiber.Ctx, params AdminListRefundsParams) error
+	// AdminApproveRefund Approve a refund request
+	// (POST /admin/refunds/{refundId}/approve)
+	AdminApproveRefund(c *fiber.Ctx, refundId string) error
+	// AdminRejectRefund Reject a refund request
+	// (POST /admin/refunds/{refundId}/reject)
+	AdminRejectRefund(c *fiber.Ctx, refundId string) error
+	// AdminListReviews List reviews for moderation
+	// (GET /admin/reviews)
+	AdminListReviews(c *fiber.Ctx, params AdminListReviewsParams) error
+	// AdminPublishSelectedReviews Bulk publish selected reviews
+	// (POST /admin/reviews/publish-selected)
+	AdminPublishSelectedReviews(c *fiber.Ctx) error
+	// AdminDeleteReview Delete a review
+	// (DELETE /admin/reviews/{reviewId})
+	AdminDeleteReview(c *fiber.Ctx, reviewId int64) error
+	// AdminApproveReview Approve a review
+	// (PUT /admin/reviews/{reviewId}/approve)
+	AdminApproveReview(c *fiber.Ctx, reviewId int64) error
+	// AdminFeatureReview Feature a review
+	// (PUT /admin/reviews/{reviewId}/feature)
+	AdminFeatureReview(c *fiber.Ctx, reviewId int64) error
+	// AdminHideReview Hide a review
+	// (PUT /admin/reviews/{reviewId}/hide)
+	AdminHideReview(c *fiber.Ctx, reviewId int64) error
+	// AdminGetSetting Get a setting by key
+	// (GET /admin/settings/{key})
+	AdminGetSetting(c *fiber.Ctx, key string) error
+	// AdminUpsertSetting Upsert a setting by key
+	// (PUT /admin/settings/{key})
+	AdminUpsertSetting(c *fiber.Ctx, key string) error
+	// AdminGetStoreSettings Get all store settings
+	// (GET /admin/store-settings)
+	AdminGetStoreSettings(c *fiber.Ctx) error
+	// AdminUpdateStoreSettingsBrand Update brand store settings
+	// (PUT /admin/store-settings/brand)
+	AdminUpdateStoreSettingsBrand(c *fiber.Ctx) error
+	// AdminUpdateStoreSettingsContact Update contact store settings
+	// (PUT /admin/store-settings/contact)
+	AdminUpdateStoreSettingsContact(c *fiber.Ctx) error
+	// AdminUpdateStoreSettingsFloatingSupport Update floating support store settings
+	// (PUT /admin/store-settings/floating-support)
+	AdminUpdateStoreSettingsFloatingSupport(c *fiber.Ctx) error
+	// AdminUpdateStoreSettingsFooter Update footer store settings
+	// (PUT /admin/store-settings/footer)
+	AdminUpdateStoreSettingsFooter(c *fiber.Ctx) error
+	// AdminUpdateStoreSettingsHomepage Update homepage store settings
+	// (PUT /admin/store-settings/homepage)
+	AdminUpdateStoreSettingsHomepage(c *fiber.Ctx) error
+	// AdminListUsers List users (admin backoffice)
+	// (GET /admin/users)
+	AdminListUsers(c *fiber.Ctx, params AdminListUsersParams) error
+	// AdminBlockUser Block or unblock a user
+	// (PATCH /admin/users/{userId}/block)
+	AdminBlockUser(c *fiber.Ctx, userId string) error
 	// LoginUser Authenticate user and get tokens
 	// (POST /auth/login)
 	LoginUser(c *fiber.Ctx) error
@@ -68,6 +175,9 @@ type ServerInterface interface {
 	// CreateCategory Create catalog category
 	// (POST /catalog/categories)
 	CreateCategory(c *fiber.Ctx) error
+	// ListCatalogProductModels List public catalog product models
+	// (GET /catalog/product-models)
+	ListCatalogProductModels(c *fiber.Ctx, params ListCatalogProductModelsParams) error
 	// ListProducts List catalog products
 	// (GET /catalog/products)
 	ListProducts(c *fiber.Ctx, params ListProductsParams) error
@@ -95,6 +205,9 @@ type ServerInterface interface {
 	// CreateCheckoutOrder Create checkout order
 	// (POST /checkout/orders)
 	CreateCheckoutOrder(c *fiber.Ctx) error
+	// CancelCheckoutOrder Cancel a pending order
+	// (POST /checkout/orders/{orderId}/cancel)
+	CancelCheckoutOrder(c *fiber.Ctx, orderId string) error
 	// GetPaymentParams Get payment initialization parameters
 	// (GET /checkout/orders/{orderId}/payment-params)
 	GetPaymentParams(c *fiber.Ctx, orderId string) error
@@ -104,6 +217,9 @@ type ServerInterface interface {
 	// GetPaymentStatus Get payment status of checkout order
 	// (GET /checkout/orders/{orderId}/payment-status)
 	GetPaymentStatus(c *fiber.Ctx, orderId string) error
+	// GetCheckoutOrderStatus Get checkout order status
+	// (GET /checkout/orders/{orderId}/status)
+	GetCheckoutOrderStatus(c *fiber.Ctx, orderId string) error
 	// PaymentNotify Payment provider webhook notification
 	// (POST /checkout/payment-notify)
 	PaymentNotify(c *fiber.Ctx) error
@@ -116,9 +232,24 @@ type ServerInterface interface {
 	// PreviewCheckout Preview checkout calculations
 	// (POST /checkout/preview)
 	PreviewCheckout(c *fiber.Ctx) error
+	// ListContentArticles List published articles (admin/authenticated)
+	// (GET /content/articles)
+	ListContentArticles(c *fiber.Ctx, params ListContentArticlesParams) error
+	// CreateContentArticle Create a new article
+	// (POST /content/articles)
+	CreateContentArticle(c *fiber.Ctx) error
+	// ListContentPages List content pages
+	// (GET /content/pages)
+	ListContentPages(c *fiber.Ctx) error
+	// CreateContentPage Create a static page
+	// (POST /content/pages)
+	CreateContentPage(c *fiber.Ctx) error
 	// GetStaticPage Get static page by slug
 	// (GET /content/pages/{slug})
 	GetStaticPage(c *fiber.Ctx, slug string) error
+	// GetActiveFaqs Get active FAQs (public)
+	// (GET /faqs/active)
+	GetActiveFaqs(c *fiber.Ctx) error
 	// GetHomepageConfig Get homepage config
 	// (GET /homepage/config)
 	GetHomepageConfig(c *fiber.Ctx) error
@@ -158,12 +289,51 @@ type ServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(c *fiber.Ctx, id string) error
+	// GetProfile Get current user profile (alias)
+	// (GET /profile)
+	GetProfile(c *fiber.Ctx) error
+	// UpdateProfile Update current user profile
+	// (PATCH /profile)
+	UpdateProfile(c *fiber.Ctx) error
+	// DoCheckin Daily check-in
+	// (POST /profile/checkin)
+	DoCheckin(c *fiber.Ctx) error
+	// GetCheckinStatusAlt Get check-in status (alias)
+	// (GET /profile/checkin-status)
+	GetCheckinStatusAlt(c *fiber.Ctx) error
+	// GetCheckinStatus Get check-in status
+	// (GET /profile/checkin/status)
+	GetCheckinStatus(c *fiber.Ctx) error
+	// UpdateProfileEmail Update profile email
+	// (PATCH /profile/email)
+	UpdateProfileEmail(c *fiber.Ctx) error
+	// UpdateProfileNotifications Update profile notification preferences
+	// (PATCH /profile/notifications)
+	UpdateProfileNotifications(c *fiber.Ctx) error
+	// GetProfileSecurity Get profile security settings
+	// (GET /profile/security)
+	GetProfileSecurity(c *fiber.Ctx) error
+	// GetProfileSessions Get active sessions list
+	// (GET /profile/sessions)
+	GetProfileSessions(c *fiber.Ctx) error
+	// GetPublicHomepage Get public homepage config
+	// (GET /public/homepage)
+	GetPublicHomepage(c *fiber.Ctx) error
 	// CreateReview Create product review
 	// (POST /reviews)
 	CreateReview(c *fiber.Ctx) error
 	// DeleteReview Delete product review
 	// (DELETE /reviews/{id})
 	DeleteReview(c *fiber.Ctx, id string) error
+	// GetUserProfile Get user profile (legacy path)
+	// (GET /user/profile)
+	GetUserProfile(c *fiber.Ctx) error
+	// GetUserCheckinStatusAlt Get check-in status (legacy path alt)
+	// (GET /user/profile/checkin-status)
+	GetUserCheckinStatusAlt(c *fiber.Ctx) error
+	// GetUserCheckinStatus Get check-in status (legacy path)
+	// (GET /user/profile/checkin/status)
+	GetUserCheckinStatus(c *fiber.Ctx) error
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(c *fiber.Ctx, params ListUsersParams) error
@@ -294,11 +464,972 @@ func (siw *ServerInterfaceWrapper) ListAdminAuditLogs(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// AdminListBanners operation middleware
+func (siw *ServerInterfaceWrapper) AdminListBanners(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListBanners(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminSaveBanner operation middleware
+func (siw *ServerInterfaceWrapper) AdminSaveBanner(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminSaveBanner(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListCategories operation middleware
+func (siw *ServerInterfaceWrapper) AdminListCategories(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListCategories(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetCollect operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetCollect(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetCollect(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // GetAdminDashboardStats operation middleware
 func (siw *ServerInterfaceWrapper) GetAdminDashboardStats(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetAdminDashboardStats(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListFaqs operation middleware
+func (siw *ServerInterfaceWrapper) AdminListFaqs(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListFaqs(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminSaveFaq operation middleware
+func (siw *ServerInterfaceWrapper) AdminSaveFaq(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminSaveFaq(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListMedia operation middleware
+func (siw *ServerInterfaceWrapper) AdminListMedia(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListMediaParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", query, &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter pageSize: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListMedia(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateMedia operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateMedia(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateMedia(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetPresignedUrl operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetPresignedUrl(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetPresignedUrlParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Required query parameter "fileName" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "fileName", query, &params.FileName, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter fileName: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "contentType" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "contentType", query, &params.ContentType, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter contentType: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetPresignedUrl(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListMessages operation middleware
+func (siw *ServerInterfaceWrapper) AdminListMessages(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListMessages(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminBroadcastMessage operation middleware
+func (siw *ServerInterfaceWrapper) AdminBroadcastMessage(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminBroadcastMessage(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetNotifications operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetNotifications(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetNotifications(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListOrders operation middleware
+func (siw *ServerInterfaceWrapper) AdminListOrders(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListOrdersParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", query, &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter q: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", query, &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter status: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", query, &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter pageSize: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListOrders(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetOrder operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetOrder(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orderId" -------------
+	var orderId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", c.Params("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter orderId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetOrder(c, orderId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateOrder operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateOrder(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orderId" -------------
+	var orderId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", c.Params("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter orderId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateOrder(c, orderId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListProducts operation middleware
+func (siw *ServerInterfaceWrapper) AdminListProducts(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListProductsParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", query, &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter limit: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", query, &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter offset: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListProducts(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListRefunds operation middleware
+func (siw *ServerInterfaceWrapper) AdminListRefunds(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListRefundsParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", query, &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter status: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListRefunds(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminApproveRefund operation middleware
+func (siw *ServerInterfaceWrapper) AdminApproveRefund(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "refundId" -------------
+	var refundId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refundId", c.Params("refundId"), &refundId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter refundId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminApproveRefund(c, refundId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminRejectRefund operation middleware
+func (siw *ServerInterfaceWrapper) AdminRejectRefund(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "refundId" -------------
+	var refundId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refundId", c.Params("refundId"), &refundId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter refundId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminRejectRefund(c, refundId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListReviews operation middleware
+func (siw *ServerInterfaceWrapper) AdminListReviews(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListReviewsParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", query, &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter q: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", query, &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter status: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", query, &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter pageSize: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListReviews(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminPublishSelectedReviews operation middleware
+func (siw *ServerInterfaceWrapper) AdminPublishSelectedReviews(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminPublishSelectedReviews(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeleteReview operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewId" -------------
+	var reviewId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewId", c.Params("reviewId"), &reviewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter reviewId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeleteReview(c, reviewId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminApproveReview operation middleware
+func (siw *ServerInterfaceWrapper) AdminApproveReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewId" -------------
+	var reviewId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewId", c.Params("reviewId"), &reviewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter reviewId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminApproveReview(c, reviewId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminFeatureReview operation middleware
+func (siw *ServerInterfaceWrapper) AdminFeatureReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewId" -------------
+	var reviewId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewId", c.Params("reviewId"), &reviewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter reviewId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminFeatureReview(c, reviewId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminHideReview operation middleware
+func (siw *ServerInterfaceWrapper) AdminHideReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewId" -------------
+	var reviewId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewId", c.Params("reviewId"), &reviewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter reviewId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminHideReview(c, reviewId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetSetting operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetSetting(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "key" -------------
+	var key string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "key", c.Params("key"), &key, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter key: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetSetting(c, key)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpsertSetting operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpsertSetting(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "key" -------------
+	var key string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "key", c.Params("key"), &key, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter key: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpsertSetting(c, key)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetStoreSettings operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetStoreSettings(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetStoreSettings(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateStoreSettingsBrand operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateStoreSettingsBrand(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateStoreSettingsBrand(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateStoreSettingsContact operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateStoreSettingsContact(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateStoreSettingsContact(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateStoreSettingsFloatingSupport operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateStoreSettingsFloatingSupport(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateStoreSettingsFloatingSupport(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateStoreSettingsFooter operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateStoreSettingsFooter(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateStoreSettingsFooter(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateStoreSettingsHomepage operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateStoreSettingsHomepage(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateStoreSettingsHomepage(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListUsers operation middleware
+func (siw *ServerInterfaceWrapper) AdminListUsers(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListUsersParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", query, &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter q: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", query, &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter pageSize: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListUsers(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminBlockUser operation middleware
+func (siw *ServerInterfaceWrapper) AdminBlockUser(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", c.Params("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter userId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminBlockUser(c, userId)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -537,6 +1668,57 @@ func (siw *ServerInterfaceWrapper) CreateCategory(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.CreateCategory(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// ListCatalogProductModels operation middleware
+func (siw *ServerInterfaceWrapper) ListCatalogProductModels(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCatalogProductModelsParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "minPrice" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "minPrice", query, &params.MinPrice, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter minPrice: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "maxPrice" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "maxPrice", query, &params.MaxPrice, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter maxPrice: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", query, &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter limit: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ListCatalogProductModels(c, params)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -796,6 +1978,35 @@ func (siw *ServerInterfaceWrapper) CreateCheckoutOrder(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// CancelCheckoutOrder operation middleware
+func (siw *ServerInterfaceWrapper) CancelCheckoutOrder(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orderId" -------------
+	var orderId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", c.Params("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter orderId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.CancelCheckoutOrder(c, orderId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // GetPaymentParams operation middleware
 func (siw *ServerInterfaceWrapper) GetPaymentParams(c *fiber.Ctx) error {
 
@@ -870,6 +2081,35 @@ func (siw *ServerInterfaceWrapper) GetPaymentStatus(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetPaymentStatus(c, orderId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCheckoutOrderStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckoutOrderStatus(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orderId" -------------
+	var orderId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orderId", c.Params("orderId"), &orderId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter orderId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCheckoutOrderStatus(c, orderId)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -981,6 +2221,104 @@ func (siw *ServerInterfaceWrapper) PreviewCheckout(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// ListContentArticles operation middleware
+func (siw *ServerInterfaceWrapper) ListContentArticles(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListContentArticlesParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pageSize", query, &params.PageSize, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter pageSize: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ListContentArticles(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// CreateContentArticle operation middleware
+func (siw *ServerInterfaceWrapper) CreateContentArticle(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.CreateContentArticle(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// ListContentPages operation middleware
+func (siw *ServerInterfaceWrapper) ListContentPages(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ListContentPages(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// CreateContentPage operation middleware
+func (siw *ServerInterfaceWrapper) CreateContentPage(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.CreateContentPage(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // GetStaticPage operation middleware
 func (siw *ServerInterfaceWrapper) GetStaticPage(c *fiber.Ctx) error {
 
@@ -997,6 +2335,24 @@ func (siw *ServerInterfaceWrapper) GetStaticPage(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetStaticPage(c, slug)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetActiveFaqs operation middleware
+func (siw *ServerInterfaceWrapper) GetActiveFaqs(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetActiveFaqs(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1366,6 +2722,186 @@ func (siw *ServerInterfaceWrapper) RequestOrderRefund(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// GetProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetProfile(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetProfile(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// UpdateProfile operation middleware
+func (siw *ServerInterfaceWrapper) UpdateProfile(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.UpdateProfile(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// DoCheckin operation middleware
+func (siw *ServerInterfaceWrapper) DoCheckin(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.DoCheckin(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCheckinStatusAlt operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckinStatusAlt(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCheckinStatusAlt(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCheckinStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckinStatus(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCheckinStatus(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// UpdateProfileEmail operation middleware
+func (siw *ServerInterfaceWrapper) UpdateProfileEmail(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.UpdateProfileEmail(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// UpdateProfileNotifications operation middleware
+func (siw *ServerInterfaceWrapper) UpdateProfileNotifications(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.UpdateProfileNotifications(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetProfileSecurity operation middleware
+func (siw *ServerInterfaceWrapper) GetProfileSecurity(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetProfileSecurity(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetProfileSessions operation middleware
+func (siw *ServerInterfaceWrapper) GetProfileSessions(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetProfileSessions(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetPublicHomepage operation middleware
+func (siw *ServerInterfaceWrapper) GetPublicHomepage(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetPublicHomepage(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // CreateReview operation middleware
 func (siw *ServerInterfaceWrapper) CreateReview(c *fiber.Ctx) error {
 
@@ -1400,6 +2936,60 @@ func (siw *ServerInterfaceWrapper) DeleteReview(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.DeleteReview(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetUserProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetUserProfile(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetUserProfile(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetUserCheckinStatusAlt operation middleware
+func (siw *ServerInterfaceWrapper) GetUserCheckinStatusAlt(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetUserCheckinStatusAlt(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetUserCheckinStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetUserCheckinStatus(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetUserCheckinStatus(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1844,6 +3434,118 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/admin/audit-logs", wrapper.ListAdminAuditLogs)
 
+	router.Get(options.BaseURL+"/admin/orders", wrapper.AdminListOrders)
+
+	router.Get(options.BaseURL+"/admin/orders/:orderId", wrapper.AdminGetOrder)
+
+	router.Patch(options.BaseURL+"/admin/orders/:orderId", wrapper.AdminUpdateOrder)
+
+	router.Get(options.BaseURL+"/admin/refunds", wrapper.AdminListRefunds)
+
+	router.Post(options.BaseURL+"/admin/refunds/:refundId/approve", wrapper.AdminApproveRefund)
+
+	router.Post(options.BaseURL+"/admin/refunds/:refundId/reject", wrapper.AdminRejectRefund)
+
+	router.Get(options.BaseURL+"/admin/reviews", wrapper.AdminListReviews)
+
+	router.Post(options.BaseURL+"/admin/reviews/publish-selected", wrapper.AdminPublishSelectedReviews)
+
+	router.Delete(options.BaseURL+"/admin/reviews/:reviewId", wrapper.AdminDeleteReview)
+
+	router.Put(options.BaseURL+"/admin/reviews/:reviewId/approve", wrapper.AdminApproveReview)
+
+	router.Put(options.BaseURL+"/admin/reviews/:reviewId/hide", wrapper.AdminHideReview)
+
+	router.Put(options.BaseURL+"/admin/reviews/:reviewId/feature", wrapper.AdminFeatureReview)
+
+	router.Get(options.BaseURL+"/admin/users", wrapper.AdminListUsers)
+
+	router.Patch(options.BaseURL+"/admin/users/:userId/block", wrapper.AdminBlockUser)
+
+	router.Get(options.BaseURL+"/admin/settings/:key", wrapper.AdminGetSetting)
+
+	router.Put(options.BaseURL+"/admin/settings/:key", wrapper.AdminUpsertSetting)
+
+	router.Get(options.BaseURL+"/admin/store-settings", wrapper.AdminGetStoreSettings)
+
+	router.Put(options.BaseURL+"/admin/store-settings/brand", wrapper.AdminUpdateStoreSettingsBrand)
+
+	router.Put(options.BaseURL+"/admin/store-settings/contact", wrapper.AdminUpdateStoreSettingsContact)
+
+	router.Put(options.BaseURL+"/admin/store-settings/footer", wrapper.AdminUpdateStoreSettingsFooter)
+
+	router.Put(options.BaseURL+"/admin/store-settings/homepage", wrapper.AdminUpdateStoreSettingsHomepage)
+
+	router.Put(options.BaseURL+"/admin/store-settings/floating-support", wrapper.AdminUpdateStoreSettingsFloatingSupport)
+
+	router.Get(options.BaseURL+"/admin/media", wrapper.AdminListMedia)
+
+	router.Post(options.BaseURL+"/admin/media", wrapper.AdminCreateMedia)
+
+	router.Get(options.BaseURL+"/admin/media/presigned", wrapper.AdminGetPresignedUrl)
+
+	router.Get(options.BaseURL+"/admin/banners", wrapper.AdminListBanners)
+
+	router.Post(options.BaseURL+"/admin/banners", wrapper.AdminSaveBanner)
+
+	router.Get(options.BaseURL+"/admin/faqs", wrapper.AdminListFaqs)
+
+	router.Post(options.BaseURL+"/admin/faqs", wrapper.AdminSaveFaq)
+
+	router.Get(options.BaseURL+"/admin/messages", wrapper.AdminListMessages)
+
+	router.Post(options.BaseURL+"/admin/messages/broadcast", wrapper.AdminBroadcastMessage)
+
+	router.Get(options.BaseURL+"/admin/notifications", wrapper.AdminGetNotifications)
+
+	router.Get(options.BaseURL+"/admin/products", wrapper.AdminListProducts)
+
+	router.Get(options.BaseURL+"/admin/categories", wrapper.AdminListCategories)
+
+	router.Get(options.BaseURL+"/admin/collect", wrapper.AdminGetCollect)
+
+	router.Get(options.BaseURL+"/profile", wrapper.GetProfile)
+
+	router.Patch(options.BaseURL+"/profile", wrapper.UpdateProfile)
+
+	router.Get(options.BaseURL+"/profile/security", wrapper.GetProfileSecurity)
+
+	router.Get(options.BaseURL+"/profile/sessions", wrapper.GetProfileSessions)
+
+	router.Patch(options.BaseURL+"/profile/email", wrapper.UpdateProfileEmail)
+
+	router.Patch(options.BaseURL+"/profile/notifications", wrapper.UpdateProfileNotifications)
+
+	router.Post(options.BaseURL+"/profile/checkin", wrapper.DoCheckin)
+
+	router.Get(options.BaseURL+"/profile/checkin/status", wrapper.GetCheckinStatus)
+
+	router.Get(options.BaseURL+"/profile/checkin-status", wrapper.GetCheckinStatusAlt)
+
+	router.Get(options.BaseURL+"/user/profile", wrapper.GetUserProfile)
+
+	router.Get(options.BaseURL+"/user/profile/checkin/status", wrapper.GetUserCheckinStatus)
+
+	router.Get(options.BaseURL+"/user/profile/checkin-status", wrapper.GetUserCheckinStatusAlt)
+
+	router.Post(options.BaseURL+"/checkout/orders/:orderId/cancel", wrapper.CancelCheckoutOrder)
+
+	router.Get(options.BaseURL+"/checkout/orders/:orderId/status", wrapper.GetCheckoutOrderStatus)
+
+	router.Get(options.BaseURL+"/public/homepage", wrapper.GetPublicHomepage)
+
+	router.Get(options.BaseURL+"/faqs/active", wrapper.GetActiveFaqs)
+
+	router.Get(options.BaseURL+"/catalog/product-models", wrapper.ListCatalogProductModels)
+
+	router.Get(options.BaseURL+"/content/articles", wrapper.ListContentArticles)
+
+	router.Post(options.BaseURL+"/content/articles", wrapper.CreateContentArticle)
+
+	router.Get(options.BaseURL+"/content/pages", wrapper.ListContentPages)
+
+	router.Post(options.BaseURL+"/content/pages", wrapper.CreateContentPage)
+
 	router.Post(options.BaseURL+"/media/upload", wrapper.UploadMedia)
 
 	router.Delete(options.BaseURL+"/media/:id", wrapper.DeleteMedia)
@@ -2034,6 +3736,197 @@ func (response ListAdminAuditLogs500JSONResponse) VisitListAdminAuditLogsRespons
 	return ctx.JSON(&response)
 }
 
+type AdminListBannersRequestObject struct {
+}
+
+type AdminListBannersResponseObject interface {
+	VisitAdminListBannersResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListBanners200JSONResponse AdminBannerListResponse
+
+func (response AdminListBanners200JSONResponse) VisitAdminListBannersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListBanners401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListBanners401JSONResponse) VisitAdminListBannersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListBanners403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListBanners403JSONResponse) VisitAdminListBannersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListBanners500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListBanners500JSONResponse) VisitAdminListBannersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveBannerRequestObject struct {
+	Body *AdminSaveBannerJSONRequestBody
+}
+
+type AdminSaveBannerResponseObject interface {
+	VisitAdminSaveBannerResponse(ctx *fiber.Ctx) error
+}
+
+type AdminSaveBanner201JSONResponse AdminBannerResponse
+
+func (response AdminSaveBanner201JSONResponse) VisitAdminSaveBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveBanner401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminSaveBanner401JSONResponse) VisitAdminSaveBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveBanner403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminSaveBanner403JSONResponse) VisitAdminSaveBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveBanner500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminSaveBanner500JSONResponse) VisitAdminSaveBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCategoriesRequestObject struct {
+}
+
+type AdminListCategoriesResponseObject interface {
+	VisitAdminListCategoriesResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListCategories200JSONResponse struct {
+	Items *[]CategoryResponse `json:"items,omitempty"`
+}
+
+func (response AdminListCategories200JSONResponse) VisitAdminListCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCategories401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListCategories401JSONResponse) VisitAdminListCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCategories403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListCategories403JSONResponse) VisitAdminListCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCategories500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListCategories500JSONResponse) VisitAdminListCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCollectRequestObject struct {
+}
+
+type AdminGetCollectResponseObject interface {
+	VisitAdminGetCollectResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetCollect200JSONResponse AdminCollectResponse
+
+func (response AdminGetCollect200JSONResponse) VisitAdminGetCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCollect401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetCollect401JSONResponse) VisitAdminGetCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCollect403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetCollect403JSONResponse) VisitAdminGetCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCollect500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetCollect500JSONResponse) VisitAdminGetCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type GetAdminDashboardStatsRequestObject struct {
 }
 
@@ -2075,6 +3968,1646 @@ type GetAdminDashboardStats500JSONResponse struct {
 }
 
 func (response GetAdminDashboardStats500JSONResponse) VisitGetAdminDashboardStatsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListFaqsRequestObject struct {
+}
+
+type AdminListFaqsResponseObject interface {
+	VisitAdminListFaqsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListFaqs200JSONResponse AdminFaqListResponse
+
+func (response AdminListFaqs200JSONResponse) VisitAdminListFaqsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListFaqs401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListFaqs401JSONResponse) VisitAdminListFaqsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListFaqs403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListFaqs403JSONResponse) VisitAdminListFaqsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListFaqs500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListFaqs500JSONResponse) VisitAdminListFaqsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveFaqRequestObject struct {
+	Body *AdminSaveFaqJSONRequestBody
+}
+
+type AdminSaveFaqResponseObject interface {
+	VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error
+}
+
+type AdminSaveFaq201JSONResponse AdminFaqResponse
+
+func (response AdminSaveFaq201JSONResponse) VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveFaq401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminSaveFaq401JSONResponse) VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveFaq403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminSaveFaq403JSONResponse) VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminSaveFaq500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminSaveFaq500JSONResponse) VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMediaRequestObject struct {
+	Params AdminListMediaParams
+}
+
+type AdminListMediaResponseObject interface {
+	VisitAdminListMediaResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListMedia200JSONResponse AdminMediaListResponse
+
+func (response AdminListMedia200JSONResponse) VisitAdminListMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMedia401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListMedia401JSONResponse) VisitAdminListMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMedia403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListMedia403JSONResponse) VisitAdminListMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMedia500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListMedia500JSONResponse) VisitAdminListMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateMediaRequestObject struct {
+	Body *AdminCreateMediaJSONRequestBody
+}
+
+type AdminCreateMediaResponseObject interface {
+	VisitAdminCreateMediaResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateMedia201JSONResponse AdminMediaResponse
+
+func (response AdminCreateMedia201JSONResponse) VisitAdminCreateMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateMedia401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateMedia401JSONResponse) VisitAdminCreateMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateMedia403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateMedia403JSONResponse) VisitAdminCreateMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateMedia500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateMedia500JSONResponse) VisitAdminCreateMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetPresignedUrlRequestObject struct {
+	Params AdminGetPresignedUrlParams
+}
+
+type AdminGetPresignedUrlResponseObject interface {
+	VisitAdminGetPresignedUrlResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetPresignedUrl200JSONResponse AdminPresignedUrlResponse
+
+func (response AdminGetPresignedUrl200JSONResponse) VisitAdminGetPresignedUrlResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetPresignedUrl401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetPresignedUrl401JSONResponse) VisitAdminGetPresignedUrlResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetPresignedUrl403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetPresignedUrl403JSONResponse) VisitAdminGetPresignedUrlResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetPresignedUrl500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetPresignedUrl500JSONResponse) VisitAdminGetPresignedUrlResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMessagesRequestObject struct {
+}
+
+type AdminListMessagesResponseObject interface {
+	VisitAdminListMessagesResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListMessages200JSONResponse AdminMessageListResponse
+
+func (response AdminListMessages200JSONResponse) VisitAdminListMessagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMessages401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListMessages401JSONResponse) VisitAdminListMessagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMessages403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListMessages403JSONResponse) VisitAdminListMessagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListMessages500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListMessages500JSONResponse) VisitAdminListMessagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBroadcastMessageRequestObject struct {
+	Body *AdminBroadcastMessageJSONRequestBody
+}
+
+type AdminBroadcastMessageResponseObject interface {
+	VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error
+}
+
+type AdminBroadcastMessage200JSONResponse AdminMessageResponse
+
+func (response AdminBroadcastMessage200JSONResponse) VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBroadcastMessage400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminBroadcastMessage400JSONResponse) VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBroadcastMessage401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminBroadcastMessage401JSONResponse) VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBroadcastMessage403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminBroadcastMessage403JSONResponse) VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBroadcastMessage500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminBroadcastMessage500JSONResponse) VisitAdminBroadcastMessageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetNotificationsRequestObject struct {
+}
+
+type AdminGetNotificationsResponseObject interface {
+	VisitAdminGetNotificationsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetNotifications200JSONResponse AdminNotificationStatusResponse
+
+func (response AdminGetNotifications200JSONResponse) VisitAdminGetNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetNotifications401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetNotifications401JSONResponse) VisitAdminGetNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetNotifications403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetNotifications403JSONResponse) VisitAdminGetNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetNotifications500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetNotifications500JSONResponse) VisitAdminGetNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListOrdersRequestObject struct {
+	Params AdminListOrdersParams
+}
+
+type AdminListOrdersResponseObject interface {
+	VisitAdminListOrdersResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListOrders200JSONResponse AdminOrderListResponse
+
+func (response AdminListOrders200JSONResponse) VisitAdminListOrdersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListOrders401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListOrders401JSONResponse) VisitAdminListOrdersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListOrders403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListOrders403JSONResponse) VisitAdminListOrdersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListOrders500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListOrders500JSONResponse) VisitAdminListOrdersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetOrderRequestObject struct {
+	OrderId string `json:"orderId"`
+}
+
+type AdminGetOrderResponseObject interface {
+	VisitAdminGetOrderResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetOrder200JSONResponse AdminOrderDetailResponse
+
+func (response AdminGetOrder200JSONResponse) VisitAdminGetOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetOrder401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetOrder401JSONResponse) VisitAdminGetOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetOrder403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetOrder403JSONResponse) VisitAdminGetOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetOrder404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminGetOrder404JSONResponse) VisitAdminGetOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetOrder500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetOrder500JSONResponse) VisitAdminGetOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrderRequestObject struct {
+	OrderId string `json:"orderId"`
+	Body    *AdminUpdateOrderJSONRequestBody
+}
+
+type AdminUpdateOrderResponseObject interface {
+	VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateOrder200JSONResponse AdminOrderDetailResponse
+
+func (response AdminUpdateOrder200JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateOrder400JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateOrder401JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateOrder403JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateOrder404JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder409JSONResponse struct{ ConflictResponseJSONResponse }
+
+func (response AdminUpdateOrder409JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateOrder500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateOrder500JSONResponse) VisitAdminUpdateOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListProductsRequestObject struct {
+	Params AdminListProductsParams
+}
+
+type AdminListProductsResponseObject interface {
+	VisitAdminListProductsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListProducts200JSONResponse AdminProductListResponse
+
+func (response AdminListProducts200JSONResponse) VisitAdminListProductsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListProducts401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListProducts401JSONResponse) VisitAdminListProductsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListProducts403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListProducts403JSONResponse) VisitAdminListProductsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListProducts500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListProducts500JSONResponse) VisitAdminListProductsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListRefundsRequestObject struct {
+	Params AdminListRefundsParams
+}
+
+type AdminListRefundsResponseObject interface {
+	VisitAdminListRefundsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListRefunds200JSONResponse AdminRefundListResponse
+
+func (response AdminListRefunds200JSONResponse) VisitAdminListRefundsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListRefunds401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListRefunds401JSONResponse) VisitAdminListRefundsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListRefunds403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListRefunds403JSONResponse) VisitAdminListRefundsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListRefunds500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListRefunds500JSONResponse) VisitAdminListRefundsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefundRequestObject struct {
+	RefundId string `json:"refundId"`
+	Body     *AdminApproveRefundJSONRequestBody
+}
+
+type AdminApproveRefundResponseObject interface {
+	VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error
+}
+
+type AdminApproveRefund200JSONResponse AdminRefundResponse
+
+func (response AdminApproveRefund200JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminApproveRefund400JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminApproveRefund401JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminApproveRefund403JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminApproveRefund404JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund409JSONResponse struct{ ConflictResponseJSONResponse }
+
+func (response AdminApproveRefund409JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveRefund500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminApproveRefund500JSONResponse) VisitAdminApproveRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefundRequestObject struct {
+	RefundId string `json:"refundId"`
+	Body     *AdminRejectRefundJSONRequestBody
+}
+
+type AdminRejectRefundResponseObject interface {
+	VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error
+}
+
+type AdminRejectRefund200JSONResponse AdminRefundResponse
+
+func (response AdminRejectRefund200JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminRejectRefund400JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminRejectRefund401JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminRejectRefund403JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminRejectRefund404JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund409JSONResponse struct{ ConflictResponseJSONResponse }
+
+func (response AdminRejectRefund409JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type AdminRejectRefund500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminRejectRefund500JSONResponse) VisitAdminRejectRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListReviewsRequestObject struct {
+	Params AdminListReviewsParams
+}
+
+type AdminListReviewsResponseObject interface {
+	VisitAdminListReviewsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListReviews200JSONResponse AdminReviewListResponse
+
+func (response AdminListReviews200JSONResponse) VisitAdminListReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListReviews401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListReviews401JSONResponse) VisitAdminListReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListReviews403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListReviews403JSONResponse) VisitAdminListReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListReviews500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListReviews500JSONResponse) VisitAdminListReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishSelectedReviewsRequestObject struct {
+	Body *AdminPublishSelectedReviewsJSONRequestBody
+}
+
+type AdminPublishSelectedReviewsResponseObject interface {
+	VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminPublishSelectedReviews200Response struct {
+}
+
+func (response AdminPublishSelectedReviews200Response) VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminPublishSelectedReviews400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminPublishSelectedReviews400JSONResponse) VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishSelectedReviews401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminPublishSelectedReviews401JSONResponse) VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishSelectedReviews403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminPublishSelectedReviews403JSONResponse) VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishSelectedReviews500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminPublishSelectedReviews500JSONResponse) VisitAdminPublishSelectedReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteReviewRequestObject struct {
+	ReviewId int64 `json:"reviewId"`
+}
+
+type AdminDeleteReviewResponseObject interface {
+	VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeleteReview204Response struct {
+}
+
+func (response AdminDeleteReview204Response) VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type AdminDeleteReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeleteReview401JSONResponse) VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteReview403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeleteReview403JSONResponse) VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteReview404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeleteReview404JSONResponse) VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeleteReview500JSONResponse) VisitAdminDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveReviewRequestObject struct {
+	ReviewId int64 `json:"reviewId"`
+}
+
+type AdminApproveReviewResponseObject interface {
+	VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error
+}
+
+type AdminApproveReview200Response struct {
+}
+
+func (response AdminApproveReview200Response) VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminApproveReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminApproveReview401JSONResponse) VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveReview403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminApproveReview403JSONResponse) VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveReview404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminApproveReview404JSONResponse) VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminApproveReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminApproveReview500JSONResponse) VisitAdminApproveReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminFeatureReviewRequestObject struct {
+	ReviewId int64 `json:"reviewId"`
+}
+
+type AdminFeatureReviewResponseObject interface {
+	VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error
+}
+
+type AdminFeatureReview200Response struct {
+}
+
+func (response AdminFeatureReview200Response) VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminFeatureReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminFeatureReview401JSONResponse) VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminFeatureReview403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminFeatureReview403JSONResponse) VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminFeatureReview404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminFeatureReview404JSONResponse) VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminFeatureReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminFeatureReview500JSONResponse) VisitAdminFeatureReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminHideReviewRequestObject struct {
+	ReviewId int64 `json:"reviewId"`
+}
+
+type AdminHideReviewResponseObject interface {
+	VisitAdminHideReviewResponse(ctx *fiber.Ctx) error
+}
+
+type AdminHideReview200Response struct {
+}
+
+func (response AdminHideReview200Response) VisitAdminHideReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminHideReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminHideReview401JSONResponse) VisitAdminHideReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminHideReview403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminHideReview403JSONResponse) VisitAdminHideReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminHideReview404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminHideReview404JSONResponse) VisitAdminHideReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminHideReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminHideReview500JSONResponse) VisitAdminHideReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetSettingRequestObject struct {
+	Key string `json:"key"`
+}
+
+type AdminGetSettingResponseObject interface {
+	VisitAdminGetSettingResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetSetting200JSONResponse AdminSettingResponse
+
+func (response AdminGetSetting200JSONResponse) VisitAdminGetSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetSetting401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetSetting401JSONResponse) VisitAdminGetSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetSetting403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetSetting403JSONResponse) VisitAdminGetSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetSetting404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminGetSetting404JSONResponse) VisitAdminGetSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetSetting500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetSetting500JSONResponse) VisitAdminGetSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpsertSettingRequestObject struct {
+	Key  string `json:"key"`
+	Body *AdminUpsertSettingJSONRequestBody
+}
+
+type AdminUpsertSettingResponseObject interface {
+	VisitAdminUpsertSettingResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpsertSetting200JSONResponse AdminSettingResponse
+
+func (response AdminUpsertSetting200JSONResponse) VisitAdminUpsertSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpsertSetting401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpsertSetting401JSONResponse) VisitAdminUpsertSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpsertSetting403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpsertSetting403JSONResponse) VisitAdminUpsertSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpsertSetting500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpsertSetting500JSONResponse) VisitAdminUpsertSettingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetStoreSettingsRequestObject struct {
+}
+
+type AdminGetStoreSettingsResponseObject interface {
+	VisitAdminGetStoreSettingsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetStoreSettings200JSONResponse AdminStoreSettingsResponse
+
+func (response AdminGetStoreSettings200JSONResponse) VisitAdminGetStoreSettingsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetStoreSettings401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetStoreSettings401JSONResponse) VisitAdminGetStoreSettingsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetStoreSettings403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetStoreSettings403JSONResponse) VisitAdminGetStoreSettingsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetStoreSettings500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetStoreSettings500JSONResponse) VisitAdminGetStoreSettingsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsBrandRequestObject struct {
+	Body *AdminUpdateStoreSettingsBrandJSONRequestBody
+}
+
+type AdminUpdateStoreSettingsBrandResponseObject interface {
+	VisitAdminUpdateStoreSettingsBrandResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateStoreSettingsBrand200Response struct {
+}
+
+func (response AdminUpdateStoreSettingsBrand200Response) VisitAdminUpdateStoreSettingsBrandResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateStoreSettingsBrand401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsBrand401JSONResponse) VisitAdminUpdateStoreSettingsBrandResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsBrand403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateStoreSettingsBrand403JSONResponse) VisitAdminUpdateStoreSettingsBrandResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsBrand500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsBrand500JSONResponse) VisitAdminUpdateStoreSettingsBrandResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsContactRequestObject struct {
+	Body *AdminUpdateStoreSettingsContactJSONRequestBody
+}
+
+type AdminUpdateStoreSettingsContactResponseObject interface {
+	VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateStoreSettingsContact200Response struct {
+}
+
+func (response AdminUpdateStoreSettingsContact200Response) VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateStoreSettingsContact401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsContact401JSONResponse) VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsContact403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateStoreSettingsContact403JSONResponse) VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsContact500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsContact500JSONResponse) VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFloatingSupportRequestObject struct {
+	Body *AdminUpdateStoreSettingsFloatingSupportJSONRequestBody
+}
+
+type AdminUpdateStoreSettingsFloatingSupportResponseObject interface {
+	VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateStoreSettingsFloatingSupport200Response struct {
+}
+
+func (response AdminUpdateStoreSettingsFloatingSupport200Response) VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateStoreSettingsFloatingSupport401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsFloatingSupport401JSONResponse) VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFloatingSupport403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateStoreSettingsFloatingSupport403JSONResponse) VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFloatingSupport500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsFloatingSupport500JSONResponse) VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFooterRequestObject struct {
+	Body *AdminUpdateStoreSettingsFooterJSONRequestBody
+}
+
+type AdminUpdateStoreSettingsFooterResponseObject interface {
+	VisitAdminUpdateStoreSettingsFooterResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateStoreSettingsFooter200Response struct {
+}
+
+func (response AdminUpdateStoreSettingsFooter200Response) VisitAdminUpdateStoreSettingsFooterResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateStoreSettingsFooter401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsFooter401JSONResponse) VisitAdminUpdateStoreSettingsFooterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFooter403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateStoreSettingsFooter403JSONResponse) VisitAdminUpdateStoreSettingsFooterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsFooter500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsFooter500JSONResponse) VisitAdminUpdateStoreSettingsFooterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsHomepageRequestObject struct {
+	Body *AdminUpdateStoreSettingsHomepageJSONRequestBody
+}
+
+type AdminUpdateStoreSettingsHomepageResponseObject interface {
+	VisitAdminUpdateStoreSettingsHomepageResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateStoreSettingsHomepage200Response struct {
+}
+
+func (response AdminUpdateStoreSettingsHomepage200Response) VisitAdminUpdateStoreSettingsHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateStoreSettingsHomepage401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsHomepage401JSONResponse) VisitAdminUpdateStoreSettingsHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsHomepage403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateStoreSettingsHomepage403JSONResponse) VisitAdminUpdateStoreSettingsHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateStoreSettingsHomepage500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateStoreSettingsHomepage500JSONResponse) VisitAdminUpdateStoreSettingsHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListUsersRequestObject struct {
+	Params AdminListUsersParams
+}
+
+type AdminListUsersResponseObject interface {
+	VisitAdminListUsersResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListUsers200JSONResponse AdminUserListResponse
+
+func (response AdminListUsers200JSONResponse) VisitAdminListUsersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListUsers401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListUsers401JSONResponse) VisitAdminListUsersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListUsers403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListUsers403JSONResponse) VisitAdminListUsersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListUsers500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListUsers500JSONResponse) VisitAdminListUsersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBlockUserRequestObject struct {
+	UserId string `json:"userId"`
+	Body   *AdminBlockUserJSONRequestBody
+}
+
+type AdminBlockUserResponseObject interface {
+	VisitAdminBlockUserResponse(ctx *fiber.Ctx) error
+}
+
+type AdminBlockUser200Response struct {
+}
+
+func (response AdminBlockUser200Response) VisitAdminBlockUserResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminBlockUser401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminBlockUser401JSONResponse) VisitAdminBlockUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBlockUser403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminBlockUser403JSONResponse) VisitAdminBlockUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBlockUser404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminBlockUser404JSONResponse) VisitAdminBlockUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBlockUser500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminBlockUser500JSONResponse) VisitAdminBlockUserResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -2630,6 +6163,34 @@ func (response CreateCategory500JSONResponse) VisitCreateCategoryResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
+type ListCatalogProductModelsRequestObject struct {
+	Params ListCatalogProductModelsParams
+}
+
+type ListCatalogProductModelsResponseObject interface {
+	VisitListCatalogProductModelsResponse(ctx *fiber.Ctx) error
+}
+
+type ListCatalogProductModels200JSONResponse PublicProductModelListResponse
+
+func (response ListCatalogProductModels200JSONResponse) VisitListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type ListCatalogProductModels500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response ListCatalogProductModels500JSONResponse) VisitListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type ListProductsRequestObject struct {
 	Params ListProductsParams
 }
@@ -3053,6 +6614,71 @@ func (response CreateCheckoutOrder500JSONResponse) VisitCreateCheckoutOrderRespo
 	return ctx.JSON(&response)
 }
 
+type CancelCheckoutOrderRequestObject struct {
+	OrderId string `json:"orderId"`
+}
+
+type CancelCheckoutOrderResponseObject interface {
+	VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error
+}
+
+type CancelCheckoutOrder200Response struct {
+}
+
+func (response CancelCheckoutOrder200Response) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type CancelCheckoutOrder400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response CancelCheckoutOrder400JSONResponse) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type CancelCheckoutOrder401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response CancelCheckoutOrder401JSONResponse) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type CancelCheckoutOrder404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response CancelCheckoutOrder404JSONResponse) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type CancelCheckoutOrder409JSONResponse struct{ ConflictResponseJSONResponse }
+
+func (response CancelCheckoutOrder409JSONResponse) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type CancelCheckoutOrder500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response CancelCheckoutOrder500JSONResponse) VisitCancelCheckoutOrderResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type GetPaymentParamsRequestObject struct {
 	OrderId string `json:"orderId"`
 }
@@ -3191,6 +6817,54 @@ type GetPaymentStatus500JSONResponse struct {
 }
 
 func (response GetPaymentStatus500JSONResponse) VisitGetPaymentStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutOrderStatusRequestObject struct {
+	OrderId string `json:"orderId"`
+}
+
+type GetCheckoutOrderStatusResponseObject interface {
+	VisitGetCheckoutOrderStatusResponse(ctx *fiber.Ctx) error
+}
+
+type GetCheckoutOrderStatus200JSONResponse CheckoutOrderResponse
+
+func (response GetCheckoutOrderStatus200JSONResponse) VisitGetCheckoutOrderStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutOrderStatus401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetCheckoutOrderStatus401JSONResponse) VisitGetCheckoutOrderStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutOrderStatus404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response GetCheckoutOrderStatus404JSONResponse) VisitGetCheckoutOrderStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutOrderStatus500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCheckoutOrderStatus500JSONResponse) VisitGetCheckoutOrderStatusResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -3358,6 +7032,217 @@ func (response PreviewCheckout500JSONResponse) VisitPreviewCheckoutResponse(ctx 
 	return ctx.JSON(&response)
 }
 
+type ListContentArticlesRequestObject struct {
+	Params ListContentArticlesParams
+}
+
+type ListContentArticlesResponseObject interface {
+	VisitListContentArticlesResponse(ctx *fiber.Ctx) error
+}
+
+type ListContentArticles200JSONResponse ArticleListResponse
+
+func (response ListContentArticles200JSONResponse) VisitListContentArticlesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentArticles401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response ListContentArticles401JSONResponse) VisitListContentArticlesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentArticles403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response ListContentArticles403JSONResponse) VisitListContentArticlesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentArticles500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response ListContentArticles500JSONResponse) VisitListContentArticlesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentArticleRequestObject struct {
+	Body *CreateContentArticleJSONRequestBody
+}
+
+type CreateContentArticleResponseObject interface {
+	VisitCreateContentArticleResponse(ctx *fiber.Ctx) error
+}
+
+type CreateContentArticle201JSONResponse ArticleResponse
+
+func (response CreateContentArticle201JSONResponse) VisitCreateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentArticle400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response CreateContentArticle400JSONResponse) VisitCreateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentArticle401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response CreateContentArticle401JSONResponse) VisitCreateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentArticle403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response CreateContentArticle403JSONResponse) VisitCreateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentArticle500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response CreateContentArticle500JSONResponse) VisitCreateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentPagesRequestObject struct {
+}
+
+type ListContentPagesResponseObject interface {
+	VisitListContentPagesResponse(ctx *fiber.Ctx) error
+}
+
+type ListContentPages200JSONResponse struct {
+	Items *[]StaticPageResponse `json:"items,omitempty"`
+}
+
+func (response ListContentPages200JSONResponse) VisitListContentPagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentPages401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response ListContentPages401JSONResponse) VisitListContentPagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentPages403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response ListContentPages403JSONResponse) VisitListContentPagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type ListContentPages500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response ListContentPages500JSONResponse) VisitListContentPagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentPageRequestObject struct {
+	Body *CreateContentPageJSONRequestBody
+}
+
+type CreateContentPageResponseObject interface {
+	VisitCreateContentPageResponse(ctx *fiber.Ctx) error
+}
+
+type CreateContentPage201JSONResponse StaticPageResponse
+
+func (response CreateContentPage201JSONResponse) VisitCreateContentPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentPage400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response CreateContentPage400JSONResponse) VisitCreateContentPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentPage401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response CreateContentPage401JSONResponse) VisitCreateContentPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentPage403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response CreateContentPage403JSONResponse) VisitCreateContentPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type CreateContentPage500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response CreateContentPage500JSONResponse) VisitCreateContentPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type GetStaticPageRequestObject struct {
 	Slug string `json:"slug"`
 }
@@ -3389,6 +7274,33 @@ type GetStaticPage500JSONResponse struct {
 }
 
 func (response GetStaticPage500JSONResponse) VisitGetStaticPageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetActiveFaqsRequestObject struct {
+}
+
+type GetActiveFaqsResponseObject interface {
+	VisitGetActiveFaqsResponse(ctx *fiber.Ctx) error
+}
+
+type GetActiveFaqs200JSONResponse PublicFaqListResponse
+
+func (response GetActiveFaqs200JSONResponse) VisitGetActiveFaqsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetActiveFaqs500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetActiveFaqs500JSONResponse) VisitGetActiveFaqsResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -3992,6 +7904,384 @@ func (response RequestOrderRefund500JSONResponse) VisitRequestOrderRefundRespons
 	return ctx.JSON(&response)
 }
 
+type GetProfileRequestObject struct {
+}
+
+type GetProfileResponseObject interface {
+	VisitGetProfileResponse(ctx *fiber.Ctx) error
+}
+
+type GetProfile200JSONResponse AccountProfileResponse
+
+func (response GetProfile200JSONResponse) VisitGetProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfile401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetProfile401JSONResponse) VisitGetProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfile500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetProfile500JSONResponse) VisitGetProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileRequestObject struct {
+	Body *UpdateProfileJSONRequestBody
+}
+
+type UpdateProfileResponseObject interface {
+	VisitUpdateProfileResponse(ctx *fiber.Ctx) error
+}
+
+type UpdateProfile200JSONResponse AccountProfileResponse
+
+func (response UpdateProfile200JSONResponse) VisitUpdateProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfile401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response UpdateProfile401JSONResponse) VisitUpdateProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfile500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response UpdateProfile500JSONResponse) VisitUpdateProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type DoCheckinRequestObject struct {
+}
+
+type DoCheckinResponseObject interface {
+	VisitDoCheckinResponse(ctx *fiber.Ctx) error
+}
+
+type DoCheckin200Response struct {
+}
+
+func (response DoCheckin200Response) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type DoCheckin401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response DoCheckin401JSONResponse) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type DoCheckin500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response DoCheckin500JSONResponse) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatusAltRequestObject struct {
+}
+
+type GetCheckinStatusAltResponseObject interface {
+	VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error
+}
+
+type GetCheckinStatusAlt200JSONResponse CheckinStatusResponse
+
+func (response GetCheckinStatusAlt200JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatusAlt401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetCheckinStatusAlt401JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatusAlt500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCheckinStatusAlt500JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatusRequestObject struct {
+}
+
+type GetCheckinStatusResponseObject interface {
+	VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error
+}
+
+type GetCheckinStatus200JSONResponse CheckinStatusResponse
+
+func (response GetCheckinStatus200JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatus401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetCheckinStatus401JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckinStatus500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCheckinStatus500JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileEmailRequestObject struct {
+	Body *UpdateProfileEmailJSONRequestBody
+}
+
+type UpdateProfileEmailResponseObject interface {
+	VisitUpdateProfileEmailResponse(ctx *fiber.Ctx) error
+}
+
+type UpdateProfileEmail200Response struct {
+}
+
+func (response UpdateProfileEmail200Response) VisitUpdateProfileEmailResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type UpdateProfileEmail400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response UpdateProfileEmail400JSONResponse) VisitUpdateProfileEmailResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileEmail401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response UpdateProfileEmail401JSONResponse) VisitUpdateProfileEmailResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileEmail500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response UpdateProfileEmail500JSONResponse) VisitUpdateProfileEmailResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileNotificationsRequestObject struct {
+	Body *UpdateProfileNotificationsJSONRequestBody
+}
+
+type UpdateProfileNotificationsResponseObject interface {
+	VisitUpdateProfileNotificationsResponse(ctx *fiber.Ctx) error
+}
+
+type UpdateProfileNotifications200Response struct {
+}
+
+func (response UpdateProfileNotifications200Response) VisitUpdateProfileNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type UpdateProfileNotifications401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response UpdateProfileNotifications401JSONResponse) VisitUpdateProfileNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateProfileNotifications500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response UpdateProfileNotifications500JSONResponse) VisitUpdateProfileNotificationsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSecurityRequestObject struct {
+}
+
+type GetProfileSecurityResponseObject interface {
+	VisitGetProfileSecurityResponse(ctx *fiber.Ctx) error
+}
+
+type GetProfileSecurity200JSONResponse ProfileSecurityResponse
+
+func (response GetProfileSecurity200JSONResponse) VisitGetProfileSecurityResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSecurity401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetProfileSecurity401JSONResponse) VisitGetProfileSecurityResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSecurity500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetProfileSecurity500JSONResponse) VisitGetProfileSecurityResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSessionsRequestObject struct {
+}
+
+type GetProfileSessionsResponseObject interface {
+	VisitGetProfileSessionsResponse(ctx *fiber.Ctx) error
+}
+
+type GetProfileSessions200JSONResponse ProfileSessionListResponse
+
+func (response GetProfileSessions200JSONResponse) VisitGetProfileSessionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSessions401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetProfileSessions401JSONResponse) VisitGetProfileSessionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfileSessions500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetProfileSessions500JSONResponse) VisitGetProfileSessionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetPublicHomepageRequestObject struct {
+}
+
+type GetPublicHomepageResponseObject interface {
+	VisitGetPublicHomepageResponse(ctx *fiber.Ctx) error
+}
+
+type GetPublicHomepage200JSONResponse PublicHomepageResponse
+
+func (response GetPublicHomepage200JSONResponse) VisitGetPublicHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetPublicHomepage500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetPublicHomepage500JSONResponse) VisitGetPublicHomepageResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type CreateReviewRequestObject struct {
 	Body *CreateReviewJSONRequestBody
 }
@@ -4090,6 +8380,120 @@ type DeleteReview500JSONResponse struct {
 }
 
 func (response DeleteReview500JSONResponse) VisitDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserProfileRequestObject struct {
+}
+
+type GetUserProfileResponseObject interface {
+	VisitGetUserProfileResponse(ctx *fiber.Ctx) error
+}
+
+type GetUserProfile200JSONResponse AccountProfileResponse
+
+func (response GetUserProfile200JSONResponse) VisitGetUserProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserProfile401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetUserProfile401JSONResponse) VisitGetUserProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserProfile500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetUserProfile500JSONResponse) VisitGetUserProfileResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatusAltRequestObject struct {
+}
+
+type GetUserCheckinStatusAltResponseObject interface {
+	VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error
+}
+
+type GetUserCheckinStatusAlt200JSONResponse CheckinStatusResponse
+
+func (response GetUserCheckinStatusAlt200JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatusAlt401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetUserCheckinStatusAlt401JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatusAlt500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetUserCheckinStatusAlt500JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatusRequestObject struct {
+}
+
+type GetUserCheckinStatusResponseObject interface {
+	VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error
+}
+
+type GetUserCheckinStatus200JSONResponse CheckinStatusResponse
+
+func (response GetUserCheckinStatus200JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatus401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetUserCheckinStatus401JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetUserCheckinStatus500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetUserCheckinStatus500JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -4769,9 +9173,114 @@ type StrictServerInterface interface {
 	// ListAdminAuditLogs List system audit logs
 	// (GET /admin/audit-logs)
 	ListAdminAuditLogs(ctx context.Context, request ListAdminAuditLogsRequestObject) (ListAdminAuditLogsResponseObject, error)
+	// AdminListBanners List banners (admin)
+	// (GET /admin/banners)
+	AdminListBanners(ctx context.Context, request AdminListBannersRequestObject) (AdminListBannersResponseObject, error)
+	// AdminSaveBanner Create or update a banner
+	// (POST /admin/banners)
+	AdminSaveBanner(ctx context.Context, request AdminSaveBannerRequestObject) (AdminSaveBannerResponseObject, error)
+	// AdminListCategories List categories (admin legacy)
+	// (GET /admin/categories)
+	AdminListCategories(ctx context.Context, request AdminListCategoriesRequestObject) (AdminListCategoriesResponseObject, error)
+	// AdminGetCollect Get admin collect/aggregate view
+	// (GET /admin/collect)
+	AdminGetCollect(ctx context.Context, request AdminGetCollectRequestObject) (AdminGetCollectResponseObject, error)
 	// GetAdminDashboardStats Get administrative dashboard statistics
 	// (GET /admin/dashboard/stats)
 	GetAdminDashboardStats(ctx context.Context, request GetAdminDashboardStatsRequestObject) (GetAdminDashboardStatsResponseObject, error)
+	// AdminListFaqs List FAQs (admin)
+	// (GET /admin/faqs)
+	AdminListFaqs(ctx context.Context, request AdminListFaqsRequestObject) (AdminListFaqsResponseObject, error)
+	// AdminSaveFaq Create or update a FAQ
+	// (POST /admin/faqs)
+	AdminSaveFaq(ctx context.Context, request AdminSaveFaqRequestObject) (AdminSaveFaqResponseObject, error)
+	// AdminListMedia List media files (admin)
+	// (GET /admin/media)
+	AdminListMedia(ctx context.Context, request AdminListMediaRequestObject) (AdminListMediaResponseObject, error)
+	// AdminCreateMedia Create a media record (admin)
+	// (POST /admin/media)
+	AdminCreateMedia(ctx context.Context, request AdminCreateMediaRequestObject) (AdminCreateMediaResponseObject, error)
+	// AdminGetPresignedUrl Get presigned URL for media upload
+	// (GET /admin/media/presigned)
+	AdminGetPresignedUrl(ctx context.Context, request AdminGetPresignedUrlRequestObject) (AdminGetPresignedUrlResponseObject, error)
+	// AdminListMessages List admin broadcast messages
+	// (GET /admin/messages)
+	AdminListMessages(ctx context.Context, request AdminListMessagesRequestObject) (AdminListMessagesResponseObject, error)
+	// AdminBroadcastMessage Send a broadcast message to all users
+	// (POST /admin/messages/broadcast)
+	AdminBroadcastMessage(ctx context.Context, request AdminBroadcastMessageRequestObject) (AdminBroadcastMessageResponseObject, error)
+	// AdminGetNotifications Get outbound notification readiness status
+	// (GET /admin/notifications)
+	AdminGetNotifications(ctx context.Context, request AdminGetNotificationsRequestObject) (AdminGetNotificationsResponseObject, error)
+	// AdminListOrders List all orders (admin queue)
+	// (GET /admin/orders)
+	AdminListOrders(ctx context.Context, request AdminListOrdersRequestObject) (AdminListOrdersResponseObject, error)
+	// AdminGetOrder Get admin order detail
+	// (GET /admin/orders/{orderId})
+	AdminGetOrder(ctx context.Context, request AdminGetOrderRequestObject) (AdminGetOrderResponseObject, error)
+	// AdminUpdateOrder Update order status (admin transition)
+	// (PATCH /admin/orders/{orderId})
+	AdminUpdateOrder(ctx context.Context, request AdminUpdateOrderRequestObject) (AdminUpdateOrderResponseObject, error)
+	// AdminListProducts List all products (admin legacy)
+	// (GET /admin/products)
+	AdminListProducts(ctx context.Context, request AdminListProductsRequestObject) (AdminListProductsResponseObject, error)
+	// AdminListRefunds List refund requests (admin)
+	// (GET /admin/refunds)
+	AdminListRefunds(ctx context.Context, request AdminListRefundsRequestObject) (AdminListRefundsResponseObject, error)
+	// AdminApproveRefund Approve a refund request
+	// (POST /admin/refunds/{refundId}/approve)
+	AdminApproveRefund(ctx context.Context, request AdminApproveRefundRequestObject) (AdminApproveRefundResponseObject, error)
+	// AdminRejectRefund Reject a refund request
+	// (POST /admin/refunds/{refundId}/reject)
+	AdminRejectRefund(ctx context.Context, request AdminRejectRefundRequestObject) (AdminRejectRefundResponseObject, error)
+	// AdminListReviews List reviews for moderation
+	// (GET /admin/reviews)
+	AdminListReviews(ctx context.Context, request AdminListReviewsRequestObject) (AdminListReviewsResponseObject, error)
+	// AdminPublishSelectedReviews Bulk publish selected reviews
+	// (POST /admin/reviews/publish-selected)
+	AdminPublishSelectedReviews(ctx context.Context, request AdminPublishSelectedReviewsRequestObject) (AdminPublishSelectedReviewsResponseObject, error)
+	// AdminDeleteReview Delete a review
+	// (DELETE /admin/reviews/{reviewId})
+	AdminDeleteReview(ctx context.Context, request AdminDeleteReviewRequestObject) (AdminDeleteReviewResponseObject, error)
+	// AdminApproveReview Approve a review
+	// (PUT /admin/reviews/{reviewId}/approve)
+	AdminApproveReview(ctx context.Context, request AdminApproveReviewRequestObject) (AdminApproveReviewResponseObject, error)
+	// AdminFeatureReview Feature a review
+	// (PUT /admin/reviews/{reviewId}/feature)
+	AdminFeatureReview(ctx context.Context, request AdminFeatureReviewRequestObject) (AdminFeatureReviewResponseObject, error)
+	// AdminHideReview Hide a review
+	// (PUT /admin/reviews/{reviewId}/hide)
+	AdminHideReview(ctx context.Context, request AdminHideReviewRequestObject) (AdminHideReviewResponseObject, error)
+	// AdminGetSetting Get a setting by key
+	// (GET /admin/settings/{key})
+	AdminGetSetting(ctx context.Context, request AdminGetSettingRequestObject) (AdminGetSettingResponseObject, error)
+	// AdminUpsertSetting Upsert a setting by key
+	// (PUT /admin/settings/{key})
+	AdminUpsertSetting(ctx context.Context, request AdminUpsertSettingRequestObject) (AdminUpsertSettingResponseObject, error)
+	// AdminGetStoreSettings Get all store settings
+	// (GET /admin/store-settings)
+	AdminGetStoreSettings(ctx context.Context, request AdminGetStoreSettingsRequestObject) (AdminGetStoreSettingsResponseObject, error)
+	// AdminUpdateStoreSettingsBrand Update brand store settings
+	// (PUT /admin/store-settings/brand)
+	AdminUpdateStoreSettingsBrand(ctx context.Context, request AdminUpdateStoreSettingsBrandRequestObject) (AdminUpdateStoreSettingsBrandResponseObject, error)
+	// AdminUpdateStoreSettingsContact Update contact store settings
+	// (PUT /admin/store-settings/contact)
+	AdminUpdateStoreSettingsContact(ctx context.Context, request AdminUpdateStoreSettingsContactRequestObject) (AdminUpdateStoreSettingsContactResponseObject, error)
+	// AdminUpdateStoreSettingsFloatingSupport Update floating support store settings
+	// (PUT /admin/store-settings/floating-support)
+	AdminUpdateStoreSettingsFloatingSupport(ctx context.Context, request AdminUpdateStoreSettingsFloatingSupportRequestObject) (AdminUpdateStoreSettingsFloatingSupportResponseObject, error)
+	// AdminUpdateStoreSettingsFooter Update footer store settings
+	// (PUT /admin/store-settings/footer)
+	AdminUpdateStoreSettingsFooter(ctx context.Context, request AdminUpdateStoreSettingsFooterRequestObject) (AdminUpdateStoreSettingsFooterResponseObject, error)
+	// AdminUpdateStoreSettingsHomepage Update homepage store settings
+	// (PUT /admin/store-settings/homepage)
+	AdminUpdateStoreSettingsHomepage(ctx context.Context, request AdminUpdateStoreSettingsHomepageRequestObject) (AdminUpdateStoreSettingsHomepageResponseObject, error)
+	// AdminListUsers List users (admin backoffice)
+	// (GET /admin/users)
+	AdminListUsers(ctx context.Context, request AdminListUsersRequestObject) (AdminListUsersResponseObject, error)
+	// AdminBlockUser Block or unblock a user
+	// (PATCH /admin/users/{userId}/block)
+	AdminBlockUser(ctx context.Context, request AdminBlockUserRequestObject) (AdminBlockUserResponseObject, error)
 	// LoginUser Authenticate user and get tokens
 	// (POST /auth/login)
 	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
@@ -4808,6 +9317,9 @@ type StrictServerInterface interface {
 	// CreateCategory Create catalog category
 	// (POST /catalog/categories)
 	CreateCategory(ctx context.Context, request CreateCategoryRequestObject) (CreateCategoryResponseObject, error)
+	// ListCatalogProductModels List public catalog product models
+	// (GET /catalog/product-models)
+	ListCatalogProductModels(ctx context.Context, request ListCatalogProductModelsRequestObject) (ListCatalogProductModelsResponseObject, error)
 	// ListProducts List catalog products
 	// (GET /catalog/products)
 	ListProducts(ctx context.Context, request ListProductsRequestObject) (ListProductsResponseObject, error)
@@ -4835,6 +9347,9 @@ type StrictServerInterface interface {
 	// CreateCheckoutOrder Create checkout order
 	// (POST /checkout/orders)
 	CreateCheckoutOrder(ctx context.Context, request CreateCheckoutOrderRequestObject) (CreateCheckoutOrderResponseObject, error)
+	// CancelCheckoutOrder Cancel a pending order
+	// (POST /checkout/orders/{orderId}/cancel)
+	CancelCheckoutOrder(ctx context.Context, request CancelCheckoutOrderRequestObject) (CancelCheckoutOrderResponseObject, error)
 	// GetPaymentParams Get payment initialization parameters
 	// (GET /checkout/orders/{orderId}/payment-params)
 	GetPaymentParams(ctx context.Context, request GetPaymentParamsRequestObject) (GetPaymentParamsResponseObject, error)
@@ -4844,6 +9359,9 @@ type StrictServerInterface interface {
 	// GetPaymentStatus Get payment status of checkout order
 	// (GET /checkout/orders/{orderId}/payment-status)
 	GetPaymentStatus(ctx context.Context, request GetPaymentStatusRequestObject) (GetPaymentStatusResponseObject, error)
+	// GetCheckoutOrderStatus Get checkout order status
+	// (GET /checkout/orders/{orderId}/status)
+	GetCheckoutOrderStatus(ctx context.Context, request GetCheckoutOrderStatusRequestObject) (GetCheckoutOrderStatusResponseObject, error)
 	// PaymentNotify Payment provider webhook notification
 	// (POST /checkout/payment-notify)
 	PaymentNotify(ctx context.Context, request PaymentNotifyRequestObject) (PaymentNotifyResponseObject, error)
@@ -4856,9 +9374,24 @@ type StrictServerInterface interface {
 	// PreviewCheckout Preview checkout calculations
 	// (POST /checkout/preview)
 	PreviewCheckout(ctx context.Context, request PreviewCheckoutRequestObject) (PreviewCheckoutResponseObject, error)
+	// ListContentArticles List published articles (admin/authenticated)
+	// (GET /content/articles)
+	ListContentArticles(ctx context.Context, request ListContentArticlesRequestObject) (ListContentArticlesResponseObject, error)
+	// CreateContentArticle Create a new article
+	// (POST /content/articles)
+	CreateContentArticle(ctx context.Context, request CreateContentArticleRequestObject) (CreateContentArticleResponseObject, error)
+	// ListContentPages List content pages
+	// (GET /content/pages)
+	ListContentPages(ctx context.Context, request ListContentPagesRequestObject) (ListContentPagesResponseObject, error)
+	// CreateContentPage Create a static page
+	// (POST /content/pages)
+	CreateContentPage(ctx context.Context, request CreateContentPageRequestObject) (CreateContentPageResponseObject, error)
 	// GetStaticPage Get static page by slug
 	// (GET /content/pages/{slug})
 	GetStaticPage(ctx context.Context, request GetStaticPageRequestObject) (GetStaticPageResponseObject, error)
+	// GetActiveFaqs Get active FAQs (public)
+	// (GET /faqs/active)
+	GetActiveFaqs(ctx context.Context, request GetActiveFaqsRequestObject) (GetActiveFaqsResponseObject, error)
 	// GetHomepageConfig Get homepage config
 	// (GET /homepage/config)
 	GetHomepageConfig(ctx context.Context, request GetHomepageConfigRequestObject) (GetHomepageConfigResponseObject, error)
@@ -4898,12 +9431,51 @@ type StrictServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(ctx context.Context, request RequestOrderRefundRequestObject) (RequestOrderRefundResponseObject, error)
+	// GetProfile Get current user profile (alias)
+	// (GET /profile)
+	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
+	// UpdateProfile Update current user profile
+	// (PATCH /profile)
+	UpdateProfile(ctx context.Context, request UpdateProfileRequestObject) (UpdateProfileResponseObject, error)
+	// DoCheckin Daily check-in
+	// (POST /profile/checkin)
+	DoCheckin(ctx context.Context, request DoCheckinRequestObject) (DoCheckinResponseObject, error)
+	// GetCheckinStatusAlt Get check-in status (alias)
+	// (GET /profile/checkin-status)
+	GetCheckinStatusAlt(ctx context.Context, request GetCheckinStatusAltRequestObject) (GetCheckinStatusAltResponseObject, error)
+	// GetCheckinStatus Get check-in status
+	// (GET /profile/checkin/status)
+	GetCheckinStatus(ctx context.Context, request GetCheckinStatusRequestObject) (GetCheckinStatusResponseObject, error)
+	// UpdateProfileEmail Update profile email
+	// (PATCH /profile/email)
+	UpdateProfileEmail(ctx context.Context, request UpdateProfileEmailRequestObject) (UpdateProfileEmailResponseObject, error)
+	// UpdateProfileNotifications Update profile notification preferences
+	// (PATCH /profile/notifications)
+	UpdateProfileNotifications(ctx context.Context, request UpdateProfileNotificationsRequestObject) (UpdateProfileNotificationsResponseObject, error)
+	// GetProfileSecurity Get profile security settings
+	// (GET /profile/security)
+	GetProfileSecurity(ctx context.Context, request GetProfileSecurityRequestObject) (GetProfileSecurityResponseObject, error)
+	// GetProfileSessions Get active sessions list
+	// (GET /profile/sessions)
+	GetProfileSessions(ctx context.Context, request GetProfileSessionsRequestObject) (GetProfileSessionsResponseObject, error)
+	// GetPublicHomepage Get public homepage config
+	// (GET /public/homepage)
+	GetPublicHomepage(ctx context.Context, request GetPublicHomepageRequestObject) (GetPublicHomepageResponseObject, error)
 	// CreateReview Create product review
 	// (POST /reviews)
 	CreateReview(ctx context.Context, request CreateReviewRequestObject) (CreateReviewResponseObject, error)
 	// DeleteReview Delete product review
 	// (DELETE /reviews/{id})
 	DeleteReview(ctx context.Context, request DeleteReviewRequestObject) (DeleteReviewResponseObject, error)
+	// GetUserProfile Get user profile (legacy path)
+	// (GET /user/profile)
+	GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error)
+	// GetUserCheckinStatusAlt Get check-in status (legacy path alt)
+	// (GET /user/profile/checkin-status)
+	GetUserCheckinStatusAlt(ctx context.Context, request GetUserCheckinStatusAltRequestObject) (GetUserCheckinStatusAltResponseObject, error)
+	// GetUserCheckinStatus Get check-in status (legacy path)
+	// (GET /user/profile/checkin/status)
+	GetUserCheckinStatus(ctx context.Context, request GetUserCheckinStatusRequestObject) (GetUserCheckinStatusResponseObject, error)
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -5040,6 +9612,112 @@ func (sh *strictHandler) ListAdminAuditLogs(ctx *fiber.Ctx, params ListAdminAudi
 	return nil
 }
 
+// AdminListBanners operation middleware
+func (sh *strictHandler) AdminListBanners(ctx *fiber.Ctx) error {
+	var request AdminListBannersRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListBanners(ctx.UserContext(), request.(AdminListBannersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListBanners")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListBannersResponseObject); ok {
+		if err := validResponse.VisitAdminListBannersResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminSaveBanner operation middleware
+func (sh *strictHandler) AdminSaveBanner(ctx *fiber.Ctx) error {
+	var request AdminSaveBannerRequestObject
+
+	var body AdminSaveBannerJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminSaveBanner(ctx.UserContext(), request.(AdminSaveBannerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminSaveBanner")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminSaveBannerResponseObject); ok {
+		if err := validResponse.VisitAdminSaveBannerResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListCategories operation middleware
+func (sh *strictHandler) AdminListCategories(ctx *fiber.Ctx) error {
+	var request AdminListCategoriesRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCategories(ctx.UserContext(), request.(AdminListCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCategories")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCategoriesResponseObject); ok {
+		if err := validResponse.VisitAdminListCategoriesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetCollect operation middleware
+func (sh *strictHandler) AdminGetCollect(ctx *fiber.Ctx) error {
+	var request AdminGetCollectRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetCollect(ctx.UserContext(), request.(AdminGetCollectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetCollect")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetCollectResponseObject); ok {
+		if err := validResponse.VisitAdminGetCollectResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetAdminDashboardStats operation middleware
 func (sh *strictHandler) GetAdminDashboardStats(ctx *fiber.Ctx) error {
 	var request GetAdminDashboardStatsRequestObject
@@ -5057,6 +9735,907 @@ func (sh *strictHandler) GetAdminDashboardStats(ctx *fiber.Ctx) error {
 		return err
 	} else if validResponse, ok := response.(GetAdminDashboardStatsResponseObject); ok {
 		if err := validResponse.VisitGetAdminDashboardStatsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListFaqs operation middleware
+func (sh *strictHandler) AdminListFaqs(ctx *fiber.Ctx) error {
+	var request AdminListFaqsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListFaqs(ctx.UserContext(), request.(AdminListFaqsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListFaqs")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListFaqsResponseObject); ok {
+		if err := validResponse.VisitAdminListFaqsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminSaveFaq operation middleware
+func (sh *strictHandler) AdminSaveFaq(ctx *fiber.Ctx) error {
+	var request AdminSaveFaqRequestObject
+
+	var body AdminSaveFaqJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminSaveFaq(ctx.UserContext(), request.(AdminSaveFaqRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminSaveFaq")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminSaveFaqResponseObject); ok {
+		if err := validResponse.VisitAdminSaveFaqResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListMedia operation middleware
+func (sh *strictHandler) AdminListMedia(ctx *fiber.Ctx, params AdminListMediaParams) error {
+	var request AdminListMediaRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListMedia(ctx.UserContext(), request.(AdminListMediaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListMedia")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListMediaResponseObject); ok {
+		if err := validResponse.VisitAdminListMediaResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateMedia operation middleware
+func (sh *strictHandler) AdminCreateMedia(ctx *fiber.Ctx) error {
+	var request AdminCreateMediaRequestObject
+
+	var body AdminCreateMediaJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateMedia(ctx.UserContext(), request.(AdminCreateMediaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateMedia")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateMediaResponseObject); ok {
+		if err := validResponse.VisitAdminCreateMediaResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetPresignedUrl operation middleware
+func (sh *strictHandler) AdminGetPresignedUrl(ctx *fiber.Ctx, params AdminGetPresignedUrlParams) error {
+	var request AdminGetPresignedUrlRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetPresignedUrl(ctx.UserContext(), request.(AdminGetPresignedUrlRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetPresignedUrl")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetPresignedUrlResponseObject); ok {
+		if err := validResponse.VisitAdminGetPresignedUrlResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListMessages operation middleware
+func (sh *strictHandler) AdminListMessages(ctx *fiber.Ctx) error {
+	var request AdminListMessagesRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListMessages(ctx.UserContext(), request.(AdminListMessagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListMessages")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListMessagesResponseObject); ok {
+		if err := validResponse.VisitAdminListMessagesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminBroadcastMessage operation middleware
+func (sh *strictHandler) AdminBroadcastMessage(ctx *fiber.Ctx) error {
+	var request AdminBroadcastMessageRequestObject
+
+	var body AdminBroadcastMessageJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminBroadcastMessage(ctx.UserContext(), request.(AdminBroadcastMessageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminBroadcastMessage")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminBroadcastMessageResponseObject); ok {
+		if err := validResponse.VisitAdminBroadcastMessageResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetNotifications operation middleware
+func (sh *strictHandler) AdminGetNotifications(ctx *fiber.Ctx) error {
+	var request AdminGetNotificationsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetNotifications(ctx.UserContext(), request.(AdminGetNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetNotifications")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetNotificationsResponseObject); ok {
+		if err := validResponse.VisitAdminGetNotificationsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListOrders operation middleware
+func (sh *strictHandler) AdminListOrders(ctx *fiber.Ctx, params AdminListOrdersParams) error {
+	var request AdminListOrdersRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListOrders(ctx.UserContext(), request.(AdminListOrdersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListOrders")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListOrdersResponseObject); ok {
+		if err := validResponse.VisitAdminListOrdersResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetOrder operation middleware
+func (sh *strictHandler) AdminGetOrder(ctx *fiber.Ctx, orderId string) error {
+	var request AdminGetOrderRequestObject
+
+	request.OrderId = orderId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetOrder(ctx.UserContext(), request.(AdminGetOrderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetOrder")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetOrderResponseObject); ok {
+		if err := validResponse.VisitAdminGetOrderResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateOrder operation middleware
+func (sh *strictHandler) AdminUpdateOrder(ctx *fiber.Ctx, orderId string) error {
+	var request AdminUpdateOrderRequestObject
+
+	request.OrderId = orderId
+
+	var body AdminUpdateOrderJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateOrder(ctx.UserContext(), request.(AdminUpdateOrderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateOrder")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateOrderResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateOrderResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListProducts operation middleware
+func (sh *strictHandler) AdminListProducts(ctx *fiber.Ctx, params AdminListProductsParams) error {
+	var request AdminListProductsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListProducts(ctx.UserContext(), request.(AdminListProductsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListProducts")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListProductsResponseObject); ok {
+		if err := validResponse.VisitAdminListProductsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListRefunds operation middleware
+func (sh *strictHandler) AdminListRefunds(ctx *fiber.Ctx, params AdminListRefundsParams) error {
+	var request AdminListRefundsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListRefunds(ctx.UserContext(), request.(AdminListRefundsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListRefunds")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListRefundsResponseObject); ok {
+		if err := validResponse.VisitAdminListRefundsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminApproveRefund operation middleware
+func (sh *strictHandler) AdminApproveRefund(ctx *fiber.Ctx, refundId string) error {
+	var request AdminApproveRefundRequestObject
+
+	request.RefundId = refundId
+
+	var body AdminApproveRefundJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminApproveRefund(ctx.UserContext(), request.(AdminApproveRefundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminApproveRefund")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminApproveRefundResponseObject); ok {
+		if err := validResponse.VisitAdminApproveRefundResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminRejectRefund operation middleware
+func (sh *strictHandler) AdminRejectRefund(ctx *fiber.Ctx, refundId string) error {
+	var request AdminRejectRefundRequestObject
+
+	request.RefundId = refundId
+
+	var body AdminRejectRefundJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRejectRefund(ctx.UserContext(), request.(AdminRejectRefundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRejectRefund")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminRejectRefundResponseObject); ok {
+		if err := validResponse.VisitAdminRejectRefundResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListReviews operation middleware
+func (sh *strictHandler) AdminListReviews(ctx *fiber.Ctx, params AdminListReviewsParams) error {
+	var request AdminListReviewsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListReviews(ctx.UserContext(), request.(AdminListReviewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListReviews")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListReviewsResponseObject); ok {
+		if err := validResponse.VisitAdminListReviewsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminPublishSelectedReviews operation middleware
+func (sh *strictHandler) AdminPublishSelectedReviews(ctx *fiber.Ctx) error {
+	var request AdminPublishSelectedReviewsRequestObject
+
+	var body AdminPublishSelectedReviewsJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminPublishSelectedReviews(ctx.UserContext(), request.(AdminPublishSelectedReviewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminPublishSelectedReviews")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminPublishSelectedReviewsResponseObject); ok {
+		if err := validResponse.VisitAdminPublishSelectedReviewsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteReview operation middleware
+func (sh *strictHandler) AdminDeleteReview(ctx *fiber.Ctx, reviewId int64) error {
+	var request AdminDeleteReviewRequestObject
+
+	request.ReviewId = reviewId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteReview(ctx.UserContext(), request.(AdminDeleteReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteReviewResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminApproveReview operation middleware
+func (sh *strictHandler) AdminApproveReview(ctx *fiber.Ctx, reviewId int64) error {
+	var request AdminApproveReviewRequestObject
+
+	request.ReviewId = reviewId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminApproveReview(ctx.UserContext(), request.(AdminApproveReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminApproveReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminApproveReviewResponseObject); ok {
+		if err := validResponse.VisitAdminApproveReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminFeatureReview operation middleware
+func (sh *strictHandler) AdminFeatureReview(ctx *fiber.Ctx, reviewId int64) error {
+	var request AdminFeatureReviewRequestObject
+
+	request.ReviewId = reviewId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminFeatureReview(ctx.UserContext(), request.(AdminFeatureReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminFeatureReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminFeatureReviewResponseObject); ok {
+		if err := validResponse.VisitAdminFeatureReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminHideReview operation middleware
+func (sh *strictHandler) AdminHideReview(ctx *fiber.Ctx, reviewId int64) error {
+	var request AdminHideReviewRequestObject
+
+	request.ReviewId = reviewId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminHideReview(ctx.UserContext(), request.(AdminHideReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminHideReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminHideReviewResponseObject); ok {
+		if err := validResponse.VisitAdminHideReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetSetting operation middleware
+func (sh *strictHandler) AdminGetSetting(ctx *fiber.Ctx, key string) error {
+	var request AdminGetSettingRequestObject
+
+	request.Key = key
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetSetting(ctx.UserContext(), request.(AdminGetSettingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetSetting")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetSettingResponseObject); ok {
+		if err := validResponse.VisitAdminGetSettingResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpsertSetting operation middleware
+func (sh *strictHandler) AdminUpsertSetting(ctx *fiber.Ctx, key string) error {
+	var request AdminUpsertSettingRequestObject
+
+	request.Key = key
+
+	var body AdminUpsertSettingJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpsertSetting(ctx.UserContext(), request.(AdminUpsertSettingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpsertSetting")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpsertSettingResponseObject); ok {
+		if err := validResponse.VisitAdminUpsertSettingResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetStoreSettings operation middleware
+func (sh *strictHandler) AdminGetStoreSettings(ctx *fiber.Ctx) error {
+	var request AdminGetStoreSettingsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetStoreSettings(ctx.UserContext(), request.(AdminGetStoreSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetStoreSettings")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetStoreSettingsResponseObject); ok {
+		if err := validResponse.VisitAdminGetStoreSettingsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateStoreSettingsBrand operation middleware
+func (sh *strictHandler) AdminUpdateStoreSettingsBrand(ctx *fiber.Ctx) error {
+	var request AdminUpdateStoreSettingsBrandRequestObject
+
+	var body AdminUpdateStoreSettingsBrandJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateStoreSettingsBrand(ctx.UserContext(), request.(AdminUpdateStoreSettingsBrandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateStoreSettingsBrand")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateStoreSettingsBrandResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateStoreSettingsBrandResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateStoreSettingsContact operation middleware
+func (sh *strictHandler) AdminUpdateStoreSettingsContact(ctx *fiber.Ctx) error {
+	var request AdminUpdateStoreSettingsContactRequestObject
+
+	var body AdminUpdateStoreSettingsContactJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateStoreSettingsContact(ctx.UserContext(), request.(AdminUpdateStoreSettingsContactRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateStoreSettingsContact")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateStoreSettingsContactResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateStoreSettingsContactResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateStoreSettingsFloatingSupport operation middleware
+func (sh *strictHandler) AdminUpdateStoreSettingsFloatingSupport(ctx *fiber.Ctx) error {
+	var request AdminUpdateStoreSettingsFloatingSupportRequestObject
+
+	var body AdminUpdateStoreSettingsFloatingSupportJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateStoreSettingsFloatingSupport(ctx.UserContext(), request.(AdminUpdateStoreSettingsFloatingSupportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateStoreSettingsFloatingSupport")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateStoreSettingsFloatingSupportResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateStoreSettingsFooter operation middleware
+func (sh *strictHandler) AdminUpdateStoreSettingsFooter(ctx *fiber.Ctx) error {
+	var request AdminUpdateStoreSettingsFooterRequestObject
+
+	var body AdminUpdateStoreSettingsFooterJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateStoreSettingsFooter(ctx.UserContext(), request.(AdminUpdateStoreSettingsFooterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateStoreSettingsFooter")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateStoreSettingsFooterResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateStoreSettingsFooterResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateStoreSettingsHomepage operation middleware
+func (sh *strictHandler) AdminUpdateStoreSettingsHomepage(ctx *fiber.Ctx) error {
+	var request AdminUpdateStoreSettingsHomepageRequestObject
+
+	var body AdminUpdateStoreSettingsHomepageJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateStoreSettingsHomepage(ctx.UserContext(), request.(AdminUpdateStoreSettingsHomepageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateStoreSettingsHomepage")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateStoreSettingsHomepageResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateStoreSettingsHomepageResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListUsers operation middleware
+func (sh *strictHandler) AdminListUsers(ctx *fiber.Ctx, params AdminListUsersParams) error {
+	var request AdminListUsersRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListUsers(ctx.UserContext(), request.(AdminListUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListUsers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListUsersResponseObject); ok {
+		if err := validResponse.VisitAdminListUsersResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminBlockUser operation middleware
+func (sh *strictHandler) AdminBlockUser(ctx *fiber.Ctx, userId string) error {
+	var request AdminBlockUserRequestObject
+
+	request.UserId = userId
+
+	var body AdminBlockUserJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminBlockUser(ctx.UserContext(), request.(AdminBlockUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminBlockUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminBlockUserResponseObject); ok {
+		if err := validResponse.VisitAdminBlockUserResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -5411,6 +10990,33 @@ func (sh *strictHandler) CreateCategory(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// ListCatalogProductModels operation middleware
+func (sh *strictHandler) ListCatalogProductModels(ctx *fiber.Ctx, params ListCatalogProductModelsParams) error {
+	var request ListCatalogProductModelsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCatalogProductModels(ctx.UserContext(), request.(ListCatalogProductModelsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCatalogProductModels")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListCatalogProductModelsResponseObject); ok {
+		if err := validResponse.VisitListCatalogProductModelsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListProducts operation middleware
 func (sh *strictHandler) ListProducts(ctx *fiber.Ctx, params ListProductsParams) error {
 	var request ListProductsRequestObject
@@ -5670,6 +11276,33 @@ func (sh *strictHandler) CreateCheckoutOrder(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// CancelCheckoutOrder operation middleware
+func (sh *strictHandler) CancelCheckoutOrder(ctx *fiber.Ctx, orderId string) error {
+	var request CancelCheckoutOrderRequestObject
+
+	request.OrderId = orderId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelCheckoutOrder(ctx.UserContext(), request.(CancelCheckoutOrderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelCheckoutOrder")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CancelCheckoutOrderResponseObject); ok {
+		if err := validResponse.VisitCancelCheckoutOrderResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetPaymentParams operation middleware
 func (sh *strictHandler) GetPaymentParams(ctx *fiber.Ctx, orderId string) error {
 	var request GetPaymentParamsRequestObject
@@ -5743,6 +11376,33 @@ func (sh *strictHandler) GetPaymentStatus(ctx *fiber.Ctx, orderId string) error 
 		return err
 	} else if validResponse, ok := response.(GetPaymentStatusResponseObject); ok {
 		if err := validResponse.VisitGetPaymentStatusResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCheckoutOrderStatus operation middleware
+func (sh *strictHandler) GetCheckoutOrderStatus(ctx *fiber.Ctx, orderId string) error {
+	var request GetCheckoutOrderStatusRequestObject
+
+	request.OrderId = orderId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCheckoutOrderStatus(ctx.UserContext(), request.(GetCheckoutOrderStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCheckoutOrderStatus")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCheckoutOrderStatusResponseObject); ok {
+		if err := validResponse.VisitGetCheckoutOrderStatusResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -5865,6 +11525,120 @@ func (sh *strictHandler) PreviewCheckout(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// ListContentArticles operation middleware
+func (sh *strictHandler) ListContentArticles(ctx *fiber.Ctx, params ListContentArticlesParams) error {
+	var request ListContentArticlesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ListContentArticles(ctx.UserContext(), request.(ListContentArticlesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListContentArticles")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListContentArticlesResponseObject); ok {
+		if err := validResponse.VisitListContentArticlesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateContentArticle operation middleware
+func (sh *strictHandler) CreateContentArticle(ctx *fiber.Ctx) error {
+	var request CreateContentArticleRequestObject
+
+	var body CreateContentArticleJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateContentArticle(ctx.UserContext(), request.(CreateContentArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateContentArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateContentArticleResponseObject); ok {
+		if err := validResponse.VisitCreateContentArticleResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListContentPages operation middleware
+func (sh *strictHandler) ListContentPages(ctx *fiber.Ctx) error {
+	var request ListContentPagesRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ListContentPages(ctx.UserContext(), request.(ListContentPagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListContentPages")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListContentPagesResponseObject); ok {
+		if err := validResponse.VisitListContentPagesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateContentPage operation middleware
+func (sh *strictHandler) CreateContentPage(ctx *fiber.Ctx) error {
+	var request CreateContentPageRequestObject
+
+	var body CreateContentPageJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateContentPage(ctx.UserContext(), request.(CreateContentPageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateContentPage")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateContentPageResponseObject); ok {
+		if err := validResponse.VisitCreateContentPageResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetStaticPage operation middleware
 func (sh *strictHandler) GetStaticPage(ctx *fiber.Ctx, slug string) error {
 	var request GetStaticPageRequestObject
@@ -5884,6 +11658,31 @@ func (sh *strictHandler) GetStaticPage(ctx *fiber.Ctx, slug string) error {
 		return err
 	} else if validResponse, ok := response.(GetStaticPageResponseObject); ok {
 		if err := validResponse.VisitGetStaticPageResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetActiveFaqs operation middleware
+func (sh *strictHandler) GetActiveFaqs(ctx *fiber.Ctx) error {
+	var request GetActiveFaqsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetActiveFaqs(ctx.UserContext(), request.(GetActiveFaqsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetActiveFaqs")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetActiveFaqsResponseObject); ok {
+		if err := validResponse.VisitGetActiveFaqsResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -6249,6 +12048,274 @@ func (sh *strictHandler) RequestOrderRefund(ctx *fiber.Ctx, id string) error {
 	return nil
 }
 
+// GetProfile operation middleware
+func (sh *strictHandler) GetProfile(ctx *fiber.Ctx) error {
+	var request GetProfileRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfile(ctx.UserContext(), request.(GetProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetProfileResponseObject); ok {
+		if err := validResponse.VisitGetProfileResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateProfile operation middleware
+func (sh *strictHandler) UpdateProfile(ctx *fiber.Ctx) error {
+	var request UpdateProfileRequestObject
+
+	var body UpdateProfileJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateProfile(ctx.UserContext(), request.(UpdateProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateProfile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateProfileResponseObject); ok {
+		if err := validResponse.VisitUpdateProfileResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DoCheckin operation middleware
+func (sh *strictHandler) DoCheckin(ctx *fiber.Ctx) error {
+	var request DoCheckinRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.DoCheckin(ctx.UserContext(), request.(DoCheckinRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DoCheckin")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DoCheckinResponseObject); ok {
+		if err := validResponse.VisitDoCheckinResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCheckinStatusAlt operation middleware
+func (sh *strictHandler) GetCheckinStatusAlt(ctx *fiber.Ctx) error {
+	var request GetCheckinStatusAltRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCheckinStatusAlt(ctx.UserContext(), request.(GetCheckinStatusAltRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCheckinStatusAlt")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCheckinStatusAltResponseObject); ok {
+		if err := validResponse.VisitGetCheckinStatusAltResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCheckinStatus operation middleware
+func (sh *strictHandler) GetCheckinStatus(ctx *fiber.Ctx) error {
+	var request GetCheckinStatusRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCheckinStatus(ctx.UserContext(), request.(GetCheckinStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCheckinStatus")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCheckinStatusResponseObject); ok {
+		if err := validResponse.VisitGetCheckinStatusResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateProfileEmail operation middleware
+func (sh *strictHandler) UpdateProfileEmail(ctx *fiber.Ctx) error {
+	var request UpdateProfileEmailRequestObject
+
+	var body UpdateProfileEmailJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateProfileEmail(ctx.UserContext(), request.(UpdateProfileEmailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateProfileEmail")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateProfileEmailResponseObject); ok {
+		if err := validResponse.VisitUpdateProfileEmailResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateProfileNotifications operation middleware
+func (sh *strictHandler) UpdateProfileNotifications(ctx *fiber.Ctx) error {
+	var request UpdateProfileNotificationsRequestObject
+
+	var body UpdateProfileNotificationsJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateProfileNotifications(ctx.UserContext(), request.(UpdateProfileNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateProfileNotifications")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateProfileNotificationsResponseObject); ok {
+		if err := validResponse.VisitUpdateProfileNotificationsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetProfileSecurity operation middleware
+func (sh *strictHandler) GetProfileSecurity(ctx *fiber.Ctx) error {
+	var request GetProfileSecurityRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfileSecurity(ctx.UserContext(), request.(GetProfileSecurityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfileSecurity")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetProfileSecurityResponseObject); ok {
+		if err := validResponse.VisitGetProfileSecurityResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetProfileSessions operation middleware
+func (sh *strictHandler) GetProfileSessions(ctx *fiber.Ctx) error {
+	var request GetProfileSessionsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfileSessions(ctx.UserContext(), request.(GetProfileSessionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfileSessions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetProfileSessionsResponseObject); ok {
+		if err := validResponse.VisitGetProfileSessionsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetPublicHomepage operation middleware
+func (sh *strictHandler) GetPublicHomepage(ctx *fiber.Ctx) error {
+	var request GetPublicHomepageRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPublicHomepage(ctx.UserContext(), request.(GetPublicHomepageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPublicHomepage")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetPublicHomepageResponseObject); ok {
+		if err := validResponse.VisitGetPublicHomepageResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // CreateReview operation middleware
 func (sh *strictHandler) CreateReview(ctx *fiber.Ctx) error {
 	var request CreateReviewRequestObject
@@ -6299,6 +12366,81 @@ func (sh *strictHandler) DeleteReview(ctx *fiber.Ctx, id string) error {
 		return err
 	} else if validResponse, ok := response.(DeleteReviewResponseObject); ok {
 		if err := validResponse.VisitDeleteReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserProfile operation middleware
+func (sh *strictHandler) GetUserProfile(ctx *fiber.Ctx) error {
+	var request GetUserProfileRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserProfile(ctx.UserContext(), request.(GetUserProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserProfile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserProfileResponseObject); ok {
+		if err := validResponse.VisitGetUserProfileResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserCheckinStatusAlt operation middleware
+func (sh *strictHandler) GetUserCheckinStatusAlt(ctx *fiber.Ctx) error {
+	var request GetUserCheckinStatusAltRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserCheckinStatusAlt(ctx.UserContext(), request.(GetUserCheckinStatusAltRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserCheckinStatusAlt")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserCheckinStatusAltResponseObject); ok {
+		if err := validResponse.VisitGetUserCheckinStatusAltResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserCheckinStatus operation middleware
+func (sh *strictHandler) GetUserCheckinStatus(ctx *fiber.Ctx) error {
+	var request GetUserCheckinStatusRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserCheckinStatus(ctx.UserContext(), request.(GetUserCheckinStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserCheckinStatus")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserCheckinStatusResponseObject); ok {
+		if err := validResponse.VisitGetUserCheckinStatusResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -6675,98 +12817,149 @@ func (sh *strictHandler) VoteWishlistItem(ctx *fiber.Ctx, id string) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

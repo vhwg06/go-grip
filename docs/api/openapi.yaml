@@ -1136,6 +1136,1528 @@ paths:
           $ref: '#/components/responses/ForbiddenResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
+  /admin/orders:
+    get:
+      tags:
+        - admin
+      summary: List all orders (admin queue)
+      operationId: adminListOrders
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Admin order queue retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/orders/{orderId}:
+    get:
+      tags:
+        - admin
+      summary: Get admin order detail
+      operationId: adminGetOrder
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order detail retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetailResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    patch:
+      tags:
+        - admin
+      summary: Update order status (admin transition)
+      operationId: adminUpdateOrder
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateOrderRequest'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/refunds:
+    get:
+      tags:
+        - admin
+      summary: List refund requests (admin)
+      operationId: adminListRefunds
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected, all]
+      responses:
+        '200':
+          description: Refund list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminRefundListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/refunds/{refundId}/approve:
+    post:
+      tags:
+        - admin
+      summary: Approve a refund request
+      operationId: adminApproveRefund
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProcessRefundRequest'
+      responses:
+        '200':
+          description: Refund approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminRefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/refunds/{refundId}/reject:
+    post:
+      tags:
+        - admin
+      summary: Reject a refund request
+      operationId: adminRejectRefund
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProcessRefundRequest'
+      responses:
+        '200':
+          description: Refund rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminRefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews:
+    get:
+      tags:
+        - admin
+      summary: List reviews for moderation
+      operationId: adminListReviews
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Reviews retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReviewListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews/publish-selected:
+    post:
+      tags:
+        - admin
+      summary: Bulk publish selected reviews
+      operationId: adminPublishSelectedReviews
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBulkReviewRequest'
+      responses:
+        '200':
+          description: Reviews published
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews/{reviewId}:
+    delete:
+      tags:
+        - admin
+      summary: Delete a review
+      operationId: adminDeleteReview
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Review deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews/{reviewId}/approve:
+    put:
+      tags:
+        - admin
+      summary: Approve a review
+      operationId: adminApproveReview
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Review approved
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews/{reviewId}/hide:
+    put:
+      tags:
+        - admin
+      summary: Hide a review
+      operationId: adminHideReview
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Review hidden
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/reviews/{reviewId}/feature:
+    put:
+      tags:
+        - admin
+      summary: Feature a review
+      operationId: adminFeatureReview
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Review featured
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/users:
+    get:
+      tags:
+        - admin
+      summary: List users (admin backoffice)
+      operationId: adminListUsers
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Users list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/users/{userId}/block:
+    patch:
+      tags:
+        - admin
+      summary: Block or unblock a user
+      operationId: adminBlockUser
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBlockUserRequest'
+      responses:
+        '200':
+          description: User status updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/settings/{key}:
+    get:
+      tags:
+        - admin
+      summary: Get a setting by key
+      operationId: adminGetSetting
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSettingResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    put:
+      tags:
+        - admin
+      summary: Upsert a setting by key
+      operationId: adminUpsertSetting
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpsertSettingRequest'
+      responses:
+        '200':
+          description: Setting upserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSettingResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings:
+    get:
+      tags:
+        - admin
+      summary: Get all store settings
+      operationId: adminGetStoreSettings
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Store settings retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStoreSettingsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings/brand:
+    put:
+      tags:
+        - admin
+      summary: Update brand store settings
+      operationId: adminUpdateStoreSettingsBrand
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Brand settings updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings/contact:
+    put:
+      tags:
+        - admin
+      summary: Update contact store settings
+      operationId: adminUpdateStoreSettingsContact
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Contact settings updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings/footer:
+    put:
+      tags:
+        - admin
+      summary: Update footer store settings
+      operationId: adminUpdateStoreSettingsFooter
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Footer settings updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings/homepage:
+    put:
+      tags:
+        - admin
+      summary: Update homepage store settings
+      operationId: adminUpdateStoreSettingsHomepage
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Homepage settings updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/store-settings/floating-support:
+    put:
+      tags:
+        - admin
+      summary: Update floating support store settings
+      operationId: adminUpdateStoreSettingsFloatingSupport
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Floating support settings updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/media:
+    get:
+      tags:
+        - admin
+      summary: List media files (admin)
+      operationId: adminListMedia
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+      responses:
+        '200':
+          description: Media files retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMediaListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - admin
+      summary: Create a media record (admin)
+      operationId: adminCreateMedia
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Media created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMediaResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/media/presigned:
+    get:
+      tags:
+        - admin
+      summary: Get presigned URL for media upload
+      operationId: adminGetPresignedUrl
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: fileName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: contentType
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPresignedUrlResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/banners:
+    get:
+      tags:
+        - admin
+      summary: List banners (admin)
+      operationId: adminListBanners
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Banners retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBannerListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - admin
+      summary: Create or update a banner
+      operationId: adminSaveBanner
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBannerRequest'
+      responses:
+        '201':
+          description: Banner saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBannerResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/faqs:
+    get:
+      tags:
+        - admin
+      summary: List FAQs (admin)
+      operationId: adminListFaqs
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: FAQs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminFaqListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - admin
+      summary: Create or update a FAQ
+      operationId: adminSaveFaq
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminFaqRequest'
+      responses:
+        '201':
+          description: FAQ saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminFaqResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/messages:
+    get:
+      tags:
+        - admin
+      summary: List admin broadcast messages
+      operationId: adminListMessages
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Messages retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMessageListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/messages/broadcast:
+    post:
+      tags:
+        - admin
+      summary: Send a broadcast message to all users
+      operationId: adminBroadcastMessage
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBroadcastMessageRequest'
+      responses:
+        '200':
+          description: Broadcast sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/notifications:
+    get:
+      tags:
+        - admin
+      summary: Get outbound notification readiness status
+      operationId: adminGetNotifications
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Notification status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminNotificationStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/products:
+    get:
+      tags:
+        - admin
+      summary: List all products (admin legacy)
+      operationId: adminListProducts
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Products retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/categories:
+    get:
+      tags:
+        - admin
+      summary: List categories (admin legacy)
+      operationId: adminListCategories
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Categories retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/collect:
+    get:
+      tags:
+        - admin
+      summary: Get admin collect/aggregate view
+      operationId: adminGetCollect
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Collect data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCollectResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile:
+    get:
+      tags:
+        - profile
+      summary: Get current user profile (alias)
+      operationId: getProfile
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    patch:
+      tags:
+        - profile
+      summary: Update current user profile
+      operationId: updateProfile
+      security:
+        - bearerAuth:
+            - "profile:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/security:
+    get:
+      tags:
+        - profile
+      summary: Get profile security settings
+      operationId: getProfileSecurity
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Security settings retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileSecurityResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/sessions:
+    get:
+      tags:
+        - profile
+      summary: Get active sessions list
+      operationId: getProfileSessions
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Sessions retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileSessionListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/email:
+    patch:
+      tags:
+        - profile
+      summary: Update profile email
+      operationId: updateProfileEmail
+      security:
+        - bearerAuth:
+            - "profile:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileEmailRequest'
+      responses:
+        '200':
+          description: Email updated
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/notifications:
+    patch:
+      tags:
+        - profile
+      summary: Update profile notification preferences
+      operationId: updateProfileNotifications
+      security:
+        - bearerAuth:
+            - "profile:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Notification preferences updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/checkin:
+    post:
+      tags:
+        - profile
+      summary: Daily check-in
+      operationId: doCheckin
+      security:
+        - bearerAuth:
+            - "profile:write"
+      responses:
+        '200':
+          description: Check-in completed
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/checkin/status:
+    get:
+      tags:
+        - profile
+      summary: Get check-in status
+      operationId: getCheckinStatus
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Check-in status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckinStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /profile/checkin-status:
+    get:
+      tags:
+        - profile
+      summary: Get check-in status (alias)
+      operationId: getCheckinStatusAlt
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Check-in status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckinStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /user/profile:
+    get:
+      tags:
+        - profile
+      summary: Get user profile (legacy path)
+      operationId: getUserProfile
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /user/profile/checkin/status:
+    get:
+      tags:
+        - profile
+      summary: Get check-in status (legacy path)
+      operationId: getUserCheckinStatus
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Check-in status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckinStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /user/profile/checkin-status:
+    get:
+      tags:
+        - profile
+      summary: Get check-in status (legacy path alt)
+      operationId: getUserCheckinStatusAlt
+      security:
+        - bearerAuth:
+            - "profile:read"
+      responses:
+        '200':
+          description: Check-in status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckinStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/orders/{orderId}/cancel:
+    post:
+      tags:
+        - checkout
+      summary: Cancel a pending order
+      operationId: cancelCheckoutOrder
+      security:
+        - bearerAuth:
+            - "checkout:write"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order cancelled
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /checkout/orders/{orderId}/status:
+    get:
+      tags:
+        - checkout
+      summary: Get checkout order status
+      operationId: getCheckoutOrderStatus
+      security:
+        - bearerAuth:
+            - "checkout:read"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutOrderResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /public/homepage:
+    get:
+      tags:
+        - content
+      summary: Get public homepage config
+      operationId: getPublicHomepage
+      responses:
+        '200':
+          description: Homepage config retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicHomepageResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /faqs/active:
+    get:
+      tags:
+        - content
+      summary: Get active FAQs (public)
+      operationId: getActiveFaqs
+      responses:
+        '200':
+          description: Active FAQs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicFaqListResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/product-models:
+    get:
+      tags:
+        - catalog
+      summary: List public catalog product models
+      operationId: listCatalogProductModels
+      parameters:
+        - name: minPrice
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: maxPrice
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Product models retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductModelListResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /content/articles:
+    get:
+      tags:
+        - content
+      summary: List published articles (admin/authenticated)
+      operationId: listContentArticles
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Articles retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - content
+      summary: Create a new article
+      operationId: createContentArticle
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+      responses:
+        '201':
+          description: Article created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /content/pages:
+    get:
+      tags:
+        - content
+      summary: List content pages
+      operationId: listContentPages
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        '200':
+          description: Pages retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StaticPageResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - content
+      summary: Create a static page
+      operationId: createContentPage
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaticPageRequest'
+      responses:
+        '201':
+          description: Page created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
   /media/upload:
     post:
       tags:
@@ -2487,6 +4009,508 @@ components:
           example: jwt-refresh-token
         user:
           $ref: '#/components/schemas/UserResponse'
+    AdminOrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrderDetailResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    AdminOrderDetailResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        userId:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: integer
+        amount:
+          type: integer
+          format: int64
+        status:
+          type: string
+        paymentMethod:
+          type: string
+        address:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AdminUpdateOrderRequest:
+      type: object
+      properties:
+        status:
+          type: string
+    AdminRefundListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminRefundResponse'
+        total:
+          type: integer
+    AdminRefundResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        orderId:
+          type: string
+        userId:
+          type: string
+        username:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+        adminUsername:
+          type: string
+        adminNote:
+          type: string
+        productName:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        tradeNo:
+          type: string
+        orderStatus:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    AdminProcessRefundRequest:
+      type: object
+      properties:
+        note:
+          type: string
+    AdminReviewListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminReviewResponse'
+        total:
+          type: integer
+        stats:
+          $ref: '#/components/schemas/ReviewModerationStats'
+    AdminReviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        productId:
+          type: string
+        productName:
+          type: string
+        userId:
+          type: string
+        username:
+          type: string
+        rating:
+          type: integer
+        comment:
+          type: string
+        status:
+          type: string
+        isVerifiedPurchase:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    ReviewModerationStats:
+      type: object
+      properties:
+        pending:
+          type: integer
+        featured:
+          type: integer
+        hidden:
+          type: integer
+    AdminBulkReviewRequest:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+    AdminUserListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    AdminUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        isAdmin:
+          type: boolean
+        orderCount:
+          type: integer
+          nullable: true
+        refundCount:
+          type: integer
+          nullable: true
+        reviewCount:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    AdminBlockUserRequest:
+      type: object
+      required:
+        - blocked
+      properties:
+        blocked:
+          type: boolean
+    AdminSettingResponse:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    AdminUpsertSettingRequest:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+    AdminStoreSettingsResponse:
+      type: object
+      additionalProperties: true
+    AdminMediaListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminMediaResponse'
+        total:
+          type: integer
+    AdminMediaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+    AdminPresignedUrlResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        key:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    AdminBannerListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminBannerResponse'
+    AdminBannerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        imageUrl:
+          type: string
+        linkUrl:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+    AdminBannerRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        imageUrl:
+          type: string
+        linkUrl:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+    AdminFaqListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminFaqResponse'
+    AdminFaqResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+    AdminFaqRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+    AdminMessageListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminMessageResponse'
+    AdminMessageResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        targetUserID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AdminBroadcastMessageRequest:
+      type: object
+      required:
+        - title
+        - body
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        imageUrl:
+          type: string
+    AdminNotificationStatusResponse:
+      type: object
+      additionalProperties: true
+    AdminProductListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+        total:
+          type: integer
+    AdminCollectResponse:
+      type: object
+      additionalProperties: true
+    ProfileSecurityResponse:
+      type: object
+      properties:
+        email:
+          type: string
+        hasPassword:
+          type: boolean
+    ProfileSessionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileSessionResponse'
+    ProfileSessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        userAgent:
+          type: string
+        ip:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    UpdateProfileEmailRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+    CheckinStatusResponse:
+      type: object
+      properties:
+        checkedIn:
+          type: boolean
+        streak:
+          type: integer
+        lastCheckinAt:
+          type: string
+          format: date-time
+          nullable: true
+    PublicHomepageResponse:
+      type: object
+      additionalProperties: true
+    PublicFaqListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminFaqResponse'
+    PublicProductModelListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+    ArticleListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleResponse'
+        total:
+          type: integer
+    ArticleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    ArticleRequest:
+      type: object
+      required:
+        - title
+        - body
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+    StaticPageRequest:
+      type: object
+      required:
+        - slug
+        - title
+        - body
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
     ErrorDetail:
       type: object
       required:
