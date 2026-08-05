@@ -45,7 +45,7 @@ const selfContainedDocsHTML = `<!DOCTYPE html>
 </body>
 </html>`
 
-// NewRouter registers OpenAPI 3.0 routes, legacy v1 routes, and global middlewares.
+// NewRouter registers strict OpenAPI 3.0 routes and global middlewares.
 func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usecase.User, tk usecase.Task, catalog usecase.Catalog, catalogBase catalogbase.UseCase, auth usecase.Auth, checkout usecase.Checkout, orders usecase.Orders, profile usecase.Profile, admin usecase.Admin, wishlist usecase.Wishlist, notify usecase.NotificationCenter, media usecase.Media, homepage usecase.Homepage, cart usecase.Cart, lead usecase.Lead, content usecase.Content, importer usecase.Importer, jwtManager *jwt.Manager, l logger.Interface) {
 	// Options
 	app.Use(middleware.Logger(l))
@@ -86,12 +86,6 @@ func NewRouter(app *fiber.App, cfg *config.Config, t usecase.Translation, u usec
 
 	// K8s probe
 	app.Get("/healthz", func(ctx *fiber.Ctx) error { return ctx.SendStatus(http.StatusOK) })
-
-	// Register legacy operational routes on /v1 for non-OpenAPI legacy endpoints & parity harness
-	apiV1Group := app.Group("/v1")
-	{
-		v1.NewRoutes(apiV1Group, t, u, tk, catalog, catalogBase, auth, checkout, orders, profile, admin, wishlist, notify, media, homepage, cart, lead, content, importer, jwtManager, cfg.Admin.Users, l)
-	}
 
 	// Strict OpenAPI Composition Server
 	server := v1.NewServer(
