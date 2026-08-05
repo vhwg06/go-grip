@@ -4,25 +4,27 @@ import (
 	"context"
 	"sync"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
 type SupportChannelRepo struct {
 	*postgres.Postgres
 	mu    sync.RWMutex
-	items map[string]entity.SupportChannel
+	items map[string]contentmodule.SupportChannel
 }
 
 func NewSupportChannelRepo(pg *postgres.Postgres) *SupportChannelRepo {
-	return &SupportChannelRepo{Postgres: pg, items: map[string]entity.SupportChannel{}}
+	return &SupportChannelRepo{Postgres: pg, items: map[string]contentmodule.SupportChannel{}}
 }
 
-func (r *SupportChannelRepo) List(ctx context.Context, enabledOnly bool) ([]entity.SupportChannel, error) {
+var _ contentmodule.SupportChannelRepo = (*SupportChannelRepo)(nil)
+
+func (r *SupportChannelRepo) List(ctx context.Context, enabledOnly bool) ([]contentmodule.SupportChannel, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]entity.SupportChannel, 0, len(r.items))
+	items := make([]contentmodule.SupportChannel, 0, len(r.items))
 	for _, item := range r.items {
 		if enabledOnly && !item.IsEnabled {
 			continue
@@ -32,7 +34,7 @@ func (r *SupportChannelRepo) List(ctx context.Context, enabledOnly bool) ([]enti
 	return items, nil
 }
 
-func (r *SupportChannelRepo) Update(ctx context.Context, channel *entity.SupportChannel) error {
+func (r *SupportChannelRepo) Update(ctx context.Context, channel *contentmodule.SupportChannel) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()

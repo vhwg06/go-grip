@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Content & Homepage capabilities.
 type Handler struct {
-	contentUC  usecase.Content
-	homepageUC usecase.Homepage
+	contentUC  contentmodule.ContentUseCase
+	homepageUC contentmodule.HomepageUseCase
 	logger     logger.Interface
 }
 
 // NewHandler constructs a new Content/Homepage vertical handler instance.
-func NewHandler(contentUC usecase.Content, homepageUC usecase.Homepage, l logger.Interface) *Handler {
+func NewHandler(contentUC contentmodule.ContentUseCase, homepageUC contentmodule.HomepageUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		contentUC:  contentUC,
 		homepageUC: homepageUC,

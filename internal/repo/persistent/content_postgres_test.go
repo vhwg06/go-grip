@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,11 +22,11 @@ func TestContentRepo(t *testing.T) {
 	t1 := now.Add(-2 * time.Hour)
 	t2 := now.Add(-1 * time.Hour)
 
-	art1 := entity.ContentArticle{
+	art1 := contentmodule.ContentArticle{
 		ID:          "a1",
 		Title:       "Low Priority, Older",
 		Slug:        "low-older",
-		Status:      entity.ContentStatusPublished,
+		Status:      contentmodule.ContentStatusPublished,
 		Topic:       "tech",
 		Tags:        []string{"go", "backend"},
 		Priority:    1,
@@ -34,11 +34,11 @@ func TestContentRepo(t *testing.T) {
 		CreatedAt:   t1,
 	}
 
-	art2 := entity.ContentArticle{
+	art2 := contentmodule.ContentArticle{
 		ID:          "a2",
 		Title:       "Low Priority, Newer",
 		Slug:        "low-newer",
-		Status:      entity.ContentStatusPublished,
+		Status:      contentmodule.ContentStatusPublished,
 		Topic:       "tech",
 		Tags:        []string{"go", "frontend"},
 		Priority:    1,
@@ -46,11 +46,11 @@ func TestContentRepo(t *testing.T) {
 		CreatedAt:   t2,
 	}
 
-	art3 := entity.ContentArticle{
+	art3 := contentmodule.ContentArticle{
 		ID:          "a3",
 		Title:       "High Priority",
 		Slug:        "high-priority",
-		Status:      entity.ContentStatusPublished,
+		Status:      contentmodule.ContentStatusPublished,
 		Topic:       "design",
 		Tags:        []string{"ui", "ux"},
 		Priority:    10,
@@ -58,11 +58,11 @@ func TestContentRepo(t *testing.T) {
 		CreatedAt:   t1,
 	}
 
-	artDraft := entity.ContentArticle{
+	artDraft := contentmodule.ContentArticle{
 		ID:        "a4",
 		Title:     "Draft Article",
 		Slug:      "draft-slug",
-		Status:    entity.ContentStatusDraft,
+		Status:    contentmodule.ContentStatusDraft,
 		Topic:     "tech",
 		Priority:  5,
 		CreatedAt: now,
@@ -76,7 +76,7 @@ func TestContentRepo(t *testing.T) {
 	// 2. Test ListArticles for PublicOnly with priority and publish date sorting
 	// Expected order: a3 (Priority 10), then a2 (Priority 1, newer published_at), then a1 (Priority 1, older published_at)
 	// Draft should be excluded.
-	items, total, err := repo.ListArticles(ctx, entity.ArticleFilter{PublicOnly: true})
+	items, total, err := repo.ListArticles(ctx, contentmodule.ArticleFilter{PublicOnly: true})
 	require.NoError(t, err)
 	require.Equal(t, 3, total)
 	require.Len(t, items, 3)
@@ -85,7 +85,7 @@ func TestContentRepo(t *testing.T) {
 	require.Equal(t, "a1", items[2].ID)
 
 	// 3. Test ListArticles filtering by Topic
-	itemsTopic, totalTopic, err := repo.ListArticles(ctx, entity.ArticleFilter{Topic: "tech"})
+	itemsTopic, totalTopic, err := repo.ListArticles(ctx, contentmodule.ArticleFilter{Topic: "tech"})
 	require.NoError(t, err)
 	// Should return: draft (a4, priority 5), low-newer (a2, priority 1), low-older (a1, priority 1) (since PublicOnly is false by default)
 	require.Equal(t, 3, totalTopic)
@@ -94,7 +94,7 @@ func TestContentRepo(t *testing.T) {
 	require.Equal(t, "a1", itemsTopic[2].ID)
 
 	// 4. Test ListArticles filtering by Tag
-	itemsTag, totalTag, err := repo.ListArticles(ctx, entity.ArticleFilter{Tag: "go"})
+	itemsTag, totalTag, err := repo.ListArticles(ctx, contentmodule.ArticleFilter{Tag: "go"})
 	require.NoError(t, err)
 	// Should return: low-newer (a2), low-older (a1)
 	require.Equal(t, 2, totalTag)
@@ -104,10 +104,10 @@ func TestContentRepo(t *testing.T) {
 	// 5. Test DeleteArticle
 	require.NoError(t, repo.DeleteArticle(ctx, "a3"))
 	_, err = repo.GetArticle(ctx, "a3")
-	require.ErrorIs(t, err, entity.ErrNotFound)
+	require.ErrorIs(t, err, contentmodule.ErrNotFound)
 
 	// After deletion, list public articles should not contain a3
-	itemsAfterDelete, totalAfterDelete, err := repo.ListArticles(ctx, entity.ArticleFilter{PublicOnly: true})
+	itemsAfterDelete, totalAfterDelete, err := repo.ListArticles(ctx, contentmodule.ArticleFilter{PublicOnly: true})
 	require.NoError(t, err)
 	require.Equal(t, 2, totalAfterDelete)
 	require.Equal(t, "a2", itemsAfterDelete[0].ID)

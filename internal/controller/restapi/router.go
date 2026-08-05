@@ -19,7 +19,8 @@ import (
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -54,7 +55,7 @@ const selfContainedDocsHTML = `<!DOCTYPE html>
 </html>`
 
 // NewRouter registers strict OpenAPI 3.0 routes and global middlewares.
-func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, catalog catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, auth usermodule.AuthUseCase, checkout ordermodule.CheckoutUseCase, orders ordermodule.OrdersUseCase, profile usermodule.ProfileUseCase, admin usermodule.AdminUseCase, wishlist wishlistmodule.WishlistUseCase, notify usecase.NotificationCenter, media mediamodule.MediaUseCase, homepage usecase.Homepage, cart cartmodule.CartUseCase, lead leadmodule.LeadUseCase, content usecase.Content, importer importermodule.ImporterUseCase, jwtManager *jwt.Manager, l logger.Interface) {
+func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, catalog catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, auth usermodule.AuthUseCase, checkout ordermodule.CheckoutUseCase, orders ordermodule.OrdersUseCase, profile usermodule.ProfileUseCase, admin usermodule.AdminUseCase, wishlist wishlistmodule.WishlistUseCase, notify notificationmodule.NotificationCenterUseCase, media mediamodule.MediaUseCase, homepage contentmodule.HomepageUseCase, cart cartmodule.CartUseCase, lead leadmodule.LeadUseCase, content contentmodule.ContentUseCase, importer importermodule.ImporterUseCase, jwtManager *jwt.Manager, l logger.Interface) {
 	// Options
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))

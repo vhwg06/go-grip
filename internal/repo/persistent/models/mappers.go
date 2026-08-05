@@ -100,6 +100,41 @@ func ProductToModule(m Product) catalogmodule.Product {
 	}
 }
 
+func ModuleToProduct(e catalogmodule.Product) Product {
+	var compareAtPrice int64
+	if e.ComparePrice != nil {
+		compareAtPrice = *e.ComparePrice
+	}
+	var introArticleID *string
+	if e.IntroArticleID != "" {
+		introArticleID = &e.IntroArticleID
+	}
+	return Product{
+		ID:              e.ID,
+		Name:            e.Title,
+		SKU:             e.SKU,
+		Description:     e.Description,
+		Price:           e.Price,
+		CompareAtPrice:  compareAtPrice,
+		Category:        e.CategoryID,
+		Image:           e.ImageURL,
+		IsHot:           e.IsHot,
+		IsActive:        e.IsActive,
+		SortOrder:       e.SortOrder,
+		PurchaseLimit:   e.PurchaseLimit,
+		PurchaseWarning: e.PurchaseWarning,
+		IntroArticleID:  introArticleID,
+		VisibilityLevel: e.VisibilityLevel,
+		StockCount:      e.StockCount,
+		LockedCount:     e.LockedCount,
+		SoldCount:       e.SoldCount,
+		Rating:          e.Rating,
+		ReviewCount:     e.ReviewCount,
+		CreatedAt:       e.CreatedAt,
+		UpdatedAt:       e.UpdatedAt,
+	}
+}
+
 func CategoryToModule(m Category) catalogmodule.Category {
 	return catalogmodule.Category{
 		ID:       m.ID,

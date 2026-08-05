@@ -4,21 +4,21 @@ import (
 	"context"
 	"sync"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
 type SEORepo struct {
 	*postgres.Postgres
 	mu    sync.RWMutex
-	items map[string]entity.SeoMetadata
+	items map[string]contentmodule.SeoMetadata
 }
 
 func NewSEORepo(pg *postgres.Postgres) *SEORepo {
-	return &SEORepo{Postgres: pg, items: map[string]entity.SeoMetadata{}}
+	return &SEORepo{Postgres: pg, items: map[string]contentmodule.SeoMetadata{}}
 }
 
-func (r *SEORepo) Store(ctx context.Context, meta *entity.SeoMetadata) error {
+func (r *SEORepo) Store(ctx context.Context, meta *contentmodule.SeoMetadata) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -26,13 +26,13 @@ func (r *SEORepo) Store(ctx context.Context, meta *entity.SeoMetadata) error {
 	return nil
 }
 
-func (r *SEORepo) GetByOwner(ctx context.Context, ownerType, ownerID string) (entity.SeoMetadata, error) {
+func (r *SEORepo) GetByOwner(ctx context.Context, ownerType, ownerID string) (contentmodule.SeoMetadata, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	item, ok := r.items[ownerType+":"+ownerID]
 	if !ok {
-		return entity.SeoMetadata{}, entity.ErrNotFound
+		return contentmodule.SeoMetadata{}, contentmodule.ErrNotFound
 	}
 	return item, nil
 }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm/clause"
 )
@@ -20,9 +20,9 @@ func NewNotificationRepo(pg *postgres.Postgres) *NotificationRepo {
 	return &NotificationRepo{Postgres: pg}
 }
 
-var _ repo.NotificationRepository = (*NotificationRepo)(nil)
+var _ notificationmodule.NotificationRepo = (*NotificationRepo)(nil)
 
-func (r *NotificationRepo) ListUserNotifications(ctx context.Context, userID string, page entity.Pagination) ([]entity.UserNotification, int, error) {
+func (r *NotificationRepo) ListUserNotifications(ctx context.Context, userID string, page pagination.Pagination) ([]notificationmodule.UserNotification, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.UserNotification{}).Where("user_id = ?", userID)
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -33,9 +33,9 @@ func (r *NotificationRepo) ListUserNotifications(ctx context.Context, userID str
 	if err := query.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("NotificationRepo.ListUserNotifications(find): %w", err)
 	}
-	items := make([]entity.UserNotification, 0, len(rows))
+	items := make([]notificationmodule.UserNotification, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, entity.UserNotification{
+		items = append(items, notificationmodule.UserNotification{
 			ID:         row.ID,
 			UserID:     row.UserID,
 			Type:       row.Type,
@@ -49,7 +49,7 @@ func (r *NotificationRepo) ListUserNotifications(ctx context.Context, userID str
 	return items, int(total), nil
 }
 
-func (r *NotificationRepo) ListBroadcastMessages(ctx context.Context, page entity.Pagination) ([]entity.BroadcastMessage, int, error) {
+func (r *NotificationRepo) ListBroadcastMessages(ctx context.Context, page pagination.Pagination) ([]notificationmodule.BroadcastMessage, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.BroadcastMessage{})
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -60,9 +60,9 @@ func (r *NotificationRepo) ListBroadcastMessages(ctx context.Context, page entit
 	if err := query.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("NotificationRepo.ListBroadcastMessages(find): %w", err)
 	}
-	items := make([]entity.BroadcastMessage, 0, len(rows))
+	items := make([]notificationmodule.BroadcastMessage, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, entity.BroadcastMessage{
+		items = append(items, notificationmodule.BroadcastMessage{
 			ID:         row.ID,
 			TitleKey:   row.TitleKey,
 			ContentKey: row.ContentKey,

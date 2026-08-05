@@ -2,11 +2,11 @@ package content
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 )
 
-// toStaticPageResponse maps entity.StaticPage to openapi.StaticPageResponse DTO.
-func toStaticPageResponse(p entity.StaticPage) openapi.StaticPageResponse {
+// toStaticPageResponse maps contentmodule.StaticPage to openapi.StaticPageResponse DTO.
+func toStaticPageResponse(p contentmodule.StaticPage) openapi.StaticPageResponse {
 	content := p.Body
 	return openapi.StaticPageResponse{
 		Id:        p.ID,
@@ -17,8 +17,8 @@ func toStaticPageResponse(p entity.StaticPage) openapi.StaticPageResponse {
 	}
 }
 
-// toHomepageConfigResponse maps entity.HomepageBlock list to openapi.HomepageConfigResponse DTO.
-func toHomepageConfigResponse(blocks []entity.HomepageBlock) openapi.HomepageConfigResponse {
+// toHomepageConfigResponse maps contentmodule.HomepageBlock list to openapi.HomepageConfigResponse DTO.
+func toHomepageConfigResponse(blocks []contentmodule.HomepageBlock) openapi.HomepageConfigResponse {
 	bannerURL := "https://example.com/banner.png"
 	metaTitle := "Go-Grip Store"
 	featuredIDs := []string{}

@@ -3,8 +3,8 @@ package persistent
 import (
 	"context"
 
-	"github.com/evrone/go-clean-template/internal/entity"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/internal/module/importer"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
@@ -32,11 +32,11 @@ func (r *ImportRepo) StoreImportedProduct(ctx context.Context, draft importer.Im
 }
 
 func (r *ImportRepo) StoreImportedPost(ctx context.Context, draft importer.ImportPostDraft) error {
-	a := entity.ContentArticle{
+	a := contentmodule.ContentArticle{
 		ID:        draft.ID,
 		Title:     draft.Title,
 		Slug:      draft.Slug,
-		Status:    entity.ContentStatusDraft,
+		Status:    contentmodule.ContentStatusDraft,
 		CreatedAt: draft.CreatedAt,
 		UpdatedAt: draft.UpdatedAt,
 	}

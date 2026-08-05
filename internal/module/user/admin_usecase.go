@@ -6,30 +6,16 @@ import (
 	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 type adminStore interface {
-	repo.AdminRepository
-	ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error)
-	GetProduct(ctx context.Context, productID string) (entity.Product, error)
-	UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error)
-	DeleteProduct(ctx context.Context, productID string) error
-	ListCategories(ctx context.Context) ([]entity.Category, error)
-	UpsertCategory(ctx context.Context, category entity.Category) (entity.Category, error)
-	DeleteCategory(ctx context.Context, categoryID string) error
-	ListSettings(ctx context.Context) ([]entity.Setting, error)
-	DeleteSetting(ctx context.Context, key string) error
-	ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
-	ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
-	UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
-	DeleteOrder(ctx context.Context, orderID string) error
-	ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
-	UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
-	BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
-	DeleteReview(ctx context.Context, reviewID int64) error
+	ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error)
+	UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error
+	ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
+	GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
+	RebuildProductAggregates(ctx context.Context) error
 }
 
 // AdminUseCase defines the application service interface for backoffice administrative tools.

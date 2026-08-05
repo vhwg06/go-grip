@@ -9,7 +9,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -18,17 +18,19 @@ import (
 type ContentRepo struct {
 	*postgres.Postgres
 	mu       sync.RWMutex
-	articles map[string]entity.ContentArticle
-	pages    map[string]entity.StaticPage
+	articles map[string]contentmodule.ContentArticle
+	pages    map[string]contentmodule.StaticPage
 }
 
 func NewContentRepo(pg *postgres.Postgres) *ContentRepo {
 	return &ContentRepo{
 		Postgres: pg,
-		articles: map[string]entity.ContentArticle{},
-		pages:    map[string]entity.StaticPage{},
+		articles: map[string]contentmodule.ContentArticle{},
+		pages:    map[string]contentmodule.StaticPage{},
 	}
 }
+
+var _ contentmodule.ContentRepo = (*ContentRepo)(nil)
 
 func (r *ContentRepo) useMemory() bool {
 	return r == nil || r.Postgres == nil || r.Pool == nil
@@ -44,7 +46,7 @@ func uuidOrNil(id string) *string {
 	return &id
 }
 
-func (r *ContentRepo) StoreArticle(ctx context.Context, article *entity.ContentArticle) error {
+func (r *ContentRepo) StoreArticle(ctx context.Context, article *contentmodule.ContentArticle) error {
 	if r.useMemory() {
 		_ = ctx
 		r.mu.Lock()
@@ -87,19 +89,19 @@ func (r *ContentRepo) StoreArticle(ctx context.Context, article *entity.ContentA
 	return nil
 }
 
-func (r *ContentRepo) UpdateArticle(ctx context.Context, article *entity.ContentArticle) error {
+func (r *ContentRepo) UpdateArticle(ctx context.Context, article *contentmodule.ContentArticle) error {
 	return r.StoreArticle(ctx, article)
 }
 
-func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFilter) ([]entity.ContentArticle, int, error) {
+func (r *ContentRepo) ListArticles(ctx context.Context, filter contentmodule.ArticleFilter) ([]contentmodule.ContentArticle, int, error) {
 	if r.useMemory() {
 		_ = ctx
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 
-		items := make([]entity.ContentArticle, 0, len(r.articles))
+		items := make([]contentmodule.ContentArticle, 0, len(r.articles))
 		for _, article := range r.articles {
-			if filter.PublicOnly && article.Status != entity.ContentStatusPublished {
+			if filter.PublicOnly && article.Status != contentmodule.ContentStatusPublished {
 				continue
 			}
 			if filter.Topic != "" && article.Topic != filter.Topic {
@@ -140,7 +142,7 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 		total := len(items)
 		page := filter.Pagination.Normalize()
 		if page.Offset >= total {
-			return []entity.ContentArticle{}, total, nil
+			return []contentmodule.ContentArticle{}, total, nil
 		}
 
 		end := page.Offset + page.Limit
@@ -148,14 +150,14 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 			end = total
 		}
 
-		return append([]entity.ContentArticle(nil), items[page.Offset:end]...), total, nil
+		return append([]contentmodule.ContentArticle(nil), items[page.Offset:end]...), total, nil
 	}
 
 	page := filter.Pagination.Normalize()
 
 	countBuilder := r.Builder.Select("COUNT(*)").From("content_articles")
 	if filter.PublicOnly {
-		countBuilder = countBuilder.Where(sq.Eq{"status": string(entity.ContentStatusPublished)})
+		countBuilder = countBuilder.Where(sq.Eq{"status": string(contentmodule.ContentStatusPublished)})
 	}
 	if filter.Topic != "" {
 		countBuilder = countBuilder.Where(sq.Eq{"topic": filter.Topic})
@@ -179,7 +181,7 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 		From("content_articles")
 
 	if filter.PublicOnly {
-		dataBuilder = dataBuilder.Where(sq.Eq{"status": string(entity.ContentStatusPublished)})
+		dataBuilder = dataBuilder.Where(sq.Eq{"status": string(contentmodule.ContentStatusPublished)})
 	}
 	if filter.Topic != "" {
 		dataBuilder = dataBuilder.Where(sq.Eq{"topic": filter.Topic})
@@ -203,9 +205,9 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 	}
 	defer rows.Close()
 
-	articles := make([]entity.ContentArticle, 0, page.Limit)
+	articles := make([]contentmodule.ContentArticle, 0, page.Limit)
 	for rows.Next() {
-		var art entity.ContentArticle
+		var art contentmodule.ContentArticle
 		var authorPtr *string
 		var statusStr string
 		var imagePtr *string
@@ -221,7 +223,7 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 			return nil, 0, fmt.Errorf("ContentRepo - ListArticles - rows.Scan: %w", err)
 		}
 
-		art.Status = entity.ContentStatus(statusStr)
+		art.Status = contentmodule.ContentStatus(statusStr)
 		if authorPtr != nil {
 			art.AuthorID = *authorPtr
 		}
@@ -239,7 +241,7 @@ func (r *ContentRepo) ListArticles(ctx context.Context, filter entity.ArticleFil
 	return articles, total, nil
 }
 
-func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.ContentArticle, error) {
+func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (contentmodule.ContentArticle, error) {
 	if r.useMemory() {
 		_ = ctx
 		r.mu.RLock()
@@ -249,7 +251,7 @@ func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.C
 				return article, nil
 			}
 		}
-		return entity.ContentArticle{}, entity.ErrNotFound
+		return contentmodule.ContentArticle{}, contentmodule.ErrNotFound
 	}
 
 	sql, args, err := r.Builder.
@@ -258,10 +260,10 @@ func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.C
 		Where("id = ? OR slug = ?", idOrSlug, idOrSlug).
 		ToSql()
 	if err != nil {
-		return entity.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Builder: %w", err)
+		return contentmodule.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Builder: %w", err)
 	}
 
-	var art entity.ContentArticle
+	var art contentmodule.ContentArticle
 	var authorPtr *string
 	var statusStr string
 	var imagePtr *string
@@ -275,12 +277,12 @@ func (r *ContentRepo) GetArticle(ctx context.Context, idOrSlug string) (entity.C
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return entity.ContentArticle{}, entity.ErrNotFound
+			return contentmodule.ContentArticle{}, contentmodule.ErrNotFound
 		}
-		return entity.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Pool.QueryRow: %w", err)
+		return contentmodule.ContentArticle{}, fmt.Errorf("ContentRepo - GetArticle - r.Pool.QueryRow: %w", err)
 	}
 
-	art.Status = entity.ContentStatus(statusStr)
+	art.Status = contentmodule.ContentStatus(statusStr)
 	if authorPtr != nil {
 		art.AuthorID = *authorPtr
 	}
@@ -301,7 +303,7 @@ func (r *ContentRepo) DeleteArticle(ctx context.Context, id string) error {
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		if _, ok := r.articles[id]; !ok {
-			return entity.ErrNotFound
+			return contentmodule.ErrNotFound
 		}
 		delete(r.articles, id)
 		return nil
@@ -320,12 +322,12 @@ func (r *ContentRepo) DeleteArticle(ctx context.Context, id string) error {
 		return fmt.Errorf("ContentRepo - DeleteArticle - r.Pool.Exec: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return entity.ErrNotFound
+		return contentmodule.ErrNotFound
 	}
 	return nil
 }
 
-func (r *ContentRepo) StorePage(ctx context.Context, page *entity.StaticPage) error {
+func (r *ContentRepo) StorePage(ctx context.Context, page *contentmodule.StaticPage) error {
 	if r.useMemory() {
 		_ = ctx
 		if page.ID == "" {
@@ -364,7 +366,7 @@ func (r *ContentRepo) StorePage(ctx context.Context, page *entity.StaticPage) er
 	return nil
 }
 
-func (r *ContentRepo) UpdatePage(ctx context.Context, page *entity.StaticPage) error {
+func (r *ContentRepo) UpdatePage(ctx context.Context, page *contentmodule.StaticPage) error {
 	existing, err := r.GetPageBySlug(ctx, page.Slug)
 	if err == nil {
 		page.ID = existing.ID
@@ -372,14 +374,14 @@ func (r *ContentRepo) UpdatePage(ctx context.Context, page *entity.StaticPage) e
 	return r.StorePage(ctx, page)
 }
 
-func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.StaticPage, error) {
+func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (contentmodule.StaticPage, error) {
 	if r.useMemory() {
 		_ = ctx
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 		page, ok := r.pages[slug]
 		if !ok {
-			return entity.StaticPage{}, entity.ErrNotFound
+			return contentmodule.StaticPage{}, contentmodule.ErrNotFound
 		}
 		return page, nil
 	}
@@ -390,10 +392,10 @@ func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.St
 		Where("slug = ?", slug).
 		ToSql()
 	if err != nil {
-		return entity.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Builder: %w", err)
+		return contentmodule.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Builder: %w", err)
 	}
 
-	var pg entity.StaticPage
+	var pg contentmodule.StaticPage
 	var statusStr string
 	var gallery []string
 
@@ -402,12 +404,12 @@ func (r *ContentRepo) GetPageBySlug(ctx context.Context, slug string) (entity.St
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return entity.StaticPage{}, entity.ErrNotFound
+			return contentmodule.StaticPage{}, contentmodule.ErrNotFound
 		}
-		return entity.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Pool.QueryRow: %w", err)
+		return contentmodule.StaticPage{}, fmt.Errorf("ContentRepo - GetPageBySlug - r.Pool.QueryRow: %w", err)
 	}
 
-	pg.Status = entity.ContentStatus(statusStr)
+	pg.Status = contentmodule.ContentStatus(statusStr)
 	pg.Gallery = gallery
 
 	return pg, nil
@@ -422,8 +424,8 @@ func (r *ContentRepo) PublishDue(ctx context.Context) (int, error) {
 
 		published := 0
 		for id, article := range r.articles {
-			if article.Status == entity.ContentStatusScheduled && article.ScheduledAt != nil && !article.ScheduledAt.After(now) {
-				article.Status = entity.ContentStatusPublished
+			if article.Status == contentmodule.ContentStatusScheduled && article.ScheduledAt != nil && !article.ScheduledAt.After(now) {
+				article.Status = contentmodule.ContentStatusPublished
 				article.PublishedAt = &now
 				r.articles[id] = article
 				published++
@@ -436,9 +438,9 @@ func (r *ContentRepo) PublishDue(ctx context.Context) (int, error) {
 
 	sql, args, err := r.Builder.
 		Update("content_articles").
-		Set("status", string(entity.ContentStatusPublished)).
+		Set("status", string(contentmodule.ContentStatusPublished)).
 		Set("published_at", now).
-		Where("status = ? AND scheduled_at <= ?", string(entity.ContentStatusScheduled), now).
+		Where("status = ? AND scheduled_at <= ?", string(contentmodule.ContentStatusScheduled), now).
 		ToSql()
 	if err != nil {
 		return 0, fmt.Errorf("ContentRepo - PublishDue - r.Builder: %w", err)

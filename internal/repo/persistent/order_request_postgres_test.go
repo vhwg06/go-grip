@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOrderRequestRepo(t *testing.T) {
 	t.Parallel()
 	repo := NewOrderRequestRepo(nil)
-	require.NoError(t, repo.Store(context.Background(), &entity.OrderRequest{ID: "o1"}))
+	require.NoError(t, repo.Store(context.Background(), &cartmodule.OrderRequest{ID: "o1"}))
 }

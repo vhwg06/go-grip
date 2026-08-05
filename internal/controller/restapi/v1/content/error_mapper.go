@@ -6,6 +6,7 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 )
 
 // mapContentError maps domain errors specific to Content & Homepage capabilities
@@ -15,7 +16,7 @@ func mapContentError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, contentmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "PAGE_NOT_FOUND",

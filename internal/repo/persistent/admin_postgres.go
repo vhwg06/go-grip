@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
@@ -16,13 +17,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func buildDetailRows(product entity.Product) []models.ProductDetail {
-	details := make([]entity.ProductSpecItem, 0, len(product.Specs)+2)
+func buildDetailRows(product catalogmodule.Product) []models.ProductDetail {
+	details := make([]catalogmodule.ProductSpecItem, 0, len(product.Specs)+2)
 	if product.SKU != "" {
-		details = append(details, entity.ProductSpecItem{Key: "sku", Value: product.SKU})
+		details = append(details, catalogmodule.ProductSpecItem{Key: "sku", Value: product.SKU})
 	}
 	if product.Brand != "" {
-		details = append(details, entity.ProductSpecItem{Key: "brand", Value: product.Brand})
+		details = append(details, catalogmodule.ProductSpecItem{Key: "brand", Value: product.Brand})
 	}
 	for _, spec := range product.Specs {
 		key := strings.TrimSpace(spec.Key)
@@ -33,12 +34,12 @@ func buildDetailRows(product entity.Product) []models.ProductDetail {
 		if key == "sku" || key == "brand" {
 			continue
 		}
-		details = append(details, entity.ProductSpecItem{Key: key, Value: value})
+		details = append(details, catalogmodule.ProductSpecItem{Key: key, Value: value})
 	}
 
 	rows := make([]models.ProductDetail, 0, len(details))
 	for i, detail := range details {
-		row := models.EntityToDetail(product.ID, detail)
+		row := models.EntityToDetail(product.ID, entity.ProductSpecItem{Key: detail.Key, Value: detail.Value})
 		row.SortOrder = i
 		rows = append(rows, row)
 	}
@@ -611,7 +612,7 @@ func (r *AdminRepo) RebuildProductAggregates(ctx context.Context) error {
 	return nil
 }
 
-func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error) {
+func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([]catalogmodule.Product, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.Product{})
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -622,34 +623,34 @@ func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([
 	if err := query.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("AdminRepo.ListProducts(find): %w", err)
 	}
-	items := make([]entity.Product, 0, len(rows))
+	items := make([]catalogmodule.Product, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, models.ProductToEntity(row))
+		items = append(items, models.ProductToModule(row))
 	}
 	return items, int(total), nil
 }
 
-func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (entity.Product, error) {
+func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (catalogmodule.Product, error) {
 	var row models.Product
 	if err := r.Gorm.WithContext(ctx).
 		Where("id = ?", productID).
 		First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Product{}, entity.ErrNotFound
+			return catalogmodule.Product{}, catalogmodule.ErrNotFound
 		}
-		return entity.Product{}, fmt.Errorf("AdminRepo.GetProduct: %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("AdminRepo.GetProduct: %w", err)
 	}
 
-	result := models.ProductToEntity(row)
+	result := models.ProductToModule(row)
 
 	var detailRows []models.ProductDetail
 	if err := r.Gorm.WithContext(ctx).
 		Where("product_id = ?", productID).
 		Order("sort_order ASC, id ASC").
 		Find(&detailRows).Error; err != nil {
-		return entity.Product{}, fmt.Errorf("AdminRepo.GetProduct(specs): %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("AdminRepo.GetProduct(specs): %w", err)
 	}
-	result.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+	result.Specs = make([]catalogmodule.ProductSpecItem, 0, len(detailRows))
 	for _, detail := range detailRows {
 		switch detail.Key {
 		case "sku":
@@ -657,14 +658,15 @@ func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (entity.Pr
 		case "brand":
 			result.Brand = detail.Value
 		default:
-			result.Specs = append(result.Specs, models.DetailToEntity(detail))
+			d := models.DetailToEntity(detail)
+			result.Specs = append(result.Specs, catalogmodule.ProductSpecItem{Key: d.Key, Value: d.Value})
 		}
 	}
 
 	return result, nil
 }
 
-func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (entity.Product, error) {
+func (r *AdminRepo) UpsertProduct(ctx context.Context, product catalogmodule.Product) (catalogmodule.Product, error) {
 	if _, err := uuid.Parse(strings.TrimSpace(product.ID)); err != nil {
 		product.ID = uuid.NewString()
 	}
@@ -676,13 +678,13 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 	var existing models.Product
 	err := r.Gorm.WithContext(ctx).Where("id = ?", product.ID).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(find existing): %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(find existing): %w", err)
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		product.IsActive = true
 	}
 
-	model := models.EntityToProduct(product)
+	model := models.ModuleToProduct(product)
 	now := time.Now().UTC()
 	if model.CreatedAt.IsZero() {
 		model.CreatedAt = now
@@ -690,30 +692,31 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product entity.Product) (
 	model.UpdatedAt = now
 
 	if err := r.Gorm.WithContext(ctx).Save(&model).Error; err != nil {
-		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct: %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("AdminRepo.UpsertProduct: %w", err)
 	}
 
 	// Persist specs
 	if err := r.Gorm.WithContext(ctx).Where("product_id = ?", product.ID).Delete(&models.ProductDetail{}).Error; err != nil {
-		return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(delete specs): %w", err)
+		return catalogmodule.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(delete specs): %w", err)
 	}
 
 	detailRows := buildDetailRows(product)
 	if len(detailRows) > 0 {
 		if err := r.Gorm.WithContext(ctx).Create(&detailRows).Error; err != nil {
-			return entity.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(create specs): %w", err)
+			return catalogmodule.Product{}, fmt.Errorf("AdminRepo.UpsertProduct(create specs): %w", err)
 		}
 	}
 
-	result := models.ProductToEntity(model)
+	result := models.ProductToModule(model)
 	result.SKU = product.SKU
 	result.Brand = product.Brand
-	result.Specs = make([]entity.ProductSpecItem, 0, len(detailRows))
+	result.Specs = make([]catalogmodule.ProductSpecItem, 0, len(detailRows))
 	for _, detail := range detailRows {
 		if detail.Key == "sku" || detail.Key == "brand" {
 			continue
 		}
-		result.Specs = append(result.Specs, models.DetailToEntity(detail))
+		d := models.DetailToEntity(detail)
+		result.Specs = append(result.Specs, catalogmodule.ProductSpecItem{Key: d.Key, Value: d.Value})
 	}
 
 	return result, nil

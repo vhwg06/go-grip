@@ -2,11 +2,11 @@ package notification
 
 import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 )
 
-// toNotificationResponse maps entity.UserNotification to openapi.NotificationResponse DTO.
-func toNotificationResponse(n entity.UserNotification) openapi.NotificationResponse {
+// toNotificationResponse maps notificationmodule.UserNotification to openapi.NotificationResponse DTO.
+func toNotificationResponse(n notificationmodule.UserNotification) openapi.NotificationResponse {
 	idInt := int(n.ID)
 	body := n.ContentKey
 	return openapi.NotificationResponse{
@@ -18,8 +18,8 @@ func toNotificationResponse(n entity.UserNotification) openapi.NotificationRespo
 	}
 }
 
-// toNotificationListResponse maps []entity.UserNotification to openapi.NotificationListResponse DTO.
-func toNotificationListResponse(notifications []entity.UserNotification, total, unreadCount int) openapi.NotificationListResponse {
+// toNotificationListResponse maps []notificationmodule.UserNotification to openapi.NotificationListResponse DTO.
+func toNotificationListResponse(notifications []notificationmodule.UserNotification, total, unreadCount int) openapi.NotificationListResponse {
 	items := make([]openapi.NotificationResponse, len(notifications))
 	for i, n := range notifications {
 		items[i] = toNotificationResponse(n)

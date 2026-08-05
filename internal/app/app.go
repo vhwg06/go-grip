@@ -12,20 +12,18 @@ import (
 	"github.com/evrone/go-clean-template/config"
 	"github.com/evrone/go-clean-template/internal/controller/restapi"
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
-	"github.com/evrone/go-clean-template/internal/entity"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/repo/persistent"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
-	adminuc "github.com/evrone/go-clean-template/internal/usecase/admin"
-	"github.com/evrone/go-clean-template/internal/usecase/content"
-	"github.com/evrone/go-clean-template/internal/usecase/notification"
 	"github.com/evrone/go-clean-template/pkg/httpserver"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
@@ -33,14 +31,14 @@ import (
 )
 
 type cartNotificationAdapter struct {
-	uc *notification.UseCase
+	uc notificationmodule.NotificationUseCase
 }
 
 func (a cartNotificationAdapter) Dispatch(ctx context.Context, channel, to, subject string) error {
 	if a.uc == nil {
 		return nil
 	}
-	return a.uc.Dispatch(ctx, entity.Notification{Channel: channel, To: to, Subject: subject})
+	return a.uc.Dispatch(ctx, notificationmodule.Notification{Channel: channel, To: to, Subject: subject})
 }
 
 type useCases struct {
@@ -52,20 +50,20 @@ type useCases struct {
 	orders      ordermodule.OrdersUseCase
 	profile     usermodule.ProfileUseCase
 	admin       usermodule.AdminUseCase
-	maintenance *adminuc.MaintenanceUseCase
+	maintenance *usermodule.MaintenanceUseCase
 	wishlist    wishlistmodule.WishlistUseCase
-	notify      *notification.CenterUseCase
+	notify      notificationmodule.NotificationCenterUseCase
 	media       mediamodule.MediaUseCase
-	homepage    *content.HomepageUseCase
+	homepage    contentmodule.HomepageUseCase
 	cart        cartmodule.CartUseCase
 	lead        leadmodule.LeadUseCase
-	content     *content.UseCase
+	content     contentmodule.ContentUseCase
 	importer    importermodule.ImporterUseCase
 }
 
 type servers struct {
 	http              *httpserver.Server
-	maintenance       *adminuc.MaintenanceUseCase
+	maintenance       *usermodule.MaintenanceUseCase
 	maintenanceTicker *time.Ticker
 	maintenanceDone   chan struct{}
 }
@@ -90,7 +88,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 	leadRepo := persistent.NewLeadRepo(pg)
 	contentRepo := persistent.NewContentRepo(pg)
 	importRepo := persistent.NewImportRepo(pg, catalogRepo, contentRepo)
-	notificationUseCase := notification.New(cfg.Notification.Enabled)
+	notificationUseCase := notificationmodule.NewNotificationUseCase(cfg.Notification.Enabled)
 	epayVerifier := webapi.NewEpayVerifier(cfg.Payment.SecretKey)
 	adminNotifier := webapi.NewNoopAdminNotifier()
 
@@ -124,16 +122,16 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 		orders:      ordermodule.NewOrdersUseCase(gripOrderRepo),
 		profile:     usermodule.NewProfileUseCase(profileRepo),
 		admin:       usermodule.NewAdminUseCase(adminRepo, adminNotifier, cfg.Admin.Users),
-		maintenance: adminuc.NewMaintenance(maintenanceRepo, 5*time.Minute),
+		maintenance: usermodule.NewMaintenanceUseCase(maintenanceRepo, 5*time.Minute),
 		wishlist:    wishlistmodule.NewWishlistUseCase(wishlistRepo, gripOrderRepo),
-		notify:      notification.NewCenter(notificationRepo),
+		notify:      notificationmodule.NewNotificationCenterUseCase(notificationRepo),
 		media: mediamodule.NewMediaUseCase(mediaRepo, mediaStorage, mediamodule.Config{
 			MaxBytes: cfg.Ecommerce.MediaMaxBytes,
 		}),
-		homepage: content.NewHomepage(homepageRepo, supportRepo),
+		homepage: contentmodule.NewHomepageUseCase(homepageRepo, supportRepo),
 		cart:     cartmodule.NewCartUseCase(cartRepo, orderRepo, cartNotificationAdapter{notificationUseCase}),
 		lead:     leadmodule.NewLeadUseCase(leadRepo),
-		content:  content.New(contentRepo),
+		content:  contentmodule.NewContentUseCase(contentRepo),
 		importer: importermodule.NewImporterUseCase(importRepo, cfg.Ecommerce.InitialImportMax),
 	}
 }

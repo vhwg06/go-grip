@@ -4,19 +4,20 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/usecase"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Notification capability.
 type Handler struct {
-	notificationUC usecase.NotificationCenter
+	notificationUC notificationmodule.NotificationCenterUseCase
 	logger         logger.Interface
 }
 
 // NewHandler constructs a new Notification vertical handler instance.
-func NewHandler(notificationUC usecase.NotificationCenter, l logger.Interface) *Handler {
+func NewHandler(notificationUC notificationmodule.NotificationCenterUseCase, l logger.Interface) *Handler {
 	return &Handler{
 		notificationUC: notificationUC,
 		logger:         l,
@@ -34,8 +35,8 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 		offset = *request.Params.Offset
 	}
 
-	actor := entity.Actor{UserID: "usr-1"}
-	pag := entity.Pagination{Limit: limit, Offset: offset}
+	actor := usermodule.Actor{UserID: "usr-1"}
+	pag := pagination.Pagination{Limit: limit, Offset: offset}
 
 	items, total, err := h.notificationUC.Inbox(ctx, actor, pag)
 	if err != nil {
@@ -57,7 +58,7 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 
 // MarkAllNotificationsRead handles POST /notifications/read-all
 func (h *Handler) MarkAllNotificationsRead(ctx context.Context, request openapi.MarkAllNotificationsReadRequestObject) (openapi.MarkAllNotificationsReadResponseObject, error) {
-	actor := entity.Actor{UserID: "usr-1"}
+	actor := usermodule.Actor{UserID: "usr-1"}
 	err := h.notificationUC.MarkAllRead(ctx, actor)
 	if err != nil {
 		status, errResp := mapNotificationError(err)

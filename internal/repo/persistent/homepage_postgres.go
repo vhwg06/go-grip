@@ -4,21 +4,23 @@ import (
 	"context"
 	"sync"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
 type HomepageRepo struct {
 	*postgres.Postgres
 	mu    sync.RWMutex
-	items map[string]entity.HomepageBlock
+	items map[string]contentmodule.HomepageBlock
 }
 
 func NewHomepageRepo(pg *postgres.Postgres) *HomepageRepo {
-	return &HomepageRepo{Postgres: pg, items: map[string]entity.HomepageBlock{}}
+	return &HomepageRepo{Postgres: pg, items: map[string]contentmodule.HomepageBlock{}}
 }
 
-func (r *HomepageRepo) Store(ctx context.Context, block *entity.HomepageBlock) error {
+var _ contentmodule.HomepageRepo = (*HomepageRepo)(nil)
+
+func (r *HomepageRepo) Store(ctx context.Context, block *contentmodule.HomepageBlock) error {
 	_ = ctx
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -26,11 +28,11 @@ func (r *HomepageRepo) Store(ctx context.Context, block *entity.HomepageBlock) e
 	return nil
 }
 
-func (r *HomepageRepo) List(ctx context.Context, activeOnly bool) ([]entity.HomepageBlock, error) {
+func (r *HomepageRepo) List(ctx context.Context, activeOnly bool) ([]contentmodule.HomepageBlock, error) {
 	_ = ctx
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]entity.HomepageBlock, 0, len(r.items))
+	items := make([]contentmodule.HomepageBlock, 0, len(r.items))
 	for _, item := range r.items {
 		if activeOnly && !item.IsActive {
 			continue
@@ -40,7 +42,7 @@ func (r *HomepageRepo) List(ctx context.Context, activeOnly bool) ([]entity.Home
 	return items, nil
 }
 
-func (r *HomepageRepo) Update(ctx context.Context, block *entity.HomepageBlock) error {
+func (r *HomepageRepo) Update(ctx context.Context, block *contentmodule.HomepageBlock) error {
 	return r.Store(ctx, block)
 }
 
