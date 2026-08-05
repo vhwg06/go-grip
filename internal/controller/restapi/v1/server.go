@@ -17,6 +17,7 @@ import (
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/notification"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/orders"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/profile"
+	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/reviews"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/user"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/wishlist"
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
@@ -162,6 +163,10 @@ func (s *Server) wishlistHandler() *wishlist.Handler {
 	return wishlist.NewHandler(s.wishlistUC, s.logger)
 }
 
+func (s *Server) reviewsHandler() *reviews.Handler {
+	return reviews.NewHandler(s.logger)
+}
+
 // -----------------------------------------------------------------------------
 // OpenAPI StrictServerInterface Delegation Methods
 // -----------------------------------------------------------------------------
@@ -255,6 +260,10 @@ func (s *Server) CreateTag(ctx context.Context, request openapi.CreateTagRequest
 }
 
 // Checkout Capability
+func (s *Server) GetCheckoutPreview(ctx context.Context, request openapi.GetCheckoutPreviewRequestObject) (openapi.GetCheckoutPreviewResponseObject, error) {
+	return s.checkoutHandler().GetCheckoutPreview(ctx, request)
+}
+
 func (s *Server) PreviewCheckout(ctx context.Context, request openapi.PreviewCheckoutRequestObject) (openapi.PreviewCheckoutResponseObject, error) {
 	return s.checkoutHandler().PreviewCheckout(ctx, request)
 }
@@ -316,6 +325,27 @@ func (s *Server) MarkAllNotificationsRead(ctx context.Context, request openapi.M
 	return s.notificationHandler().MarkAllNotificationsRead(ctx, request)
 }
 
+func (s *Server) GetUnreadNotificationCount(ctx context.Context, request openapi.GetUnreadNotificationCountRequestObject) (openapi.GetUnreadNotificationCountResponseObject, error) {
+	return s.notificationHandler().GetUnreadNotificationCount(ctx, request)
+}
+
+func (s *Server) MarkNotificationRead(ctx context.Context, request openapi.MarkNotificationReadRequestObject) (openapi.MarkNotificationReadResponseObject, error) {
+	return s.notificationHandler().MarkNotificationRead(ctx, request)
+}
+
+// Reviews Capability
+func (s *Server) GetProductReviews(ctx context.Context, request openapi.GetProductReviewsRequestObject) (openapi.GetProductReviewsResponseObject, error) {
+	return s.reviewsHandler().GetProductReviews(ctx, request)
+}
+
+func (s *Server) CreateReview(ctx context.Context, request openapi.CreateReviewRequestObject) (openapi.CreateReviewResponseObject, error) {
+	return s.reviewsHandler().CreateReview(ctx, request)
+}
+
+func (s *Server) DeleteReview(ctx context.Context, request openapi.DeleteReviewRequestObject) (openapi.DeleteReviewResponseObject, error) {
+	return s.reviewsHandler().DeleteReview(ctx, request)
+}
+
 // Orders Capability
 func (s *Server) ListOrders(ctx context.Context, request openapi.ListOrdersRequestObject) (openapi.ListOrdersResponseObject, error) {
 	return s.ordersHandler().ListOrders(ctx, request)
@@ -370,6 +400,18 @@ func (s *Server) UnlockUser(ctx context.Context, request openapi.UnlockUserReque
 // Wishlist Capability
 func (s *Server) GetMyWishlist(ctx context.Context, request openapi.GetMyWishlistRequestObject) (openapi.GetMyWishlistResponseObject, error) {
 	return s.wishlistHandler().GetMyWishlist(ctx, request)
+}
+
+func (s *Server) AddToWishlistDirect(ctx context.Context, request openapi.AddToWishlistDirectRequestObject) (openapi.AddToWishlistDirectResponseObject, error) {
+	return s.wishlistHandler().AddToWishlistDirect(ctx, request)
+}
+
+func (s *Server) RemoveFromWishlistDirect(ctx context.Context, request openapi.RemoveFromWishlistDirectRequestObject) (openapi.RemoveFromWishlistDirectResponseObject, error) {
+	return s.wishlistHandler().RemoveFromWishlistDirect(ctx, request)
+}
+
+func (s *Server) VoteWishlistItem(ctx context.Context, request openapi.VoteWishlistItemRequestObject) (openapi.VoteWishlistItemResponseObject, error) {
+	return s.wishlistHandler().VoteWishlistItem(ctx, request)
 }
 
 func (s *Server) AddToWishlist(ctx context.Context, request openapi.AddToWishlistRequestObject) (openapi.AddToWishlistResponseObject, error) {

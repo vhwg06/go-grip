@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,12 +16,16 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-// Auth returns a JWT authentication middleware for Fiber.
+// Auth returns a JWT authentication middleware for Fiber that extracts actor information from Bearer tokens when present.
 func Auth(jwtManager *jwt.Manager) func(*fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		header := ctx.Get("Authorization")
 		if header == "" {
-			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "missing authorization header"})
+			emptyActor := usermodule.Actor{}
+			userCtx := context.WithValue(ctx.UserContext(), "actor", emptyActor)
+			ctx.SetUserContext(userCtx)
+			ctx.Locals("actor", emptyActor)
+			return ctx.Next()
 		}
 
 		parts := strings.SplitN(header, " ", _bearerParts)
@@ -33,12 +38,15 @@ func Auth(jwtManager *jwt.Manager) func(*fiber.Ctx) error {
 			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "invalid or expired token"})
 		}
 
-		actor := entity.Actor{
-			UserID:    userID,
-			Username:  username,
-			IsAdmin:   isAdmin,
-			IsBlocked: false,
+		actor := usermodule.Actor{
+			UserID:   userID,
+			Username: username,
+			IsAdmin:  isAdmin,
 		}
+
+		userCtx := context.WithValue(ctx.UserContext(), "actor", actor)
+		userCtx = context.WithValue(userCtx, "userID", userID)
+		ctx.SetUserContext(userCtx)
 
 		ctx.Locals("userID", userID)
 		ctx.Locals("actor", actor)

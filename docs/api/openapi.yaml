@@ -728,6 +728,38 @@ paths:
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /checkout/preview:
+    get:
+      tags:
+        - checkout
+      summary: Preview checkout calculations
+      operationId: getCheckoutPreview
+      security:
+        - bearerAuth:
+            - "checkout:read"
+      parameters:
+        - name: product_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: quantity
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Preview calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
     post:
       tags:
         - checkout
@@ -1226,6 +1258,133 @@ paths:
           $ref: '#/components/responses/UnauthorizedResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
+  /catalog/products/{id}/reviews:
+    get:
+      tags:
+        - reviews
+      summary: Read public product reviews
+      operationId: getProductReviews
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /reviews:
+    post:
+      tags:
+        - reviews
+      summary: Create product review
+      operationId: createReview
+      security:
+        - bearerAuth:
+            - "reviews:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '409':
+          $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /reviews/{id}:
+    delete:
+      tags:
+        - reviews
+      summary: Delete product review
+      operationId: deleteReview
+      security:
+        - bearerAuth:
+            - "reviews:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Review deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /notifications/unread-count:
+    get:
+      tags:
+        - notifications
+      summary: Get unread notification count
+      operationId: getUnreadNotificationCount
+      security:
+        - bearerAuth:
+            - "notifications:read"
+      responses:
+        '200':
+          description: Unread notification count retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadNotificationCountResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /notifications/{id}/read:
+    post:
+      tags:
+        - notifications
+      summary: Mark single notification as read
+      operationId: markNotificationRead
+      security:
+        - bearerAuth:
+            - "notifications:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+        '204':
+          description: Notification marked as read
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
   /wishlist:
     get:
       tags:
@@ -1241,9 +1400,84 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WishlistResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/WishlistItemResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    post:
+      tags:
+        - wishlist
+      summary: Add product item to wishlist
+      operationId: addToWishlistDirect
+      security:
+        - bearerAuth:
+            - "wishlist:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToWishlistRequest'
+      responses:
+        '200':
+          description: Item added to wishlist successfully
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /wishlist/{id}:
+    delete:
+      tags:
+        - wishlist
+      summary: Remove product item from wishlist
+      operationId: removeFromWishlistDirect
+      security:
+        - bearerAuth:
+            - "wishlist:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed from wishlist successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /wishlist/{id}/vote:
+    post:
+      tags:
+        - wishlist
+      summary: Vote on wishlist item
+      operationId: voteWishlistItem
+      security:
+        - bearerAuth:
+            - "wishlist:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vote registered
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /wishlist/items:
@@ -2021,12 +2255,65 @@ components:
         title:
           type: string
           example: Order Shipped
+        type:
+          type: string
+          example: order_status
         body:
           type: string
           example: Your order #100 has been dispatched.
         is_read:
           type: boolean
           example: false
+        created_at:
+          type: string
+          format: date-time
+    UnreadNotificationCountResponse:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          example: 0
+    CreateReviewRequest:
+      type: object
+      required:
+        - product_id
+        - rating
+        - content
+      properties:
+        product_id:
+          type: string
+          example: prd-100
+        rating:
+          type: integer
+          example: 5
+        content:
+          type: string
+          example: Great product!
+    ReviewResponse:
+      type: object
+      required:
+        - id
+        - product_id
+        - rating
+        - content
+      properties:
+        id:
+          type: string
+          example: rev-1
+        product_id:
+          type: string
+          example: prd-100
+        user_id:
+          type: string
+          example: usr-1
+        rating:
+          type: integer
+          example: 5
+        content:
+          type: string
+          example: Great product!
         created_at:
           type: string
           format: date-time

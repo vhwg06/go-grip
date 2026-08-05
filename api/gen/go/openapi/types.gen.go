@@ -210,6 +210,18 @@ type CreateCheckoutOrderRequest struct {
 	Quantity int `json:"quantity"`
 }
 
+// CreateReviewRequest defines model for CreateReviewRequest.
+type CreateReviewRequest struct {
+	// Content Example: Great product!
+	Content string `json:"content"`
+
+	// ProductId Example: prd-100
+	ProductId string `json:"product_id"`
+
+	// Rating Example: 5
+	Rating int `json:"rating"`
+}
+
 // ErrorDetail defines model for ErrorDetail.
 type ErrorDetail struct {
 	// Field Example: email
@@ -352,6 +364,9 @@ type NotificationResponse struct {
 
 	// Title Example: Order Shipped
 	Title string `json:"title"`
+
+	// Type Example: order_status
+	Type *string `json:"type,omitempty"`
 }
 
 // OrderListResponse defines model for OrderListResponse.
@@ -501,6 +516,25 @@ type RegisterRequest struct {
 	Username string `json:"username"`
 }
 
+// ReviewResponse defines model for ReviewResponse.
+type ReviewResponse struct {
+	// Content Example: Great product!
+	Content   string     `json:"content"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// Id Example: rev-1
+	Id string `json:"id"`
+
+	// ProductId Example: prd-100
+	ProductId string `json:"product_id"`
+
+	// Rating Example: 5
+	Rating int `json:"rating"`
+
+	// UserId Example: usr-1
+	UserId *string `json:"user_id,omitempty"`
+}
+
 // StaticPageResponse defines model for StaticPageResponse.
 type StaticPageResponse struct {
 	// Content Example: Welcome to Go-Grip shop!
@@ -564,6 +598,12 @@ type TokenPairResponse struct {
 	// RefreshToken Example: jwt-refresh-token
 	RefreshToken string        `json:"refreshToken"`
 	User         *UserResponse `json:"user,omitempty"`
+}
+
+// UnreadNotificationCountResponse defines model for UnreadNotificationCountResponse.
+type UnreadNotificationCountResponse struct {
+	// Count Example: 0
+	Count int `json:"count"`
 }
 
 // UpdateAccountProfileRequest defines model for UpdateAccountProfileRequest.
@@ -677,6 +717,12 @@ type ListProductsParams struct {
 // PaymentNotifyJSONBody defines parameters for PaymentNotify.
 type PaymentNotifyJSONBody map[string]string
 
+// GetCheckoutPreviewParams defines parameters for GetCheckoutPreview.
+type GetCheckoutPreviewParams struct {
+	ProductId *string `form:"product_id,omitempty" json:"product_id,omitempty"`
+	Quantity  *int    `form:"quantity,omitempty" json:"quantity,omitempty"`
+}
+
 // ListLeadsParams defines parameters for ListLeads.
 type ListLeadsParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -752,11 +798,17 @@ type SubmitLeadJSONRequestBody = SubmitLeadRequest
 // RequestOrderRefundJSONRequestBody defines body for RequestOrderRefund for application/json ContentType.
 type RequestOrderRefundJSONRequestBody = RefundRequestPayload
 
+// CreateReviewJSONRequestBody defines body for CreateReview for application/json ContentType.
+type CreateReviewJSONRequestBody = CreateReviewRequest
+
 // CreateAdminUserJSONRequestBody defines body for CreateAdminUser for application/json ContentType.
 type CreateAdminUserJSONRequestBody = CreateAdminUserRequest
 
 // UpdateMyProfileJSONRequestBody defines body for UpdateMyProfile for application/json ContentType.
 type UpdateMyProfileJSONRequestBody = UpdateProfileRequest
+
+// AddToWishlistDirectJSONRequestBody defines body for AddToWishlistDirect for application/json ContentType.
+type AddToWishlistDirectJSONRequestBody = AddToWishlistRequest
 
 // AddToWishlistJSONRequestBody defines body for AddToWishlist for application/json ContentType.
 type AddToWishlistJSONRequestBody = AddToWishlistRequest

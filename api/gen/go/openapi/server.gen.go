@@ -83,6 +83,9 @@ type ServerInterface interface {
 	// UpdateProduct Update catalog product
 	// (PUT /catalog/products/{id})
 	UpdateProduct(c *fiber.Ctx, id string) error
+	// GetProductReviews Read public product reviews
+	// (GET /catalog/products/{id}/reviews)
+	GetProductReviews(c *fiber.Ctx, id string) error
 	// ListTags List catalog tags
 	// (GET /catalog/tags)
 	ListTags(c *fiber.Ctx) error
@@ -101,6 +104,9 @@ type ServerInterface interface {
 	// PaymentNotify Payment provider webhook notification
 	// (POST /checkout/payment-notify)
 	PaymentNotify(c *fiber.Ctx) error
+	// GetCheckoutPreview Preview checkout calculations
+	// (GET /checkout/preview)
+	GetCheckoutPreview(c *fiber.Ctx, params GetCheckoutPreviewParams) error
 	// PreviewCheckout Preview checkout calculations
 	// (POST /checkout/preview)
 	PreviewCheckout(c *fiber.Ctx) error
@@ -131,6 +137,12 @@ type ServerInterface interface {
 	// MarkAllNotificationsRead Mark all notifications as read
 	// (POST /notifications/read-all)
 	MarkAllNotificationsRead(c *fiber.Ctx) error
+	// GetUnreadNotificationCount Get unread notification count
+	// (GET /notifications/unread-count)
+	GetUnreadNotificationCount(c *fiber.Ctx) error
+	// MarkNotificationRead Mark single notification as read
+	// (POST /notifications/{id}/read)
+	MarkNotificationRead(c *fiber.Ctx, id string) error
 	// ListOrders List user orders
 	// (GET /orders)
 	ListOrders(c *fiber.Ctx, params ListOrdersParams) error
@@ -140,6 +152,12 @@ type ServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(c *fiber.Ctx, id string) error
+	// CreateReview Create product review
+	// (POST /reviews)
+	CreateReview(c *fiber.Ctx) error
+	// DeleteReview Delete product review
+	// (DELETE /reviews/{id})
+	DeleteReview(c *fiber.Ctx, id string) error
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(c *fiber.Ctx, params ListUsersParams) error
@@ -164,12 +182,21 @@ type ServerInterface interface {
 	// GetMyWishlist Get user wishlist
 	// (GET /wishlist)
 	GetMyWishlist(c *fiber.Ctx) error
+	// AddToWishlistDirect Add product item to wishlist
+	// (POST /wishlist)
+	AddToWishlistDirect(c *fiber.Ctx) error
 	// AddToWishlist Add product item to wishlist
 	// (POST /wishlist/items)
 	AddToWishlist(c *fiber.Ctx) error
 	// RemoveFromWishlist Remove product item from wishlist
 	// (DELETE /wishlist/items/{productId})
 	RemoveFromWishlist(c *fiber.Ctx, productId string) error
+	// RemoveFromWishlistDirect Remove product item from wishlist
+	// (DELETE /wishlist/{id})
+	RemoveFromWishlistDirect(c *fiber.Ctx, id string) error
+	// VoteWishlistItem Vote on wishlist item
+	// (POST /wishlist/{id}/vote)
+	VoteWishlistItem(c *fiber.Ctx, id string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -680,6 +707,35 @@ func (siw *ServerInterfaceWrapper) UpdateProduct(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// GetProductReviews operation middleware
+func (siw *ServerInterfaceWrapper) GetProductReviews(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetProductReviews(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // ListTags operation middleware
 func (siw *ServerInterfaceWrapper) ListTags(c *fiber.Ctx) error {
 
@@ -797,6 +853,50 @@ func (siw *ServerInterfaceWrapper) PaymentNotify(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.PaymentNotify(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCheckoutPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckoutPreview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCheckoutPreviewParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "product_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "product_id", query, &params.ProductId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter product_id: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "quantity" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "quantity", query, &params.Quantity, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter quantity: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCheckoutPreview(c, params)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1064,6 +1164,53 @@ func (siw *ServerInterfaceWrapper) MarkAllNotificationsRead(c *fiber.Ctx) error 
 	return handler(c)
 }
 
+// GetUnreadNotificationCount operation middleware
+func (siw *ServerInterfaceWrapper) GetUnreadNotificationCount(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetUnreadNotificationCount(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// MarkNotificationRead operation middleware
+func (siw *ServerInterfaceWrapper) MarkNotificationRead(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.MarkNotificationRead(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // ListOrders operation middleware
 func (siw *ServerInterfaceWrapper) ListOrders(c *fiber.Ctx) error {
 
@@ -1153,6 +1300,53 @@ func (siw *ServerInterfaceWrapper) RequestOrderRefund(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.RequestOrderRefund(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// CreateReview operation middleware
+func (siw *ServerInterfaceWrapper) CreateReview(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.CreateReview(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// DeleteReview operation middleware
+func (siw *ServerInterfaceWrapper) DeleteReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.DeleteReview(c, id)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1369,6 +1563,24 @@ func (siw *ServerInterfaceWrapper) GetMyWishlist(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// AddToWishlistDirect operation middleware
+func (siw *ServerInterfaceWrapper) AddToWishlistDirect(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AddToWishlistDirect(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // AddToWishlist operation middleware
 func (siw *ServerInterfaceWrapper) AddToWishlist(c *fiber.Ctx) error {
 
@@ -1403,6 +1615,64 @@ func (siw *ServerInterfaceWrapper) RemoveFromWishlist(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.RemoveFromWishlist(c, productId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// RemoveFromWishlistDirect operation middleware
+func (siw *ServerInterfaceWrapper) RemoveFromWishlistDirect(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.RemoveFromWishlistDirect(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// VoteWishlistItem operation middleware
+func (siw *ServerInterfaceWrapper) VoteWishlistItem(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.VoteWishlistItem(c, id)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1491,6 +1761,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Put(options.BaseURL+"/cart/items/:itemId", wrapper.UpdateCartItem)
 
+	router.Get(options.BaseURL+"/checkout/preview", wrapper.GetCheckoutPreview)
+
 	router.Post(options.BaseURL+"/checkout/preview", wrapper.PreviewCheckout)
 
 	router.Post(options.BaseURL+"/checkout/orders", wrapper.CreateCheckoutOrder)
@@ -1529,7 +1801,23 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Post(options.BaseURL+"/notifications/read-all", wrapper.MarkAllNotificationsRead)
 
+	router.Get(options.BaseURL+"/catalog/products/:id/reviews", wrapper.GetProductReviews)
+
+	router.Post(options.BaseURL+"/reviews", wrapper.CreateReview)
+
+	router.Delete(options.BaseURL+"/reviews/:id", wrapper.DeleteReview)
+
+	router.Get(options.BaseURL+"/notifications/unread-count", wrapper.GetUnreadNotificationCount)
+
+	router.Post(options.BaseURL+"/notifications/:id/read", wrapper.MarkNotificationRead)
+
 	router.Get(options.BaseURL+"/wishlist", wrapper.GetMyWishlist)
+
+	router.Post(options.BaseURL+"/wishlist", wrapper.AddToWishlistDirect)
+
+	router.Delete(options.BaseURL+"/wishlist/:id", wrapper.RemoveFromWishlistDirect)
+
+	router.Post(options.BaseURL+"/wishlist/:id/vote", wrapper.VoteWishlistItem)
 
 	router.Post(options.BaseURL+"/wishlist/items", wrapper.AddToWishlist)
 
@@ -2539,6 +2827,43 @@ func (response UpdateProduct500JSONResponse) VisitUpdateProductResponse(ctx *fib
 	return ctx.JSON(&response)
 }
 
+type GetProductReviewsRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetProductReviewsResponseObject interface {
+	VisitGetProductReviewsResponse(ctx *fiber.Ctx) error
+}
+
+type GetProductReviews200JSONResponse []ReviewResponse
+
+func (response GetProductReviews200JSONResponse) VisitGetProductReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetProductReviews404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response GetProductReviews404JSONResponse) VisitGetProductReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetProductReviews500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetProductReviews500JSONResponse) VisitGetProductReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type ListTagsRequestObject struct {
 }
 
@@ -2797,6 +3122,54 @@ type PaymentNotify500JSONResponse struct {
 }
 
 func (response PaymentNotify500JSONResponse) VisitPaymentNotifyResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutPreviewRequestObject struct {
+	Params GetCheckoutPreviewParams
+}
+
+type GetCheckoutPreviewResponseObject interface {
+	VisitGetCheckoutPreviewResponse(ctx *fiber.Ctx) error
+}
+
+type GetCheckoutPreview200JSONResponse CheckoutPreviewResponse
+
+func (response GetCheckoutPreview200JSONResponse) VisitGetCheckoutPreviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutPreview400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response GetCheckoutPreview400JSONResponse) VisitGetCheckoutPreviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutPreview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetCheckoutPreview401JSONResponse) VisitGetCheckoutPreviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetCheckoutPreview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCheckoutPreview500JSONResponse) VisitGetCheckoutPreviewResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -3227,6 +3600,108 @@ func (response MarkAllNotificationsRead500JSONResponse) VisitMarkAllNotification
 	return ctx.JSON(&response)
 }
 
+type GetUnreadNotificationCountRequestObject struct {
+}
+
+type GetUnreadNotificationCountResponseObject interface {
+	VisitGetUnreadNotificationCountResponse(ctx *fiber.Ctx) error
+}
+
+type GetUnreadNotificationCount200JSONResponse UnreadNotificationCountResponse
+
+func (response GetUnreadNotificationCount200JSONResponse) VisitGetUnreadNotificationCountResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetUnreadNotificationCount401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response GetUnreadNotificationCount401JSONResponse) VisitGetUnreadNotificationCountResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetUnreadNotificationCount500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetUnreadNotificationCount500JSONResponse) VisitGetUnreadNotificationCountResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type MarkNotificationReadRequestObject struct {
+	Id string `json:"id"`
+}
+
+type MarkNotificationReadResponseObject interface {
+	VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error
+}
+
+type MarkNotificationRead200Response struct {
+}
+
+func (response MarkNotificationRead200Response) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type MarkNotificationRead204Response struct {
+}
+
+func (response MarkNotificationRead204Response) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type MarkNotificationRead400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response MarkNotificationRead400JSONResponse) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type MarkNotificationRead401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response MarkNotificationRead401JSONResponse) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type MarkNotificationRead404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response MarkNotificationRead404JSONResponse) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type MarkNotificationRead500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response MarkNotificationRead500JSONResponse) VisitMarkNotificationReadResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type ListOrdersRequestObject struct {
 	Params ListOrdersParams
 }
@@ -3377,6 +3852,110 @@ type RequestOrderRefund500JSONResponse struct {
 }
 
 func (response RequestOrderRefund500JSONResponse) VisitRequestOrderRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type CreateReviewRequestObject struct {
+	Body *CreateReviewJSONRequestBody
+}
+
+type CreateReviewResponseObject interface {
+	VisitCreateReviewResponse(ctx *fiber.Ctx) error
+}
+
+type CreateReview201JSONResponse ReviewResponse
+
+func (response CreateReview201JSONResponse) VisitCreateReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(201)
+
+	return ctx.JSON(&response)
+}
+
+type CreateReview400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response CreateReview400JSONResponse) VisitCreateReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type CreateReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response CreateReview401JSONResponse) VisitCreateReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type CreateReview409JSONResponse struct{ ConflictResponseJSONResponse }
+
+func (response CreateReview409JSONResponse) VisitCreateReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type CreateReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response CreateReview500JSONResponse) VisitCreateReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type DeleteReviewRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteReviewResponseObject interface {
+	VisitDeleteReviewResponse(ctx *fiber.Ctx) error
+}
+
+type DeleteReview204Response struct {
+}
+
+func (response DeleteReview204Response) VisitDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type DeleteReview401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response DeleteReview401JSONResponse) VisitDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type DeleteReview404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response DeleteReview404JSONResponse) VisitDeleteReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type DeleteReview500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response DeleteReview500JSONResponse) VisitDeleteReviewResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -3759,7 +4338,7 @@ type GetMyWishlistResponseObject interface {
 	VisitGetMyWishlistResponse(ctx *fiber.Ctx) error
 }
 
-type GetMyWishlist200JSONResponse WishlistResponse
+type GetMyWishlist200JSONResponse []WishlistItemResponse
 
 func (response GetMyWishlist200JSONResponse) VisitGetMyWishlistResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
@@ -3784,6 +4363,62 @@ type GetMyWishlist500JSONResponse struct {
 }
 
 func (response GetMyWishlist500JSONResponse) VisitGetMyWishlistResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AddToWishlistDirectRequestObject struct {
+	Body *AddToWishlistDirectJSONRequestBody
+}
+
+type AddToWishlistDirectResponseObject interface {
+	VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error
+}
+
+type AddToWishlistDirect200Response struct {
+}
+
+func (response AddToWishlistDirect200Response) VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AddToWishlistDirect400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AddToWishlistDirect400JSONResponse) VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AddToWishlistDirect401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AddToWishlistDirect401JSONResponse) VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AddToWishlistDirect404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AddToWishlistDirect404JSONResponse) VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AddToWishlistDirect500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AddToWishlistDirect500JSONResponse) VisitAddToWishlistDirectResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -3895,6 +4530,100 @@ func (response RemoveFromWishlist500JSONResponse) VisitRemoveFromWishlistRespons
 	return ctx.JSON(&response)
 }
 
+type RemoveFromWishlistDirectRequestObject struct {
+	Id string `json:"id"`
+}
+
+type RemoveFromWishlistDirectResponseObject interface {
+	VisitRemoveFromWishlistDirectResponse(ctx *fiber.Ctx) error
+}
+
+type RemoveFromWishlistDirect200Response struct {
+}
+
+func (response RemoveFromWishlistDirect200Response) VisitRemoveFromWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type RemoveFromWishlistDirect401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response RemoveFromWishlistDirect401JSONResponse) VisitRemoveFromWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type RemoveFromWishlistDirect404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response RemoveFromWishlistDirect404JSONResponse) VisitRemoveFromWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type RemoveFromWishlistDirect500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response RemoveFromWishlistDirect500JSONResponse) VisitRemoveFromWishlistDirectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type VoteWishlistItemRequestObject struct {
+	Id string `json:"id"`
+}
+
+type VoteWishlistItemResponseObject interface {
+	VisitVoteWishlistItemResponse(ctx *fiber.Ctx) error
+}
+
+type VoteWishlistItem200Response struct {
+}
+
+func (response VoteWishlistItem200Response) VisitVoteWishlistItemResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type VoteWishlistItem401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response VoteWishlistItem401JSONResponse) VisitVoteWishlistItemResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type VoteWishlistItem404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response VoteWishlistItem404JSONResponse) VisitVoteWishlistItemResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type VoteWishlistItem500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response VoteWishlistItem500JSONResponse) VisitVoteWishlistItemResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetAccountProfile Get account profile details
@@ -3960,6 +4689,9 @@ type StrictServerInterface interface {
 	// UpdateProduct Update catalog product
 	// (PUT /catalog/products/{id})
 	UpdateProduct(ctx context.Context, request UpdateProductRequestObject) (UpdateProductResponseObject, error)
+	// GetProductReviews Read public product reviews
+	// (GET /catalog/products/{id}/reviews)
+	GetProductReviews(ctx context.Context, request GetProductReviewsRequestObject) (GetProductReviewsResponseObject, error)
 	// ListTags List catalog tags
 	// (GET /catalog/tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
@@ -3978,6 +4710,9 @@ type StrictServerInterface interface {
 	// PaymentNotify Payment provider webhook notification
 	// (POST /checkout/payment-notify)
 	PaymentNotify(ctx context.Context, request PaymentNotifyRequestObject) (PaymentNotifyResponseObject, error)
+	// GetCheckoutPreview Preview checkout calculations
+	// (GET /checkout/preview)
+	GetCheckoutPreview(ctx context.Context, request GetCheckoutPreviewRequestObject) (GetCheckoutPreviewResponseObject, error)
 	// PreviewCheckout Preview checkout calculations
 	// (POST /checkout/preview)
 	PreviewCheckout(ctx context.Context, request PreviewCheckoutRequestObject) (PreviewCheckoutResponseObject, error)
@@ -4008,6 +4743,12 @@ type StrictServerInterface interface {
 	// MarkAllNotificationsRead Mark all notifications as read
 	// (POST /notifications/read-all)
 	MarkAllNotificationsRead(ctx context.Context, request MarkAllNotificationsReadRequestObject) (MarkAllNotificationsReadResponseObject, error)
+	// GetUnreadNotificationCount Get unread notification count
+	// (GET /notifications/unread-count)
+	GetUnreadNotificationCount(ctx context.Context, request GetUnreadNotificationCountRequestObject) (GetUnreadNotificationCountResponseObject, error)
+	// MarkNotificationRead Mark single notification as read
+	// (POST /notifications/{id}/read)
+	MarkNotificationRead(ctx context.Context, request MarkNotificationReadRequestObject) (MarkNotificationReadResponseObject, error)
 	// ListOrders List user orders
 	// (GET /orders)
 	ListOrders(ctx context.Context, request ListOrdersRequestObject) (ListOrdersResponseObject, error)
@@ -4017,6 +4758,12 @@ type StrictServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(ctx context.Context, request RequestOrderRefundRequestObject) (RequestOrderRefundResponseObject, error)
+	// CreateReview Create product review
+	// (POST /reviews)
+	CreateReview(ctx context.Context, request CreateReviewRequestObject) (CreateReviewResponseObject, error)
+	// DeleteReview Delete product review
+	// (DELETE /reviews/{id})
+	DeleteReview(ctx context.Context, request DeleteReviewRequestObject) (DeleteReviewResponseObject, error)
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -4041,12 +4788,21 @@ type StrictServerInterface interface {
 	// GetMyWishlist Get user wishlist
 	// (GET /wishlist)
 	GetMyWishlist(ctx context.Context, request GetMyWishlistRequestObject) (GetMyWishlistResponseObject, error)
+	// AddToWishlistDirect Add product item to wishlist
+	// (POST /wishlist)
+	AddToWishlistDirect(ctx context.Context, request AddToWishlistDirectRequestObject) (AddToWishlistDirectResponseObject, error)
 	// AddToWishlist Add product item to wishlist
 	// (POST /wishlist/items)
 	AddToWishlist(ctx context.Context, request AddToWishlistRequestObject) (AddToWishlistResponseObject, error)
 	// RemoveFromWishlist Remove product item from wishlist
 	// (DELETE /wishlist/items/{productId})
 	RemoveFromWishlist(ctx context.Context, request RemoveFromWishlistRequestObject) (RemoveFromWishlistResponseObject, error)
+	// RemoveFromWishlistDirect Remove product item from wishlist
+	// (DELETE /wishlist/{id})
+	RemoveFromWishlistDirect(ctx context.Context, request RemoveFromWishlistDirectRequestObject) (RemoveFromWishlistDirectResponseObject, error)
+	// VoteWishlistItem Vote on wishlist item
+	// (POST /wishlist/{id}/vote)
+	VoteWishlistItem(ctx context.Context, request VoteWishlistItemRequestObject) (VoteWishlistItemResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args any) (any, error)
@@ -4660,6 +5416,33 @@ func (sh *strictHandler) UpdateProduct(ctx *fiber.Ctx, id string) error {
 	return nil
 }
 
+// GetProductReviews operation middleware
+func (sh *strictHandler) GetProductReviews(ctx *fiber.Ctx, id string) error {
+	var request GetProductReviewsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProductReviews(ctx.UserContext(), request.(GetProductReviewsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProductReviews")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetProductReviewsResponseObject); ok {
+		if err := validResponse.VisitGetProductReviewsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListTags operation middleware
 func (sh *strictHandler) ListTags(ctx *fiber.Ctx) error {
 	var request ListTagsRequestObject
@@ -4824,6 +5607,33 @@ func (sh *strictHandler) PaymentNotify(ctx *fiber.Ctx) error {
 		return err
 	} else if validResponse, ok := response.(PaymentNotifyResponseObject); ok {
 		if err := validResponse.VisitPaymentNotifyResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCheckoutPreview operation middleware
+func (sh *strictHandler) GetCheckoutPreview(ctx *fiber.Ctx, params GetCheckoutPreviewParams) error {
+	var request GetCheckoutPreviewRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCheckoutPreview(ctx.UserContext(), request.(GetCheckoutPreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCheckoutPreview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCheckoutPreviewResponseObject); ok {
+		if err := validResponse.VisitGetCheckoutPreviewResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -5108,6 +5918,58 @@ func (sh *strictHandler) MarkAllNotificationsRead(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// GetUnreadNotificationCount operation middleware
+func (sh *strictHandler) GetUnreadNotificationCount(ctx *fiber.Ctx) error {
+	var request GetUnreadNotificationCountRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUnreadNotificationCount(ctx.UserContext(), request.(GetUnreadNotificationCountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUnreadNotificationCount")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUnreadNotificationCountResponseObject); ok {
+		if err := validResponse.VisitGetUnreadNotificationCountResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// MarkNotificationRead operation middleware
+func (sh *strictHandler) MarkNotificationRead(ctx *fiber.Ctx, id string) error {
+	var request MarkNotificationReadRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkNotificationRead(ctx.UserContext(), request.(MarkNotificationReadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkNotificationRead")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(MarkNotificationReadResponseObject); ok {
+		if err := validResponse.VisitMarkNotificationReadResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListOrders operation middleware
 func (sh *strictHandler) ListOrders(ctx *fiber.Ctx, params ListOrdersParams) error {
 	var request ListOrdersRequestObject
@@ -5187,6 +6049,64 @@ func (sh *strictHandler) RequestOrderRefund(ctx *fiber.Ctx, id string) error {
 		return err
 	} else if validResponse, ok := response.(RequestOrderRefundResponseObject); ok {
 		if err := validResponse.VisitRequestOrderRefundResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateReview operation middleware
+func (sh *strictHandler) CreateReview(ctx *fiber.Ctx) error {
+	var request CreateReviewRequestObject
+
+	var body CreateReviewJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateReview(ctx.UserContext(), request.(CreateReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateReviewResponseObject); ok {
+		if err := validResponse.VisitCreateReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteReview operation middleware
+func (sh *strictHandler) DeleteReview(ctx *fiber.Ctx, id string) error {
+	var request DeleteReviewRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteReview(ctx.UserContext(), request.(DeleteReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteReviewResponseObject); ok {
+		if err := validResponse.VisitDeleteReviewResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -5415,6 +6335,37 @@ func (sh *strictHandler) GetMyWishlist(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// AddToWishlistDirect operation middleware
+func (sh *strictHandler) AddToWishlistDirect(ctx *fiber.Ctx) error {
+	var request AddToWishlistDirectRequestObject
+
+	var body AddToWishlistDirectJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AddToWishlistDirect(ctx.UserContext(), request.(AddToWishlistDirectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddToWishlistDirect")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AddToWishlistDirectResponseObject); ok {
+		if err := validResponse.VisitAddToWishlistDirectResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // AddToWishlist operation middleware
 func (sh *strictHandler) AddToWishlist(ctx *fiber.Ctx) error {
 	var request AddToWishlistRequestObject
@@ -5473,96 +6424,157 @@ func (sh *strictHandler) RemoveFromWishlist(ctx *fiber.Ctx, productId string) er
 	return nil
 }
 
+// RemoveFromWishlistDirect operation middleware
+func (sh *strictHandler) RemoveFromWishlistDirect(ctx *fiber.Ctx, id string) error {
+	var request RemoveFromWishlistDirectRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveFromWishlistDirect(ctx.UserContext(), request.(RemoveFromWishlistDirectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveFromWishlistDirect")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RemoveFromWishlistDirectResponseObject); ok {
+		if err := validResponse.VisitRemoveFromWishlistDirectResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// VoteWishlistItem operation middleware
+func (sh *strictHandler) VoteWishlistItem(ctx *fiber.Ctx, id string) error {
+	var request VoteWishlistItemRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.VoteWishlistItem(ctx.UserContext(), request.(VoteWishlistItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VoteWishlistItem")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(VoteWishlistItemResponseObject); ok {
+		if err := validResponse.VisitVoteWishlistItemResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"zCVQdUuUcxuY6h7o4+3jfwIAAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
@@ -24,8 +25,22 @@ func NewHandler(notificationUC notificationmodule.NotificationCenterUseCase, l l
 	}
 }
 
+func getActor(ctx context.Context) usermodule.Actor {
+	if val := ctx.Value("actor"); val != nil {
+		if a, ok := val.(usermodule.Actor); ok {
+			return a
+		}
+	}
+	return usermodule.Actor{}
+}
+
 // ListNotifications handles GET /notifications
 func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNotificationsRequestObject) (openapi.ListNotificationsResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.ListNotifications401JSONResponse{}, nil
+	}
+
 	limit := 10
 	if request.Params.Limit != nil && *request.Params.Limit > 0 {
 		limit = *request.Params.Limit
@@ -35,7 +50,6 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 		offset = *request.Params.Offset
 	}
 
-	actor := usermodule.Actor{UserID: "usr-1"}
 	pag := pagination.Pagination{Limit: limit, Offset: offset}
 
 	items, total, err := h.notificationUC.Inbox(ctx, actor, pag)
@@ -58,7 +72,11 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 
 // MarkAllNotificationsRead handles POST /notifications/read-all
 func (h *Handler) MarkAllNotificationsRead(ctx context.Context, request openapi.MarkAllNotificationsReadRequestObject) (openapi.MarkAllNotificationsReadResponseObject, error) {
-	actor := usermodule.Actor{UserID: "usr-1"}
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.MarkAllNotificationsRead401JSONResponse{}, nil
+	}
+
 	err := h.notificationUC.MarkAllRead(ctx, actor)
 	if err != nil {
 		status, errResp := mapNotificationError(err)
@@ -73,4 +91,53 @@ func (h *Handler) MarkAllNotificationsRead(ctx context.Context, request openapi.
 	}
 
 	return openapi.MarkAllNotificationsRead200Response{}, nil
+}
+
+// GetUnreadNotificationCount handles GET /notifications/unread-count
+func (h *Handler) GetUnreadNotificationCount(ctx context.Context, request openapi.GetUnreadNotificationCountRequestObject) (openapi.GetUnreadNotificationCountResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.GetUnreadNotificationCount401JSONResponse{}, nil
+	}
+
+	count, err := h.notificationUC.UnreadCount(ctx, actor)
+	if err != nil {
+		return openapi.GetUnreadNotificationCount500JSONResponse{}, nil
+	}
+
+	return openapi.GetUnreadNotificationCount200JSONResponse(openapi.UnreadNotificationCountResponse{
+		Count: count,
+	}), nil
+}
+
+// MarkNotificationRead handles POST /notifications/{id}/read
+func (h *Handler) MarkNotificationRead(ctx context.Context, request openapi.MarkNotificationReadRequestObject) (openapi.MarkNotificationReadResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.MarkNotificationRead401JSONResponse{}, nil
+	}
+
+	notifID, err := strconv.ParseInt(request.Id, 10, 64)
+	if err != nil {
+		return openapi.MarkNotificationRead400JSONResponse{}, nil
+	}
+
+	err = h.notificationUC.MarkRead(ctx, actor, notifID)
+	if err != nil {
+		status, errResp := mapNotificationError(err)
+		switch status {
+		case 400:
+			return openapi.MarkNotificationRead400JSONResponse{}, nil
+		case 401:
+			return openapi.MarkNotificationRead401JSONResponse{
+				UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp),
+			}, nil
+		case 404:
+			return openapi.MarkNotificationRead404JSONResponse{}, nil
+		default:
+			return openapi.MarkNotificationRead500JSONResponse{}, nil
+		}
+	}
+
+	return openapi.MarkNotificationRead200Response{}, nil
 }

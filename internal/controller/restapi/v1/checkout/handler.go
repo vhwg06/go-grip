@@ -32,13 +32,49 @@ func getActor(ctx context.Context) usermodule.Actor {
 	return usermodule.Actor{}
 }
 
+// GetCheckoutPreview handles GET /checkout/preview
+func (h *Handler) GetCheckoutPreview(ctx context.Context, request openapi.GetCheckoutPreviewRequestObject) (openapi.GetCheckoutPreviewResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.GetCheckoutPreview401JSONResponse{}, nil
+	}
+
+	productID := ""
+	if request.Params.ProductId != nil {
+		productID = *request.Params.ProductId
+	}
+	quantity := 1
+	if request.Params.Quantity != nil && *request.Params.Quantity > 0 {
+		quantity = *request.Params.Quantity
+	}
+
+	breakdown, err := h.checkoutUC.Preview(ctx, actor, productID, quantity)
+	if err != nil {
+		status, errResp := mapCheckoutError(err)
+		switch status {
+		case 400:
+			return openapi.GetCheckoutPreview400JSONResponse{}, nil
+		default:
+			return openapi.GetCheckoutPreview500JSONResponse{
+				InternalErrorResponseJSONResponse: openapi.InternalErrorResponseJSONResponse(errResp),
+			}, nil
+		}
+	}
+
+	previewDTO := toCheckoutPreviewResponse(breakdown)
+	return openapi.GetCheckoutPreview200JSONResponse(previewDTO), nil
+}
+
 // PreviewCheckout handles POST /checkout/preview
 func (h *Handler) PreviewCheckout(ctx context.Context, request openapi.PreviewCheckoutRequestObject) (openapi.PreviewCheckoutResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.PreviewCheckout401JSONResponse{}, nil
+	}
 	if request.Body == nil {
 		return openapi.PreviewCheckout400JSONResponse{}, nil
 	}
 
-	actor := getActor(ctx)
 	productID := request.Body.ProductId
 	quantity := 1
 	if request.Body.Quantity > 0 {

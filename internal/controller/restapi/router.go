@@ -60,6 +60,9 @@ func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, cat
 	app.Use(middleware.Logger(l))
 	app.Use(middleware.Recovery(l))
 	app.Use(middleware.RejectBlockedMutations())
+	if jwtManager != nil {
+		app.Use(middleware.Auth(jwtManager))
+	}
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.HTTP.CORSAllowedOrigins,
 		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",

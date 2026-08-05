@@ -9,9 +9,14 @@ import (
 func toNotificationResponse(n notificationmodule.UserNotification) openapi.NotificationResponse {
 	idInt := int(n.ID)
 	body := n.ContentKey
+	notifType := n.Type
+	if notifType == "" {
+		notifType = "system"
+	}
 	return openapi.NotificationResponse{
 		Id:        idInt,
 		Title:     n.TitleKey,
+		Type:      &notifType,
 		Body:      &body,
 		IsRead:    &n.IsRead,
 		CreatedAt: &n.CreatedAt,

@@ -53,6 +53,16 @@ func (uc *catalogUseCase) CreateProduct(ctx context.Context, product Product) (P
 
 func (uc *catalogUseCase) ListProducts(ctx context.Context, filter ProductFilter) ([]Product, int, error) {
 	page := filter.Pagination.Normalize()
+	if uc.gripRepo != nil {
+		items, total, err := uc.gripRepo.ListVisibleProducts(ctx, usermodule.Actor{IsAdmin: true}, ProductRepoFilter{
+			Keyword: filter.Keyword, Category: filter.CategoryID, Brand: filter.Brand, MinPrice: filter.MinPrice, MaxPrice: filter.MaxPrice,
+			Sort: filter.Sort, Limit: uint64(page.Limit), Offset: uint64(page.Offset),
+		})
+		if err == nil && len(items) > 0 {
+			return items, total, nil
+		}
+	}
+
 	items, total, err := uc.repo.ListProducts(ctx, ProductRepoFilter{
 		Keyword: filter.Keyword, Category: filter.CategoryID, Brand: filter.Brand, MinPrice: filter.MinPrice, MaxPrice: filter.MaxPrice,
 		Sort: filter.Sort, Limit: uint64(page.Limit), Offset: uint64(page.Offset),
@@ -64,6 +74,12 @@ func (uc *catalogUseCase) ListProducts(ctx context.Context, filter ProductFilter
 }
 
 func (uc *catalogUseCase) GetProduct(ctx context.Context, id string) (Product, error) {
+	if uc.gripRepo != nil {
+		p, err := uc.gripRepo.GetVisibleProduct(ctx, usermodule.Actor{IsAdmin: true}, id)
+		if err == nil {
+			return p, nil
+		}
+	}
 	return uc.repo.GetProduct(ctx, id)
 }
 
