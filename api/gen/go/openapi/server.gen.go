@@ -140,30 +140,6 @@ type ServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(c *fiber.Ctx, id string) error
-	// ListTasks List tasks for authenticated user
-	// (GET /tasks)
-	ListTasks(c *fiber.Ctx, params ListTasksParams) error
-	// CreateTask Create new task
-	// (POST /tasks)
-	CreateTask(c *fiber.Ctx) error
-	// DeleteTask Delete task
-	// (DELETE /tasks/{id})
-	DeleteTask(c *fiber.Ctx, id string) error
-	// GetTaskByID Get task by ID
-	// (GET /tasks/{id})
-	GetTaskByID(c *fiber.Ctx, id string) error
-	// UpdateTask Update task
-	// (PUT /tasks/{id})
-	UpdateTask(c *fiber.Ctx, id string) error
-	// TransitionTask Transition task status
-	// (POST /tasks/{id}/transition)
-	TransitionTask(c *fiber.Ctx, id string) error
-	// TranslateText Translate text content
-	// (POST /translation/do)
-	TranslateText(c *fiber.Ctx) error
-	// GetTranslationHistory Get user translation history
-	// (GET /translation/history)
-	GetTranslationHistory(c *fiber.Ctx) error
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(c *fiber.Ctx, params ListUsersParams) error
@@ -1190,227 +1166,6 @@ func (siw *ServerInterfaceWrapper) RequestOrderRefund(c *fiber.Ctx) error {
 	return handler(c)
 }
 
-// ListTasks operation middleware
-func (siw *ServerInterfaceWrapper) ListTasks(c *fiber.Ctx) error {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListTasksParams
-
-	var query url.Values
-	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
-	}
-
-	// ------------- Optional query parameter "status" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", query, &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter status: %w", err).Error())
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", query, &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter limit: %w", err).Error())
-	}
-
-	// ------------- Optional query parameter "offset" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", query, &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter offset: %w", err).Error())
-	}
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.ListTasks(c, params)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// CreateTask operation middleware
-func (siw *ServerInterfaceWrapper) CreateTask(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.CreateTask(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// DeleteTask operation middleware
-func (siw *ServerInterfaceWrapper) DeleteTask(c *fiber.Ctx) error {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
-	}
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.DeleteTask(c, id)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetTaskByID operation middleware
-func (siw *ServerInterfaceWrapper) GetTaskByID(c *fiber.Ctx) error {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
-	}
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetTaskByID(c, id)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// UpdateTask operation middleware
-func (siw *ServerInterfaceWrapper) UpdateTask(c *fiber.Ctx) error {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
-	}
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.UpdateTask(c, id)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// TransitionTask operation middleware
-func (siw *ServerInterfaceWrapper) TransitionTask(c *fiber.Ctx) error {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
-	}
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.TransitionTask(c, id)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// TranslateText operation middleware
-func (siw *ServerInterfaceWrapper) TranslateText(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.TranslateText(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetTranslationHistory operation middleware
-func (siw *ServerInterfaceWrapper) GetTranslationHistory(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetTranslationHistory(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
 // ListUsers operation middleware
 func (siw *ServerInterfaceWrapper) ListUsers(c *fiber.Ctx) error {
 
@@ -1707,22 +1462,6 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Post(options.BaseURL+"/users/:id/lock", wrapper.LockUser)
 
 	router.Post(options.BaseURL+"/users/:id/unlock", wrapper.UnlockUser)
-
-	router.Get(options.BaseURL+"/tasks", wrapper.ListTasks)
-
-	router.Post(options.BaseURL+"/tasks", wrapper.CreateTask)
-
-	router.Delete(options.BaseURL+"/tasks/:id", wrapper.DeleteTask)
-
-	router.Get(options.BaseURL+"/tasks/:id", wrapper.GetTaskByID)
-
-	router.Put(options.BaseURL+"/tasks/:id", wrapper.UpdateTask)
-
-	router.Post(options.BaseURL+"/tasks/:id/transition", wrapper.TransitionTask)
-
-	router.Post(options.BaseURL+"/translation/do", wrapper.TranslateText)
-
-	router.Get(options.BaseURL+"/translation/history", wrapper.GetTranslationHistory)
 
 	router.Get(options.BaseURL+"/catalog/products", wrapper.ListProducts)
 
@@ -3644,437 +3383,6 @@ func (response RequestOrderRefund500JSONResponse) VisitRequestOrderRefundRespons
 	return ctx.JSON(&response)
 }
 
-type ListTasksRequestObject struct {
-	Params ListTasksParams
-}
-
-type ListTasksResponseObject interface {
-	VisitListTasksResponse(ctx *fiber.Ctx) error
-}
-
-type ListTasks200JSONResponse TaskListResponse
-
-func (response ListTasks200JSONResponse) VisitListTasksResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type ListTasks401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response ListTasks401JSONResponse) VisitListTasksResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type ListTasks500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response ListTasks500JSONResponse) VisitListTasksResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type CreateTaskRequestObject struct {
-	Body *CreateTaskJSONRequestBody
-}
-
-type CreateTaskResponseObject interface {
-	VisitCreateTaskResponse(ctx *fiber.Ctx) error
-}
-
-type CreateTask201JSONResponse TaskResponse
-
-func (response CreateTask201JSONResponse) VisitCreateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(201)
-
-	return ctx.JSON(&response)
-}
-
-type CreateTask400JSONResponse struct{ BadRequestResponseJSONResponse }
-
-func (response CreateTask400JSONResponse) VisitCreateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(400)
-
-	return ctx.JSON(&response)
-}
-
-type CreateTask401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response CreateTask401JSONResponse) VisitCreateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type CreateTask500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response CreateTask500JSONResponse) VisitCreateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type DeleteTaskRequestObject struct {
-	Id string `json:"id"`
-}
-
-type DeleteTaskResponseObject interface {
-	VisitDeleteTaskResponse(ctx *fiber.Ctx) error
-}
-
-type DeleteTask204Response struct {
-}
-
-func (response DeleteTask204Response) VisitDeleteTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Status(204)
-	return nil
-}
-
-type DeleteTask401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response DeleteTask401JSONResponse) VisitDeleteTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type DeleteTask403JSONResponse struct{ ForbiddenResponseJSONResponse }
-
-func (response DeleteTask403JSONResponse) VisitDeleteTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(403)
-
-	return ctx.JSON(&response)
-}
-
-type DeleteTask404JSONResponse struct{ NotFoundResponseJSONResponse }
-
-func (response DeleteTask404JSONResponse) VisitDeleteTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(404)
-
-	return ctx.JSON(&response)
-}
-
-type DeleteTask500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response DeleteTask500JSONResponse) VisitDeleteTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetTaskByIDRequestObject struct {
-	Id string `json:"id"`
-}
-
-type GetTaskByIDResponseObject interface {
-	VisitGetTaskByIDResponse(ctx *fiber.Ctx) error
-}
-
-type GetTaskByID200JSONResponse TaskResponse
-
-func (response GetTaskByID200JSONResponse) VisitGetTaskByIDResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetTaskByID401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetTaskByID401JSONResponse) VisitGetTaskByIDResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetTaskByID403JSONResponse struct{ ForbiddenResponseJSONResponse }
-
-func (response GetTaskByID403JSONResponse) VisitGetTaskByIDResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(403)
-
-	return ctx.JSON(&response)
-}
-
-type GetTaskByID404JSONResponse struct{ NotFoundResponseJSONResponse }
-
-func (response GetTaskByID404JSONResponse) VisitGetTaskByIDResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(404)
-
-	return ctx.JSON(&response)
-}
-
-type GetTaskByID500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetTaskByID500JSONResponse) VisitGetTaskByIDResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTaskRequestObject struct {
-	Id   string `json:"id"`
-	Body *UpdateTaskJSONRequestBody
-}
-
-type UpdateTaskResponseObject interface {
-	VisitUpdateTaskResponse(ctx *fiber.Ctx) error
-}
-
-type UpdateTask200JSONResponse TaskResponse
-
-func (response UpdateTask200JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTask400JSONResponse struct{ BadRequestResponseJSONResponse }
-
-func (response UpdateTask400JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(400)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTask401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response UpdateTask401JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTask403JSONResponse struct{ ForbiddenResponseJSONResponse }
-
-func (response UpdateTask403JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(403)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTask404JSONResponse struct{ NotFoundResponseJSONResponse }
-
-func (response UpdateTask404JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(404)
-
-	return ctx.JSON(&response)
-}
-
-type UpdateTask500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response UpdateTask500JSONResponse) VisitUpdateTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTaskRequestObject struct {
-	Id   string `json:"id"`
-	Body *TransitionTaskJSONRequestBody
-}
-
-type TransitionTaskResponseObject interface {
-	VisitTransitionTaskResponse(ctx *fiber.Ctx) error
-}
-
-type TransitionTask200JSONResponse TaskResponse
-
-func (response TransitionTask200JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask400JSONResponse struct{ BadRequestResponseJSONResponse }
-
-func (response TransitionTask400JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(400)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response TransitionTask401JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask403JSONResponse struct{ ForbiddenResponseJSONResponse }
-
-func (response TransitionTask403JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(403)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask404JSONResponse struct{ NotFoundResponseJSONResponse }
-
-func (response TransitionTask404JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(404)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask422JSONResponse struct {
-	UnprocessableEntityResponseJSONResponse
-}
-
-func (response TransitionTask422JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(422)
-
-	return ctx.JSON(&response)
-}
-
-type TransitionTask500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response TransitionTask500JSONResponse) VisitTransitionTaskResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type TranslateTextRequestObject struct {
-	Body *TranslateTextJSONRequestBody
-}
-
-type TranslateTextResponseObject interface {
-	VisitTranslateTextResponse(ctx *fiber.Ctx) error
-}
-
-type TranslateText200JSONResponse TranslationResponse
-
-func (response TranslateText200JSONResponse) VisitTranslateTextResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type TranslateText400JSONResponse struct{ BadRequestResponseJSONResponse }
-
-func (response TranslateText400JSONResponse) VisitTranslateTextResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(400)
-
-	return ctx.JSON(&response)
-}
-
-type TranslateText401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response TranslateText401JSONResponse) VisitTranslateTextResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type TranslateText500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response TranslateText500JSONResponse) VisitTranslateTextResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetTranslationHistoryRequestObject struct {
-}
-
-type GetTranslationHistoryResponseObject interface {
-	VisitGetTranslationHistoryResponse(ctx *fiber.Ctx) error
-}
-
-type GetTranslationHistory200JSONResponse TranslationHistoryResponse
-
-func (response GetTranslationHistory200JSONResponse) VisitGetTranslationHistoryResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetTranslationHistory401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetTranslationHistory401JSONResponse) VisitGetTranslationHistoryResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetTranslationHistory500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetTranslationHistory500JSONResponse) VisitGetTranslationHistoryResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
 type ListUsersRequestObject struct {
 	Params ListUsersParams
 }
@@ -4709,30 +4017,6 @@ type StrictServerInterface interface {
 	// RequestOrderRefund Request order refund
 	// (POST /orders/{id}/refund)
 	RequestOrderRefund(ctx context.Context, request RequestOrderRefundRequestObject) (RequestOrderRefundResponseObject, error)
-	// ListTasks List tasks for authenticated user
-	// (GET /tasks)
-	ListTasks(ctx context.Context, request ListTasksRequestObject) (ListTasksResponseObject, error)
-	// CreateTask Create new task
-	// (POST /tasks)
-	CreateTask(ctx context.Context, request CreateTaskRequestObject) (CreateTaskResponseObject, error)
-	// DeleteTask Delete task
-	// (DELETE /tasks/{id})
-	DeleteTask(ctx context.Context, request DeleteTaskRequestObject) (DeleteTaskResponseObject, error)
-	// GetTaskByID Get task by ID
-	// (GET /tasks/{id})
-	GetTaskByID(ctx context.Context, request GetTaskByIDRequestObject) (GetTaskByIDResponseObject, error)
-	// UpdateTask Update task
-	// (PUT /tasks/{id})
-	UpdateTask(ctx context.Context, request UpdateTaskRequestObject) (UpdateTaskResponseObject, error)
-	// TransitionTask Transition task status
-	// (POST /tasks/{id}/transition)
-	TransitionTask(ctx context.Context, request TransitionTaskRequestObject) (TransitionTaskResponseObject, error)
-	// TranslateText Translate text content
-	// (POST /translation/do)
-	TranslateText(ctx context.Context, request TranslateTextRequestObject) (TranslateTextResponseObject, error)
-	// GetTranslationHistory Get user translation history
-	// (GET /translation/history)
-	GetTranslationHistory(ctx context.Context, request GetTranslationHistoryRequestObject) (GetTranslationHistoryResponseObject, error)
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -5911,240 +5195,6 @@ func (sh *strictHandler) RequestOrderRefund(ctx *fiber.Ctx, id string) error {
 	return nil
 }
 
-// ListTasks operation middleware
-func (sh *strictHandler) ListTasks(ctx *fiber.Ctx, params ListTasksParams) error {
-	var request ListTasksRequestObject
-
-	request.Params = params
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.ListTasks(ctx.UserContext(), request.(ListTasksRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListTasks")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(ListTasksResponseObject); ok {
-		if err := validResponse.VisitListTasksResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// CreateTask operation middleware
-func (sh *strictHandler) CreateTask(ctx *fiber.Ctx) error {
-	var request CreateTaskRequestObject
-
-	var body CreateTaskJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-	request.Body = &body
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateTask(ctx.UserContext(), request.(CreateTaskRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateTask")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(CreateTaskResponseObject); ok {
-		if err := validResponse.VisitCreateTaskResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// DeleteTask operation middleware
-func (sh *strictHandler) DeleteTask(ctx *fiber.Ctx, id string) error {
-	var request DeleteTaskRequestObject
-
-	request.Id = id
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteTask(ctx.UserContext(), request.(DeleteTaskRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DeleteTask")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(DeleteTaskResponseObject); ok {
-		if err := validResponse.VisitDeleteTaskResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetTaskByID operation middleware
-func (sh *strictHandler) GetTaskByID(ctx *fiber.Ctx, id string) error {
-	var request GetTaskByIDRequestObject
-
-	request.Id = id
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetTaskByID(ctx.UserContext(), request.(GetTaskByIDRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetTaskByID")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetTaskByIDResponseObject); ok {
-		if err := validResponse.VisitGetTaskByIDResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// UpdateTask operation middleware
-func (sh *strictHandler) UpdateTask(ctx *fiber.Ctx, id string) error {
-	var request UpdateTaskRequestObject
-
-	request.Id = id
-
-	var body UpdateTaskJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-	request.Body = &body
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.UpdateTask(ctx.UserContext(), request.(UpdateTaskRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UpdateTask")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(UpdateTaskResponseObject); ok {
-		if err := validResponse.VisitUpdateTaskResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// TransitionTask operation middleware
-func (sh *strictHandler) TransitionTask(ctx *fiber.Ctx, id string) error {
-	var request TransitionTaskRequestObject
-
-	request.Id = id
-
-	var body TransitionTaskJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-	request.Body = &body
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.TransitionTask(ctx.UserContext(), request.(TransitionTaskRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TransitionTask")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(TransitionTaskResponseObject); ok {
-		if err := validResponse.VisitTransitionTaskResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// TranslateText operation middleware
-func (sh *strictHandler) TranslateText(ctx *fiber.Ctx) error {
-	var request TranslateTextRequestObject
-
-	var body TranslateTextJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-	request.Body = &body
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.TranslateText(ctx.UserContext(), request.(TranslateTextRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TranslateText")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(TranslateTextResponseObject); ok {
-		if err := validResponse.VisitTranslateTextResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetTranslationHistory operation middleware
-func (sh *strictHandler) GetTranslationHistory(ctx *fiber.Ctx) error {
-	var request GetTranslationHistoryRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetTranslationHistory(ctx.UserContext(), request.(GetTranslationHistoryRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetTranslationHistory")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetTranslationHistoryResponseObject); ok {
-		if err := validResponse.VisitGetTranslationHistoryResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
 // ListUsers operation middleware
 func (sh *strictHandler) ListUsers(ctx *fiber.Ctx, params ListUsersParams) error {
 	var request ListUsersRequestObject
@@ -6428,101 +5478,91 @@ func (sh *strictHandler) RemoveFromWishlist(ctx *fiber.Ctx, productId string) er
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

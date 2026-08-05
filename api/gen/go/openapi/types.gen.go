@@ -210,15 +210,6 @@ type CreateCheckoutOrderRequest struct {
 	Quantity int `json:"quantity"`
 }
 
-// CreateTaskRequest defines model for CreateTaskRequest.
-type CreateTaskRequest struct {
-	// Description Example: Implement task capability endpoints
-	Description *string `json:"description,omitempty"`
-
-	// Title Example: Complete migration task
-	Title string `json:"title"`
-}
-
 // ErrorDetail defines model for ErrorDetail.
 type ErrorDetail struct {
 	// Field Example: email
@@ -565,35 +556,6 @@ type TagResponse struct {
 	Slug *string `json:"slug,omitempty"`
 }
 
-// TaskListResponse defines model for TaskListResponse.
-type TaskListResponse struct {
-	Items []TaskResponse `json:"items"`
-
-	// Total Example: 5
-	Total int `json:"total"`
-}
-
-// TaskResponse defines model for TaskResponse.
-type TaskResponse struct {
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-
-	// Description Example: Implement task capability endpoints
-	Description *string `json:"description,omitempty"`
-
-	// Id Example: task-101
-	Id string `json:"id"`
-
-	// Status Example: IN_PROGRESS
-	Status string `json:"status"`
-
-	// Title Example: Complete migration task
-	Title     string     `json:"title"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-
-	// UserId Example: user-123
-	UserId string `json:"user_id"`
-}
-
 // TokenPairResponse defines model for TokenPairResponse.
 type TokenPairResponse struct {
 	// AccessToken Example: jwt-access-token
@@ -602,44 +564,6 @@ type TokenPairResponse struct {
 	// RefreshToken Example: jwt-refresh-token
 	RefreshToken string        `json:"refreshToken"`
 	User         *UserResponse `json:"user,omitempty"`
-}
-
-// TransitionTaskRequest defines model for TransitionTaskRequest.
-type TransitionTaskRequest struct {
-	// Status Example: COMPLETED
-	Status string `json:"status"`
-}
-
-// TranslationHistoryResponse defines model for TranslationHistoryResponse.
-type TranslationHistoryResponse struct {
-	History []TranslationResponse `json:"history"`
-}
-
-// TranslationRequest defines model for TranslationRequest.
-type TranslationRequest struct {
-	// Source Example: en
-	Source string `json:"source"`
-
-	// Target Example: vi
-	Target string `json:"target"`
-
-	// Text Example: Hello world
-	Text string `json:"text"`
-}
-
-// TranslationResponse defines model for TranslationResponse.
-type TranslationResponse struct {
-	// Source Example: en
-	Source string `json:"source"`
-
-	// Target Example: vi
-	Target string `json:"target"`
-
-	// Text Example: Hello world
-	Text string `json:"text"`
-
-	// Translation Example: Xin chào thế giới
-	Translation string `json:"translation"`
 }
 
 // UpdateAccountProfileRequest defines model for UpdateAccountProfileRequest.
@@ -664,15 +588,6 @@ type UpdateCartItemRequest struct {
 type UpdateProfileRequest struct {
 	// DisplayName Example: John Doe
 	DisplayName string `json:"displayName"`
-}
-
-// UpdateTaskRequest defines model for UpdateTaskRequest.
-type UpdateTaskRequest struct {
-	// Description Example: Updated task description
-	Description *string `json:"description,omitempty"`
-
-	// Title Example: Updated task title
-	Title *string `json:"title,omitempty"`
 }
 
 // UserListResponse defines model for UserListResponse.
@@ -780,13 +695,6 @@ type ListOrdersParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-// ListTasksParams defines parameters for ListTasks.
-type ListTasksParams struct {
-	Status *string `form:"status,omitempty" json:"status,omitempty"`
-	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *int    `form:"offset,omitempty" json:"offset,omitempty"`
-}
-
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -843,18 +751,6 @@ type SubmitLeadJSONRequestBody = SubmitLeadRequest
 
 // RequestOrderRefundJSONRequestBody defines body for RequestOrderRefund for application/json ContentType.
 type RequestOrderRefundJSONRequestBody = RefundRequestPayload
-
-// CreateTaskJSONRequestBody defines body for CreateTask for application/json ContentType.
-type CreateTaskJSONRequestBody = CreateTaskRequest
-
-// UpdateTaskJSONRequestBody defines body for UpdateTask for application/json ContentType.
-type UpdateTaskJSONRequestBody = UpdateTaskRequest
-
-// TransitionTaskJSONRequestBody defines body for TransitionTask for application/json ContentType.
-type TransitionTaskJSONRequestBody = TransitionTaskRequest
-
-// TranslateTextJSONRequestBody defines body for TranslateText for application/json ContentType.
-type TranslateTextJSONRequestBody = TranslationRequest
 
 // CreateAdminUserJSONRequestBody defines body for CreateAdminUser for application/json ContentType.
 type CreateAdminUserJSONRequestBody = CreateAdminUserRequest

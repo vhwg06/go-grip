@@ -11,17 +11,6 @@ import (
 //go:generate mockgen -source=contracts.go -destination=../usecase/mocks_repo_test.go -package=usecase_test
 
 type (
-	// TranslationRepo -.
-	TranslationRepo interface {
-		Store(ctx context.Context, userID string, t entity.Translation) error
-		GetHistory(ctx context.Context, userID string) ([]entity.Translation, error)
-	}
-
-	// TranslationWebAPI -.
-	TranslationWebAPI interface {
-		Translate(ctx context.Context, t entity.Translation) (entity.Translation, error)
-	}
-
 	// UserRepo -.
 	UserRepo interface {
 		Store(ctx context.Context, user *entity.User) error
@@ -37,23 +26,6 @@ type (
 		List(ctx context.Context) ([]entity.Role, error)
 		GetByName(ctx context.Context, name entity.RoleName) (entity.Role, error)
 	}
-
-	// TaskRepo -.
-	TaskRepo interface {
-		Store(ctx context.Context, task *entity.Task) error
-		GetByID(ctx context.Context, userID, taskID string) (entity.Task, error)
-		List(ctx context.Context, userID string, filter TaskFilter) ([]entity.Task, int, error)
-		Update(ctx context.Context, task *entity.Task) error
-		Delete(ctx context.Context, userID, taskID string) error
-	}
-
-	// TaskFilter -.
-	TaskFilter struct {
-		Status *entity.TaskStatus
-		Limit  uint64
-		Offset uint64
-	}
-
 	UserFilter struct {
 		Limit  uint64
 		Offset uint64

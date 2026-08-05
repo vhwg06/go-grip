@@ -17,8 +17,6 @@ import (
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/notification"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/orders"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/profile"
-	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/task"
-	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/translation"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/user"
 	"github.com/evrone/go-clean-template/internal/controller/restapi/v1/wishlist"
 	"github.com/evrone/go-clean-template/internal/usecase"
@@ -32,9 +30,7 @@ var _ openapi.StrictServerInterface = (*Server)(nil)
 // Server is the delivery layer composition root for OpenAPI generated handlers.
 type Server struct {
 	cfg         *config.Config
-	usecase     usecase.Translation
 	userUC      usecase.User
-	taskUC      usecase.Task
 	catalogUC   usecase.Catalog
 	catalogBase catalogbase.UseCase
 	authUC      usecase.Auth
@@ -57,9 +53,7 @@ type Server struct {
 // NewServer constructs the OpenAPI Server composition root.
 func NewServer(
 	cfg *config.Config,
-	usecase usecase.Translation,
 	userUC usecase.User,
-	taskUC usecase.Task,
 	catalogUC usecase.Catalog,
 	catalogBase catalogbase.UseCase,
 	authUC usecase.Auth,
@@ -80,9 +74,7 @@ func NewServer(
 ) *Server {
 	return &Server{
 		cfg:         cfg,
-		usecase:     usecase,
 		userUC:      userUC,
-		taskUC:      taskUC,
 		catalogUC:   catalogUC,
 		catalogBase: catalogBase,
 		authUC:      authUC,
@@ -151,14 +143,6 @@ func (s *Server) ordersHandler() *orders.Handler {
 
 func (s *Server) profileHandler() *profile.Handler {
 	return profile.NewHandler(s.profileUC, s.logger)
-}
-
-func (s *Server) taskHandler() *task.Handler {
-	return task.NewHandler(s.taskUC, s.logger)
-}
-
-func (s *Server) translationHandler() *translation.Handler {
-	return translation.NewHandler(s.usecase, s.logger)
 }
 
 func (s *Server) userHandler() *user.Handler {
@@ -343,40 +327,6 @@ func (s *Server) GetAccountProfile(ctx context.Context, request openapi.GetAccou
 
 func (s *Server) UpdateAccountProfile(ctx context.Context, request openapi.UpdateAccountProfileRequestObject) (openapi.UpdateAccountProfileResponseObject, error) {
 	return s.profileHandler().UpdateAccountProfile(ctx, request)
-}
-
-// Task Capability
-func (s *Server) CreateTask(ctx context.Context, request openapi.CreateTaskRequestObject) (openapi.CreateTaskResponseObject, error) {
-	return s.taskHandler().CreateTask(ctx, request)
-}
-
-func (s *Server) ListTasks(ctx context.Context, request openapi.ListTasksRequestObject) (openapi.ListTasksResponseObject, error) {
-	return s.taskHandler().ListTasks(ctx, request)
-}
-
-func (s *Server) GetTaskByID(ctx context.Context, request openapi.GetTaskByIDRequestObject) (openapi.GetTaskByIDResponseObject, error) {
-	return s.taskHandler().GetTaskByID(ctx, request)
-}
-
-func (s *Server) UpdateTask(ctx context.Context, request openapi.UpdateTaskRequestObject) (openapi.UpdateTaskResponseObject, error) {
-	return s.taskHandler().UpdateTask(ctx, request)
-}
-
-func (s *Server) TransitionTask(ctx context.Context, request openapi.TransitionTaskRequestObject) (openapi.TransitionTaskResponseObject, error) {
-	return s.taskHandler().TransitionTask(ctx, request)
-}
-
-func (s *Server) DeleteTask(ctx context.Context, request openapi.DeleteTaskRequestObject) (openapi.DeleteTaskResponseObject, error) {
-	return s.taskHandler().DeleteTask(ctx, request)
-}
-
-// Translation Capability
-func (s *Server) TranslateText(ctx context.Context, request openapi.TranslateTextRequestObject) (openapi.TranslateTextResponseObject, error) {
-	return s.translationHandler().TranslateText(ctx, request)
-}
-
-func (s *Server) GetTranslationHistory(ctx context.Context, request openapi.GetTranslationHistoryRequestObject) (openapi.GetTranslationHistoryResponseObject, error) {
-	return s.translationHandler().GetTranslationHistory(ctx, request)
 }
 
 // User Capability

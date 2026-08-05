@@ -27,8 +27,6 @@ import (
 	"github.com/evrone/go-clean-template/internal/usecase/notification"
 	"github.com/evrone/go-clean-template/internal/usecase/orders"
 	"github.com/evrone/go-clean-template/internal/usecase/profile"
-	"github.com/evrone/go-clean-template/internal/usecase/task"
-	"github.com/evrone/go-clean-template/internal/usecase/translation"
 	"github.com/evrone/go-clean-template/internal/usecase/user"
 	"github.com/evrone/go-clean-template/internal/usecase/wishlist"
 	"github.com/evrone/go-clean-template/pkg/httpserver"
@@ -38,9 +36,7 @@ import (
 )
 
 type useCases struct {
-	translation *translation.UseCase
 	user        *user.UseCase
-	task        *task.UseCase
 	catalog     *catalog.UseCase
 	catalogBase catalogbase.UseCase
 	auth        *auth.UseCase
@@ -68,8 +64,6 @@ type servers struct {
 
 func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Manager) useCases {
 	userRepo := persistent.NewUserRepo(pg)
-	taskRepo := persistent.NewTaskRepo(pg)
-	translationRepo := persistent.NewTranslationRepo(pg)
 	catalogRepo := persistent.NewCatalogRepo(pg)
 	authRepo := persistent.NewAuthRepo(pg)
 	profileRepo := persistent.NewProfileRepo(pg)
@@ -115,8 +109,6 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 
 	return useCases{
 		user:        user.New(userRepo, jwtManager),
-		task:        task.New(taskRepo),
-		translation: translation.New(translationRepo, webapi.New()),
 		catalog:     catalogUseCase,
 		catalogBase: catalogBaseUseCase,
 		auth:        auth.New(authRepo, jwtManager, 30*24*time.Hour, cfg.Admin.Users),
@@ -140,7 +132,7 @@ func initUseCases(cfg *config.Config, pg *postgres.Postgres, jwtManager *jwt.Man
 
 func initServers(cfg *config.Config, uc useCases, jwtManager *jwt.Manager, l logger.Interface) servers {
 	httpServer := httpserver.New(l, httpserver.Port(cfg.HTTP.Port), httpserver.Prefork(cfg.HTTP.UsePreforkMode))
-	restapi.NewRouter(httpServer.App, cfg, uc.translation, uc.user, uc.task, uc.catalog, uc.catalogBase, uc.auth, uc.checkout, uc.orders, uc.profile, uc.admin, uc.wishlist, uc.notify, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
+	restapi.NewRouter(httpServer.App, cfg, uc.user, uc.catalog, uc.catalogBase, uc.auth, uc.checkout, uc.orders, uc.profile, uc.admin, uc.wishlist, uc.notify, uc.media, uc.homepage, uc.cart, uc.lead, uc.content, uc.importer, jwtManager, l)
 
 	interval := cfg.Ecommerce.SchedulerInterval
 	if interval <= 0 {

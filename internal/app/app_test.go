@@ -51,7 +51,7 @@ func TestRun_UsesRESTServerOnly_TDD(t *testing.T) {
 	}
 
 	require.Contains(t, routes, "/v1/catalog/products")
-	require.Contains(t, routes, "/v1/admin/settings")
+	require.Contains(t, routes, "/v1/admin/dashboard/stats")
 	require.Contains(t, routes, "/v1/checkout/orders")
 
 	for _, path := range routes {
