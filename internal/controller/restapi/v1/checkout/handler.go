@@ -119,7 +119,7 @@ func (h *Handler) CreateCheckoutOrder(ctx context.Context, request openapi.Creat
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
-		case 400:
+		case 400, 404:
 			return openapi.CreateCheckoutOrder400JSONResponse{}, nil
 		case 401:
 			return openapi.CreateCheckoutOrder401JSONResponse{

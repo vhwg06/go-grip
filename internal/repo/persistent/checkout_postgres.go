@@ -45,6 +45,9 @@ func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor use
 			Where("id = ?", order.ProductID).
 			Where("is_active = ?", true).
 			First(&product).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ordermodule.ErrNotFound
+			}
 			return fmt.Errorf("CheckoutRepo.CreateOrderWithReservation: select product: %w", err)
 		}
 

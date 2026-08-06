@@ -6,25 +6,24 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
 // mapAdminError maps domain errors specific to Admin capability
 // to standard HTTP status codes and openapi.ErrorResponse DTOs.
 //
-// Both entity.Err* and usermodule.Err* sentinels are checked because
-// ensureAdmin returns usermodule-package errors while other callers may
-// propagate the shared entity sentinels. Checking only one set causes
-// the other to fall through to 500.
-// ErrUnauthorized (unauthenticated caller) → 401; ErrForbidden (authenticated
-// but non-admin caller) → 403.
+// Both entity.Err*, usermodule.Err*, and ordermodule.Err* sentinels are checked
+// to ensure errors from user/auth and order modules propagate correctly without
+// falling through to 500.
+// ErrUnauthorized → 401; ErrForbidden → 403; ErrNotFound → 404.
 func mapAdminError(err error) (int, openapi.ErrorResponse) {
 	if err == nil {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
 	// Unauthenticated: no valid actor identity → 401.
-	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
+	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, ordermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",
@@ -34,7 +33,7 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 	}
 
 	// Authenticated but not an admin → 403.
-	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) {
+	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, ordermodule.ErrForbidden) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",
@@ -43,7 +42,7 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusForbidden, resp
 	}
 
-	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
+	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) || errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, ordermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "NOT_FOUND",
