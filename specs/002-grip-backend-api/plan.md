@@ -183,86 +183,54 @@ items := make([]map[string]interface{}, 0)              // hardcoded empty
 
 ---
 
-## Mechanism 4 — Announcement: Spec Ambiguity  `[Unknown]`
+## Mechanism 4 — Announcement: Approved Decision  `[Confirmed Decision]`
 
 | | |
 |---|---|
-| **OpenAPI declares** | `getCatalogAnnouncement` → `type: array, items: type: object` (generic schema) |
-| **Backend emits** | `[{ "enabled": true, "message": "..." }]` |
-| **Test expects** | nullable object `{ id, content, active }` |
-
-**Verdict**: OpenAPI schema is `type: object, additionalProperties: true` effectively. Both `{ enabled, message }` and `{ id, content, active }` are valid against this schema. Neither backend nor test can be definitively called wrong without spec clarification.
-
-**Required action**: Confirm intent — what fields does the announcement object carry?
+| **Approved Decision** | Top-level container is a single object (changed from array to single object in OpenAPI) containing `{ enabled, message }` (no `id` field). |
+| **OpenAPI update** | Change `getCatalogAnnouncement` response schema to single object `{ enabled: boolean, message: string }`. |
 
 ---
 
-## Mechanism 5 — Cascade Failures (fix upstream first)
+## Mechanism 6 — Fixture Dependency & Blocker Issues
 
-### 5A — Order operations: `createPendingOrder` fails  `[High]`
-
-**Chain**:  
-1. `createPendingOrder` → `GET /v1/catalog/products` → public catalog handler
-2. Public catalog handler discards `ListPublicModels` result → `items: []`
-3. `expect(product).toBeTruthy()` fails → scenario aborts
-
-**Affects**: 4 scenarios in Order operations (Execute transition, Reject disallowed, Delete after cancel, Read refund relevance).  
-**Fix**: Fix Mechanism 2A (public catalog list wiring) first.
-
----
-
-### 5B — Checkout: no purchasable product  `[High]`
-
-Same cascade as 5A — `GET /v1/catalog/products` returns empty.
-
----
-
-### 5C — Catalog master data: category/definition creation failing  `[Medium]`
-
-If catalog write path (Mechanism 3) is broken, test fixtures cannot create:
-- `POST /admin/catalog/categories` → prerequisite for model creation
-- `POST /admin/catalog/attribute-definitions` → prerequisite for variant dimensions
-
-Affects: 5 Catalog master data scenarios.
-
----
-
-## Mechanism 6 — Fixture Dependency Issues
-
-### 6A — Refund approve/reject: empty queue fixture  `[High]`
+### 6A — Refund approve/reject: fixture isolation  `[Implemented — Verification Blocked]`
 
 **Root cause**:  
-Scenario "Approve/Reject After Evidence Review" calls `GET /admin/refunds?status=pending` and takes `items[0].id`.  
-If the pending refund queue is empty (no prior test created a refund in this run), `items[0]` is `undefined` → `refundId = "missing-refund"`.  
-`strconv.ParseInt("missing-refund")` fails → handler returns `400`.  
-Test expects `200` (assertAccepted).
+Scenario "Approve/Reject After Evidence Review" previously relied on `GET /admin/refunds?status=pending` and took `items[0].id`. If queue was empty, it fell back to `"missing-refund"`.  
+**Fix implemented**: Scenario fixture creates its own order via `createBrowserRefund(...)` → requests refund → approves/rejects. Strict assertion `refundId` in `world.state`.  
+**Commit**: `79d40e9` (`fix(test): isolate refund approve and reject scenario fixtures (Batch 7)`).  
+**Status**: Implementation accepted. Runtime verification deferred until Checkout order creation 500 blocker is resolved.
 
-**This is a fixture isolation issue** — scenario does not self-create the required refund.  
-**Fix**: Scenario fixture must create its own order → request refund → then approve/reject.
+### 6B — Checkout Order Creation 500 Blocker  `[Unknown / Blocker]`
+
+**Observed**:  
+`POST /v1/checkout/orders` → HTTP 500 (`{"error":null}`) while preparing refund fixture in `createBrowserRefund`.
+
+**Impact**:  
+Blocks `SC-REF-DECISION-001` and `SC-REF-DECISION-002` before refund decision behavior can be exercised.
+
+**Status**:  
+Unknown backend defect or payload mismatch.  
+Needs OpenAPI schema → `createBrowserRefund` request payload → handler trace / server log.
 
 ---
 
-## Mechanism 7 — Remaining Spec Ambiguity
+## Mechanism 7 — Spec Ambiguity Approved Decisions
 
-### 7A — Homepage/footer: validation rules not in OpenAPI
-
-| | |
-|---|---|
-| **Test expects** | `400` for duplicate block priority |
-| **OpenAPI declares** | Request schema: `additionalProperties: true`; responses: `200` only, no `400` |
-
-Validation rules not declared in spec. Cannot implement without PRD decision.  
-**Required action**: If validation is a business requirement → add `400` response to OpenAPI first.
-
-### 7B — Admin notification test: response body fields
+### 7A — Homepage/footer block priority validation  `[Confirmed Decision]`
 
 | | |
 |---|---|
-| **OpenAPI declares** | `type: object` (generic, no required fields) |
-| **Test expects** | `{ status: "queued", type: "email" }` |
+| **Approved Decision** | Duplicate block priority MUST return `HTTP 400 Bad Request`. |
+| **OpenAPI update** | Add `400 Bad Request` response schema to homepage/footer settings endpoints. |
 
-Generic schema means both `{}` and `{ status: "queued" }` are valid against OpenAPI. Test may be over-specifying.  
-**Required action**: Confirm intent — should response include `status` field?
+### 7B — Admin notification test response body  `[Confirmed Decision]`
+
+| | |
+|---|---|
+| **Approved Decision** | Response body MUST contain `{ status: "queued", type: "email" }`. |
+| **OpenAPI update** | Specify required `status` ("queued") and `type` ("email") fields in notification test response schema. |
 
 ---
 
