@@ -168,5 +168,5 @@ func (h *Handler) QueueAdminNotificationTest(ctx context.Context, _ openapi.Queu
 		return openapi.QueueAdminNotificationTest403JSONResponse{}, nil
 	}
 
-	return openapi.QueueAdminNotificationTest200Response{}, nil
+	return openapi.QueueAdminNotificationTest200JSONResponse{}, nil
 }

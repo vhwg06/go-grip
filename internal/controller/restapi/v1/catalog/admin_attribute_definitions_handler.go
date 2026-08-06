@@ -16,12 +16,12 @@ func (h *Handler) AdminListAttributeDefinitions(ctx context.Context, _ openapi.A
 		return openapi.AdminListAttributeDefinitions403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ListDefinitions(ctx)
+	items, err := h.catalogBase.ListDefinitions(ctx)
 	if err != nil {
 		return openapi.AdminListAttributeDefinitions500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListAttributeDefinitions200Response{}, nil
+	return openapi.AdminListAttributeDefinitions200JSONResponse(map[string]interface{}{"items": items}), nil
 }
 
 // AdminCreateAttributeDefinition handles POST /admin/catalog/attribute-definitions
@@ -39,12 +39,12 @@ func (h *Handler) AdminCreateAttributeDefinition(ctx context.Context, request op
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateDefinition(ctx, input)
+	res, err := h.catalogBase.CreateDefinition(ctx, input)
 	if err != nil {
 		return openapi.AdminCreateAttributeDefinition400JSONResponse{}, nil
 	}
 
-	return openapi.AdminCreateAttributeDefinition201Response{}, nil
+	return openapi.AdminCreateAttributeDefinition201JSONResponse(res), nil
 }
 
 // AdminUpdateAttributeDefinition handles PATCH /admin/catalog/attribute-definitions/{definitionId}
@@ -62,12 +62,12 @@ func (h *Handler) AdminUpdateAttributeDefinition(ctx context.Context, request op
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateDefinition(ctx, request.DefinitionId, input)
+	res, err := h.catalogBase.UpdateDefinition(ctx, request.DefinitionId, input)
 	if err != nil {
 		return openapi.AdminUpdateAttributeDefinition400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateAttributeDefinition200Response{}, nil
+	return openapi.AdminUpdateAttributeDefinition200JSONResponse(res), nil
 }
 
 // AdminDeactivateAttributeDefinition handles POST /admin/catalog/attribute-definitions/{definitionId}/deactivate
@@ -80,12 +80,12 @@ func (h *Handler) AdminDeactivateAttributeDefinition(ctx context.Context, reques
 		return openapi.AdminDeactivateAttributeDefinition403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DeactivateDefinition(ctx, request.DefinitionId)
+	res, err := h.catalogBase.DeactivateDefinition(ctx, request.DefinitionId)
 	if err != nil {
 		return openapi.AdminDeactivateAttributeDefinition404JSONResponse{}, nil
 	}
 
-	return openapi.AdminDeactivateAttributeDefinition200Response{}, nil
+	return openapi.AdminDeactivateAttributeDefinition200JSONResponse(res), nil
 }
 
 // AdminAddAttributeEnumValue handles POST /admin/catalog/attribute-definitions/{definitionId}/enum-values
@@ -103,12 +103,12 @@ func (h *Handler) AdminAddAttributeEnumValue(ctx context.Context, request openap
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.AddEnumValue(ctx, request.DefinitionId, input)
+	res, err := h.catalogBase.AddEnumValue(ctx, request.DefinitionId, input)
 	if err != nil {
 		return openapi.AdminAddAttributeEnumValue400JSONResponse{}, nil
 	}
 
-	return openapi.AdminAddAttributeEnumValue201Response{}, nil
+	return openapi.AdminAddAttributeEnumValue201JSONResponse(res), nil
 }
 
 // AdminDeactivateAttributeEnumValue handles POST /admin/catalog/attribute-definitions/{definitionId}/enum-values/{enumValueId}/deactivate
@@ -121,10 +121,10 @@ func (h *Handler) AdminDeactivateAttributeEnumValue(ctx context.Context, request
 		return openapi.AdminDeactivateAttributeEnumValue403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DeactivateEnumValue(ctx, request.DefinitionId, request.EnumValueId)
+	res, err := h.catalogBase.DeactivateEnumValue(ctx, request.DefinitionId, request.EnumValueId)
 	if err != nil {
 		return openapi.AdminDeactivateAttributeEnumValue404JSONResponse{}, nil
 	}
 
-	return openapi.AdminDeactivateAttributeEnumValue200Response{}, nil
+	return openapi.AdminDeactivateAttributeEnumValue200JSONResponse(res), nil
 }

@@ -16,12 +16,12 @@ func (h *Handler) AdminListCatalogMasters(ctx context.Context, request openapi.A
 		return openapi.AdminListCatalogMasters403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ListMasters(ctx, request.MasterKind)
+	items, err := h.catalogBase.ListMasters(ctx, request.MasterKind)
 	if err != nil {
 		return openapi.AdminListCatalogMasters500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogMasters200Response{}, nil
+	return openapi.AdminListCatalogMasters200JSONResponse(map[string]interface{}{"items": items}), nil
 }
 
 // AdminCreateCatalogMaster handles POST /admin/catalog/masters/{masterKind}
@@ -39,12 +39,12 @@ func (h *Handler) AdminCreateCatalogMaster(ctx context.Context, request openapi.
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateMaster(ctx, request.MasterKind, input)
+	res, err := h.catalogBase.CreateMaster(ctx, request.MasterKind, input)
 	if err != nil {
 		return openapi.AdminCreateCatalogMaster400JSONResponse{}, nil
 	}
 
-	return openapi.AdminCreateCatalogMaster201Response{}, nil
+	return openapi.AdminCreateCatalogMaster201JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogMaster handles PATCH /admin/catalog/masters/{masterKind}/{masterId}
@@ -62,12 +62,12 @@ func (h *Handler) AdminUpdateCatalogMaster(ctx context.Context, request openapi.
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateMaster(ctx, request.MasterKind, request.MasterId, input)
+	res, err := h.catalogBase.UpdateMaster(ctx, request.MasterKind, request.MasterId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogMaster400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogMaster200Response{}, nil
+	return openapi.AdminUpdateCatalogMaster200JSONResponse(res), nil
 }
 
 // AdminDeactivateCatalogMaster handles POST /admin/catalog/masters/{masterKind}/{masterId}/deactivate
@@ -80,10 +80,10 @@ func (h *Handler) AdminDeactivateCatalogMaster(ctx context.Context, request open
 		return openapi.AdminDeactivateCatalogMaster403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DeactivateMaster(ctx, request.MasterKind, request.MasterId)
+	res, err := h.catalogBase.DeactivateMaster(ctx, request.MasterKind, request.MasterId)
 	if err != nil {
 		return openapi.AdminDeactivateCatalogMaster404JSONResponse{}, nil
 	}
 
-	return openapi.AdminDeactivateCatalogMaster200Response{}, nil
+	return openapi.AdminDeactivateCatalogMaster200JSONResponse(res), nil
 }

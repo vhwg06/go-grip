@@ -21,12 +21,12 @@ func (h *Handler) AdminCreateCatalogModelVariant(ctx context.Context, request op
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateVariant(ctx, request.ModelId, input)
+	res, err := h.catalogBase.CreateVariant(ctx, request.ModelId, input)
 	if err != nil {
 		return openapi.AdminCreateCatalogModelVariant400JSONResponse{}, nil
 	}
 
-	return openapi.AdminCreateCatalogModelVariant201Response{}, nil
+	return openapi.AdminCreateCatalogModelVariant201JSONResponse(res), nil
 }
 
 // AdminGetCatalogVariant handles GET /admin/catalog/variants/{variantId}
@@ -39,12 +39,12 @@ func (h *Handler) AdminGetCatalogVariant(ctx context.Context, request openapi.Ad
 		return openapi.AdminGetCatalogVariant403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.GetVariant(ctx, request.VariantId)
+	res, err := h.catalogBase.GetVariant(ctx, request.VariantId)
 	if err != nil {
 		return openapi.AdminGetCatalogVariant404JSONResponse{}, nil
 	}
 
-	return openapi.AdminGetCatalogVariant200Response{}, nil
+	return openapi.AdminGetCatalogVariant200JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogVariant handles PATCH /admin/catalog/variants/{variantId}
@@ -62,12 +62,12 @@ func (h *Handler) AdminUpdateCatalogVariant(ctx context.Context, request openapi
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateVariant(ctx, request.VariantId, input)
+	res, err := h.catalogBase.UpdateVariant(ctx, request.VariantId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogVariant400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogVariant200Response{}, nil
+	return openapi.AdminUpdateCatalogVariant200JSONResponse(res), nil
 }
 
 // AdminActivateCatalogVariant handles POST /admin/catalog/variants/{variantId}/activate
@@ -80,12 +80,12 @@ func (h *Handler) AdminActivateCatalogVariant(ctx context.Context, request opena
 		return openapi.AdminActivateCatalogVariant403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ActivateVariant(ctx, request.VariantId)
+	res, err := h.catalogBase.ActivateVariant(ctx, request.VariantId)
 	if err != nil {
 		return openapi.AdminActivateCatalogVariant404JSONResponse{}, nil
 	}
 
-	return openapi.AdminActivateCatalogVariant200Response{}, nil
+	return openapi.AdminActivateCatalogVariant200JSONResponse(res), nil
 }
 
 // AdminInactivateCatalogVariant handles POST /admin/catalog/variants/{variantId}/inactivate
@@ -98,12 +98,12 @@ func (h *Handler) AdminInactivateCatalogVariant(ctx context.Context, request ope
 		return openapi.AdminInactivateCatalogVariant403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.InactivateVariant(ctx, request.VariantId)
+	res, err := h.catalogBase.InactivateVariant(ctx, request.VariantId)
 	if err != nil {
 		return openapi.AdminInactivateCatalogVariant404JSONResponse{}, nil
 	}
 
-	return openapi.AdminInactivateCatalogVariant200Response{}, nil
+	return openapi.AdminInactivateCatalogVariant200JSONResponse(res), nil
 }
 
 // AdminBulkUpdateVariantPrices handles POST /admin/catalog/variants/prices:bulk
@@ -121,12 +121,12 @@ func (h *Handler) AdminBulkUpdateVariantPrices(ctx context.Context, request open
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.BulkSetPrice(ctx, input)
+	res, err := h.catalogBase.BulkSetPrice(ctx, input)
 	if err != nil {
 		return openapi.AdminBulkUpdateVariantPrices400JSONResponse{}, nil
 	}
 
-	return openapi.AdminBulkUpdateVariantPrices200Response{}, nil
+	return openapi.AdminBulkUpdateVariantPrices200JSONResponse(map[string]interface{}{"result": res}), nil
 }
 
 // GetCatalogSettings handles GET /catalog/settings

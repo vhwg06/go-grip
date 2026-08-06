@@ -1209,6 +1209,9 @@ type ListContentArticlesParams struct {
 // UpdateContentArticleJSONBody defines parameters for UpdateContentArticle.
 type UpdateContentArticleJSONBody = map[string]interface{}
 
+// UpdateContentPageJSONBody defines parameters for UpdateContentPage.
+type UpdateContentPageJSONBody = map[string]interface{}
+
 // ListLeadsParams defines parameters for ListLeads.
 type ListLeadsParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1388,6 +1391,9 @@ type UpdateContentArticleJSONRequestBody = UpdateContentArticleJSONBody
 
 // CreateContentPageJSONRequestBody defines body for CreateContentPage for application/json ContentType.
 type CreateContentPageJSONRequestBody = StaticPageRequest
+
+// UpdateContentPageJSONRequestBody defines body for UpdateContentPage for application/json ContentType.
+type UpdateContentPageJSONRequestBody = UpdateContentPageJSONBody
 
 // ExecuteImportJSONRequestBody defines body for ExecuteImport for application/json ContentType.
 type ExecuteImportJSONRequestBody = ImportExecuteRequest

@@ -21,12 +21,12 @@ func (h *Handler) AdminAddCatalogVariantDimension(ctx context.Context, request o
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateDimension(ctx, request.ModelId, input)
+	res, err := h.catalogBase.CreateDimension(ctx, request.ModelId, input)
 	if err != nil {
 		return openapi.AdminAddCatalogVariantDimension400JSONResponse{}, nil
 	}
 
-	return openapi.AdminAddCatalogVariantDimension201Response{}, nil
+	return openapi.AdminAddCatalogVariantDimension201JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogVariantDimension handles PATCH /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}
@@ -44,12 +44,12 @@ func (h *Handler) AdminUpdateCatalogVariantDimension(ctx context.Context, reques
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateDimension(ctx, request.ModelId, request.DimensionId, input)
+	res, err := h.catalogBase.UpdateDimension(ctx, request.ModelId, request.DimensionId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogVariantDimension400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogVariantDimension200Response{}, nil
+	return openapi.AdminUpdateCatalogVariantDimension200JSONResponse(res), nil
 }
 
 // AdminAddCatalogVariantDimensionValue handles POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values
@@ -67,12 +67,12 @@ func (h *Handler) AdminAddCatalogVariantDimensionValue(ctx context.Context, requ
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.AddDimensionValue(ctx, request.ModelId, request.DimensionId, input)
+	res, err := h.catalogBase.AddDimensionValue(ctx, request.ModelId, request.DimensionId, input)
 	if err != nil {
 		return openapi.AdminAddCatalogVariantDimensionValue400JSONResponse{}, nil
 	}
 
-	return openapi.AdminAddCatalogVariantDimensionValue201Response{}, nil
+	return openapi.AdminAddCatalogVariantDimensionValue201JSONResponse(res), nil
 }
 
 // AdminDeactivateCatalogVariantDimensionValue handles POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values/{valueId}/deactivate
@@ -85,10 +85,10 @@ func (h *Handler) AdminDeactivateCatalogVariantDimensionValue(ctx context.Contex
 		return openapi.AdminDeactivateCatalogVariantDimensionValue403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DeactivateDimensionValue(ctx, request.ModelId, request.DimensionId, request.ValueId)
+	res, err := h.catalogBase.DeactivateDimensionValue(ctx, request.ModelId, request.DimensionId, request.ValueId)
 	if err != nil {
 		return openapi.AdminDeactivateCatalogVariantDimensionValue404JSONResponse{}, nil
 	}
 
-	return openapi.AdminDeactivateCatalogVariantDimensionValue200Response{}, nil
+	return openapi.AdminDeactivateCatalogVariantDimensionValue200JSONResponse(res), nil
 }

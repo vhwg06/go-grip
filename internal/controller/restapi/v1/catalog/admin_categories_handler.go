@@ -26,12 +26,12 @@ func (h *Handler) AdminListCatalogCategories(ctx context.Context, _ openapi.Admi
 		return openapi.AdminListCatalogCategories403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ListCategories(ctx)
+	items, err := h.catalogBase.ListCategories(ctx)
 	if err != nil {
 		return openapi.AdminListCatalogCategories500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogCategories200Response{}, nil
+	return openapi.AdminListCatalogCategories200JSONResponse(map[string]interface{}{"items": items}), nil
 }
 
 // AdminCreateCatalogCategory handles POST /admin/catalog/categories
@@ -49,12 +49,12 @@ func (h *Handler) AdminCreateCatalogCategory(ctx context.Context, request openap
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateCategory(ctx, input)
+	res, err := h.catalogBase.CreateCategory(ctx, input)
 	if err != nil {
 		return openapi.AdminCreateCatalogCategory400JSONResponse{}, nil
 	}
 
-	return openapi.AdminCreateCatalogCategory201Response{}, nil
+	return openapi.AdminCreateCatalogCategory201JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogCategory handles PATCH /admin/catalog/categories/{categoryId}
@@ -72,12 +72,12 @@ func (h *Handler) AdminUpdateCatalogCategory(ctx context.Context, request openap
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateCategory(ctx, request.CategoryId, input)
+	res, err := h.catalogBase.UpdateCategory(ctx, request.CategoryId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogCategory400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogCategory200Response{}, nil
+	return openapi.AdminUpdateCatalogCategory200JSONResponse(res), nil
 }
 
 // AdminDeleteCatalogCategory handles DELETE /admin/catalog/categories/{categoryId}
@@ -108,10 +108,10 @@ func (h *Handler) AdminDeactivateCatalogCategory(ctx context.Context, request op
 		return openapi.AdminDeactivateCatalogCategory403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DeactivateCategory(ctx, request.CategoryId)
+	res, err := h.catalogBase.DeactivateCategory(ctx, request.CategoryId)
 	if err != nil {
 		return openapi.AdminDeactivateCatalogCategory404JSONResponse{}, nil
 	}
 
-	return openapi.AdminDeactivateCatalogCategory200Response{}, nil
+	return openapi.AdminDeactivateCatalogCategory200JSONResponse(res), nil
 }

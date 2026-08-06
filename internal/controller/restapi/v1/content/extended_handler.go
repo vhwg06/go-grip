@@ -186,3 +186,79 @@ func (h *Handler) ListPublicContentArticles(ctx context.Context, _ openapi.ListP
 
 	return openapi.ListPublicContentArticles200Response{}, nil
 }
+
+// GetContentArticlePreview handles GET /content/articles/{id}/preview
+func (h *Handler) GetContentArticlePreview(ctx context.Context, request openapi.GetContentArticlePreviewRequestObject) (openapi.GetContentArticlePreviewResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.GetContentArticlePreview404JSONResponse{}, nil
+	}
+
+	article, err := h.contentUC.GetArticle(ctx, request.Id)
+	if err != nil {
+		return openapi.GetContentArticlePreview404JSONResponse{}, nil
+	}
+
+	resp := map[string]interface{}{
+		"id":     article.ID,
+		"title":  article.Title,
+		"body":   article.Body,
+		"slug":   article.Slug,
+		"status": string(article.Status),
+	}
+	return openapi.GetContentArticlePreview200JSONResponse(resp), nil
+}
+
+// GetPublicContentArticle handles GET /public/content/articles/{id}
+func (h *Handler) GetPublicContentArticle(ctx context.Context, request openapi.GetPublicContentArticleRequestObject) (openapi.GetPublicContentArticleResponseObject, error) {
+	article, err := h.contentUC.GetArticle(ctx, request.Id)
+	if err != nil {
+		return openapi.GetPublicContentArticle404JSONResponse{}, nil
+	}
+
+	resp := map[string]interface{}{
+		"id":     article.ID,
+		"title":  article.Title,
+		"body":   article.Body,
+		"slug":   article.Slug,
+		"status": string(article.Status),
+	}
+	return openapi.GetPublicContentArticle200JSONResponse(resp), nil
+}
+
+// UpdateContentPage handles PATCH /content/pages/{slug}
+func (h *Handler) UpdateContentPage(ctx context.Context, request openapi.UpdateContentPageRequestObject) (openapi.UpdateContentPageResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.UpdateContentPage404JSONResponse{}, nil
+	}
+
+	bodyMap := map[string]interface{}{}
+	if request.Body != nil {
+		bodyMap = map[string]interface{}(*request.Body)
+	}
+
+	page := contentmodule.StaticPage{
+		Slug: request.Slug,
+	}
+	if title, ok := bodyMap["title"].(string); ok {
+		page.Title = title
+	}
+	if body, ok := bodyMap["body"].(string); ok {
+		page.Body = body
+	}
+
+	updated, err := h.contentUC.UpdatePage(ctx, page)
+	if err != nil {
+		return openapi.UpdateContentPage404JSONResponse{}, nil
+	}
+
+	resp := map[string]interface{}{
+		"slug":         updated.Slug,
+		"title":        updated.Title,
+		"body":         updated.Body,
+		"gallery":      bodyMap["gallery"],
+		"template_key": bodyMap["template_key"],
+	}
+	return openapi.UpdateContentPage200JSONResponse(resp), nil
+}

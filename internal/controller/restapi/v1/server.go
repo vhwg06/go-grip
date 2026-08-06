@@ -860,3 +860,16 @@ func (s *Server) ListPublicContentArticles(ctx context.Context, request openapi.
 func (s *Server) ClearNotificationInbox(ctx context.Context, request openapi.ClearNotificationInboxRequestObject) (openapi.ClearNotificationInboxResponseObject, error) {
 	return s.notificationHandler().ClearNotificationInbox(ctx, request)
 }
+
+// Content additions
+func (s *Server) GetContentArticlePreview(ctx context.Context, request openapi.GetContentArticlePreviewRequestObject) (openapi.GetContentArticlePreviewResponseObject, error) {
+	return s.contentHandler().GetContentArticlePreview(ctx, request)
+}
+
+func (s *Server) GetPublicContentArticle(ctx context.Context, request openapi.GetPublicContentArticleRequestObject) (openapi.GetPublicContentArticleResponseObject, error) {
+	return s.contentHandler().GetPublicContentArticle(ctx, request)
+}
+
+func (s *Server) UpdateContentPage(ctx context.Context, request openapi.UpdateContentPageRequestObject) (openapi.UpdateContentPageResponseObject, error) {
+	return s.contentHandler().UpdateContentPage(ctx, request)
+}

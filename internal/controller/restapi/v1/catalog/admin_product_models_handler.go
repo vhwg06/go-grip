@@ -16,12 +16,12 @@ func (h *Handler) AdminListCatalogProductModels(ctx context.Context, _ openapi.A
 		return openapi.AdminListCatalogProductModels403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ListModels(ctx)
+	items, err := h.catalogBase.ListModels(ctx)
 	if err != nil {
 		return openapi.AdminListCatalogProductModels500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogProductModels200Response{}, nil
+	return openapi.AdminListCatalogProductModels200JSONResponse(map[string]interface{}{"items": items}), nil
 }
 
 // AdminCreateCatalogProductModel handles POST /admin/catalog/product-models
@@ -39,12 +39,12 @@ func (h *Handler) AdminCreateCatalogProductModel(ctx context.Context, request op
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.CreateModel(ctx, input)
+	res, err := h.catalogBase.CreateModel(ctx, input)
 	if err != nil {
 		return openapi.AdminCreateCatalogProductModel400JSONResponse{}, nil
 	}
 
-	return openapi.AdminCreateCatalogProductModel201Response{}, nil
+	return openapi.AdminCreateCatalogProductModel201JSONResponse(res), nil
 }
 
 // AdminGetCatalogProductModel handles GET /admin/catalog/product-models/{modelId}
@@ -57,12 +57,12 @@ func (h *Handler) AdminGetCatalogProductModel(ctx context.Context, request opena
 		return openapi.AdminGetCatalogProductModel403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.GetModel(ctx, request.ModelId)
+	res, err := h.catalogBase.GetModel(ctx, request.ModelId)
 	if err != nil {
 		return openapi.AdminGetCatalogProductModel404JSONResponse{}, nil
 	}
 
-	return openapi.AdminGetCatalogProductModel200Response{}, nil
+	return openapi.AdminGetCatalogProductModel200JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogProductModel handles PATCH /admin/catalog/product-models/{modelId}
@@ -80,12 +80,12 @@ func (h *Handler) AdminUpdateCatalogProductModel(ctx context.Context, request op
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.UpdateModel(ctx, request.ModelId, input)
+	res, err := h.catalogBase.UpdateModel(ctx, request.ModelId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogProductModel400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogProductModel200Response{}, nil
+	return openapi.AdminUpdateCatalogProductModel200JSONResponse(res), nil
 }
 
 // AdminDeleteCatalogProductModel handles DELETE /admin/catalog/product-models/{modelId}
@@ -116,12 +116,12 @@ func (h *Handler) AdminPublishCatalogProductModel(ctx context.Context, request o
 		return openapi.AdminPublishCatalogProductModel403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.PublishModel(ctx, request.ModelId)
+	res, err := h.catalogBase.PublishModel(ctx, request.ModelId)
 	if err != nil {
 		return openapi.AdminPublishCatalogProductModel400JSONResponse{}, nil
 	}
 
-	return openapi.AdminPublishCatalogProductModel200Response{}, nil
+	return openapi.AdminPublishCatalogProductModel200JSONResponse(res), nil
 }
 
 // AdminUnpublishCatalogProductModel handles POST /admin/catalog/product-models/{modelId}/unpublish
@@ -134,12 +134,12 @@ func (h *Handler) AdminUnpublishCatalogProductModel(ctx context.Context, request
 		return openapi.AdminUnpublishCatalogProductModel403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.UnpublishModel(ctx, request.ModelId)
+	res, err := h.catalogBase.UnpublishModel(ctx, request.ModelId)
 	if err != nil {
 		return openapi.AdminUnpublishCatalogProductModel400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUnpublishCatalogProductModel200Response{}, nil
+	return openapi.AdminUnpublishCatalogProductModel200JSONResponse(res), nil
 }
 
 // AdminDiscontinueCatalogProductModel handles POST /admin/catalog/product-models/{modelId}/discontinue
@@ -152,12 +152,12 @@ func (h *Handler) AdminDiscontinueCatalogProductModel(ctx context.Context, reque
 		return openapi.AdminDiscontinueCatalogProductModel403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.DiscontinueModel(ctx, request.ModelId)
+	res, err := h.catalogBase.DiscontinueModel(ctx, request.ModelId)
 	if err != nil {
 		return openapi.AdminDiscontinueCatalogProductModel400JSONResponse{}, nil
 	}
 
-	return openapi.AdminDiscontinueCatalogProductModel200Response{}, nil
+	return openapi.AdminDiscontinueCatalogProductModel200JSONResponse(res), nil
 }
 
 // AdminUpdateCatalogProductModelMedia handles PUT /admin/catalog/product-models/{modelId}/media
@@ -175,12 +175,12 @@ func (h *Handler) AdminUpdateCatalogProductModelMedia(ctx context.Context, reque
 		input = map[string]any(*request.Body)
 	}
 
-	_, err := h.catalogBase.ReplaceMedia(ctx, request.ModelId, input)
+	res, err := h.catalogBase.ReplaceMedia(ctx, request.ModelId, input)
 	if err != nil {
 		return openapi.AdminUpdateCatalogProductModelMedia400JSONResponse{}, nil
 	}
 
-	return openapi.AdminUpdateCatalogProductModelMedia200Response{}, nil
+	return openapi.AdminUpdateCatalogProductModelMedia200JSONResponse(res), nil
 }
 
 // AdminListCatalogModelVariants handles GET /admin/catalog/product-models/{modelId}/variants
@@ -193,10 +193,10 @@ func (h *Handler) AdminListCatalogModelVariants(ctx context.Context, request ope
 		return openapi.AdminListCatalogModelVariants403JSONResponse{}, nil
 	}
 
-	_, err := h.catalogBase.ListVariants(ctx, request.ModelId)
+	items, err := h.catalogBase.ListVariants(ctx, request.ModelId)
 	if err != nil {
 		return openapi.AdminListCatalogModelVariants500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogModelVariants200Response{}, nil
+	return openapi.AdminListCatalogModelVariants200JSONResponse(map[string]interface{}{"items": items}), nil
 }
