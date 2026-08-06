@@ -38,9 +38,13 @@ func (r *ProfileRepo) UpdateProfile(ctx context.Context, u usermodule.User) (use
 		return u, nil
 	}
 	model := map[string]any{
-		"email":                         u.Email,
-		"display_name":                  u.DisplayName,
 		"desktop_notifications_enabled": u.DesktopNotificationsEnabled,
+	}
+	if u.Email != "" {
+		model["email"] = u.Email
+	}
+	if u.DisplayName != "" {
+		model["display_name"] = u.DisplayName
 	}
 
 	if err := r.Gorm.WithContext(ctx).

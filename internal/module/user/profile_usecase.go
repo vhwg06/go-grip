@@ -41,8 +41,12 @@ func (uc *profileUseCase) Update(ctx context.Context, actor Actor, email string,
 		return User{}, err
 	}
 
-	u.Email = email
-	u.DisplayName = displayName
+	if email != "" {
+		u.Email = email
+	}
+	if displayName != "" {
+		u.DisplayName = displayName
+	}
 	u.DesktopNotificationsEnabled = desktopNotificationsEnabled
 	updated, err := uc.repo.UpdateProfile(ctx, u)
 	if err != nil {

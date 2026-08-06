@@ -52,7 +52,7 @@ func (h *Handler) RegisterUser(ctx context.Context, request openapi.RegisterUser
 
 // LoginUser handles POST /auth/login
 func (h *Handler) LoginUser(ctx context.Context, request openapi.LoginUserRequestObject) (openapi.LoginUserResponseObject, error) {
-	if request.Body == nil {
+	if request.Body == nil || request.Body.Email == "" {
 		return openapi.LoginUser400JSONResponse{}, nil
 	}
 
@@ -126,6 +126,14 @@ func getActor(ctx context.Context) usermodule.Actor {
 
 // LogoutUser handles POST /auth/logout
 func (h *Handler) LogoutUser(ctx context.Context, request openapi.LogoutUserRequestObject) (openapi.LogoutUserResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		_, errResp := mapAuthError(usermodule.ErrUnauthorized)
+		return openapi.LogoutUser401JSONResponse{
+			UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp),
+		}, nil
+	}
+
 	if request.Body == nil {
 		return openapi.LogoutUser400JSONResponse{}, nil
 	}
@@ -137,8 +145,6 @@ func (h *Handler) LogoutUser(ctx context.Context, request openapi.LogoutUserRequ
 	if token == "" && request.Body.LegacyRefreshToken != nil {
 		token = *request.Body.LegacyRefreshToken
 	}
-
-	actor := getActor(ctx)
 
 	err := h.authUC.Logout(ctx, actor, token)
 	if err != nil {
