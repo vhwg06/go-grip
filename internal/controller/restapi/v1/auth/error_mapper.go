@@ -6,10 +6,16 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
 // mapAuthError maps domain errors specific to the Auth capability
 // to standard HTTP status codes and openapi.ErrorResponse DTOs.
+//
+// Both entity.Err* and usermodule.Err* sentinels are checked because
+// the auth usecase returns usermodule-package errors while callers may
+// also propagate the shared entity errors. Checking only one set causes
+// the other to fall through to 500.
 func mapAuthError(err error) (int, openapi.ErrorResponse) {
 	if err == nil {
 		return http.StatusOK, openapi.ErrorResponse{}
@@ -24,7 +30,12 @@ func mapAuthError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusConflict, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidCredentials) || errors.Is(err, entity.ErrUserNotFound) {
+	// ErrInvalidCredentials is returned by authUseCase (usermodule package) on
+	// bad email/password; entity.ErrInvalidCredentials covers the shared sentinel.
+	if errors.Is(err, entity.ErrInvalidCredentials) ||
+		errors.Is(err, usermodule.ErrInvalidCredentials) ||
+		errors.Is(err, entity.ErrUserNotFound) ||
+		errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_CREDENTIALS",
@@ -33,7 +44,7 @@ func mapAuthError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusUnauthorized, resp
 	}
 
-	if errors.Is(err, entity.ErrUnauthorized) {
+	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",
@@ -42,7 +53,7 @@ func mapAuthError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusUnauthorized, resp
 	}
 
-	if errors.Is(err, entity.ErrForbidden) {
+	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",
@@ -51,7 +62,7 @@ func mapAuthError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusForbidden, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, entity.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

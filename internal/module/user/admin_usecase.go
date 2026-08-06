@@ -283,6 +283,11 @@ func (uc *adminUseCase) RepairAggregates(ctx context.Context, actor Actor) error
 }
 
 func (uc *adminUseCase) ensureAdmin(actor Actor) error {
+	// An empty UserID means the request carried no valid token; the caller is
+	// unauthenticated (→ 401) rather than forbidden (→ 403).
+	if actor.UserID == "" {
+		return ErrUnauthorized
+	}
 	if actor.IsAdmin {
 		return nil
 	}

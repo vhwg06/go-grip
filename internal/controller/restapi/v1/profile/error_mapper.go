@@ -6,16 +6,22 @@ import (
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
 // mapProfileError maps domain errors specific to Profile capability
 // to standard HTTP status codes and openapi.ErrorResponse DTOs.
+//
+// Both entity.Err* and usermodule.Err* sentinels are checked because
+// the profile usecase returns usermodule-package errors while shared
+// infrastructure may propagate entity sentinels.
 func mapProfileError(err error) (int, openapi.ErrorResponse) {
 	if err == nil {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrNotFound) ||
+		errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "USER_NOT_FOUND",
@@ -24,7 +30,7 @@ func mapProfileError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrUnauthorized) {
+	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",
@@ -33,7 +39,7 @@ func mapProfileError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusUnauthorized, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, entity.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",
