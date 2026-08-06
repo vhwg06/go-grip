@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -179,8 +180,10 @@ func persistSnapshot(ctx context.Context, repositories CatalogRepositories, snap
 	}
 	for _, definition := range snapshot.Definitions {
 		if containsDefinition(existingDefinitions, definition.ID) {
-			if err := repositories.Definitions.Update(ctx, definition); err != nil {
-				return fmt.Errorf("catalog base: update definition %s: %w", definition.ID, err)
+			if !sameDefinition(existingDefinitions, definition) {
+				if err := repositories.Definitions.Update(ctx, definition); err != nil {
+					return fmt.Errorf("catalog base: update definition %s: %w", definition.ID, err)
+				}
 			}
 		} else if err := repositories.Definitions.Store(ctx, definition); err != nil {
 			return fmt.Errorf("catalog base: store definition %s: %w", definition.ID, err)
@@ -192,8 +195,10 @@ func persistSnapshot(ctx context.Context, repositories CatalogRepositories, snap
 	}
 	for _, master := range snapshot.Masters {
 		if containsMaster(existingMasters, master.Kind, master.ID) {
-			if err := repositories.Masters.Update(ctx, master); err != nil {
-				return fmt.Errorf("catalog base: update master %s: %w", master.ID, err)
+			if !sameMaster(existingMasters, master) {
+				if err := repositories.Masters.Update(ctx, master); err != nil {
+					return fmt.Errorf("catalog base: update master %s: %w", master.ID, err)
+				}
 			}
 		} else if err := repositories.Masters.Store(ctx, master); err != nil {
 			return fmt.Errorf("catalog base: store master %s: %w", master.ID, err)
@@ -205,8 +210,10 @@ func persistSnapshot(ctx context.Context, repositories CatalogRepositories, snap
 	}
 	for _, model := range snapshot.Models {
 		if containsModel(existingModels, model.ID) {
-			if err := repositories.ProductModels.Update(ctx, model); err != nil {
-				return fmt.Errorf("catalog base: update ProductModel %s: %w", model.ID, err)
+			if !sameModelRoot(existingModels, model) {
+				if err := repositories.ProductModels.Update(ctx, model); err != nil {
+					return fmt.Errorf("catalog base: update ProductModel %s: %w", model.ID, err)
+				}
 			}
 		} else if err := repositories.ProductModels.Store(ctx, model); err != nil {
 			return fmt.Errorf("catalog base: store ProductModel %s: %w", model.ID, err)
@@ -238,8 +245,10 @@ func reconcileCategories(ctx context.Context, repository CatalogCategoryReposito
 				}
 			}
 			if containsCategory(existing, category.ID) {
-				if err := repository.Update(ctx, category); err != nil {
-					return fmt.Errorf("catalog base: update category %s: %w", category.ID, err)
+				if !sameCategory(existing, category) {
+					if err := repository.Update(ctx, category); err != nil {
+						return fmt.Errorf("catalog base: update category %s: %w", category.ID, err)
+					}
 				}
 			} else if err := repository.Store(ctx, category); err != nil {
 				return fmt.Errorf("catalog base: store category %s: %w", category.ID, err)
@@ -264,10 +273,28 @@ func containsCategory(categories []CatalogCategory, id string) bool {
 	return false
 }
 
+func sameCategory(categories []CatalogCategory, desired CatalogCategory) bool {
+	for _, existing := range categories {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
+		}
+	}
+	return false
+}
+
 func containsDefinition(definitions []CatalogAttributeDefinition, id string) bool {
 	for _, definition := range definitions {
 		if definition.ID == id {
 			return true
+		}
+	}
+	return false
+}
+
+func sameDefinition(definitions []CatalogAttributeDefinition, desired CatalogAttributeDefinition) bool {
+	for _, existing := range definitions {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
 		}
 	}
 	return false
@@ -282,10 +309,31 @@ func containsMaster(masters []CatalogMaster, kind, id string) bool {
 	return false
 }
 
+func sameMaster(masters []CatalogMaster, desired CatalogMaster) bool {
+	for _, existing := range masters {
+		if existing.Kind == desired.Kind && existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
+		}
+	}
+	return false
+}
+
 func containsModel(models []CatalogProductModel, id string) bool {
 	for _, model := range models {
 		if model.ID == id {
 			return true
+		}
+	}
+	return false
+}
+
+func sameModelRoot(models []CatalogProductModel, desired CatalogProductModel) bool {
+	desired.Images = nil
+	desired.Dimensions = nil
+	desired.Variants = nil
+	for _, existing := range models {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
 		}
 	}
 	return false
@@ -300,8 +348,10 @@ func reconcileModelChildren(ctx context.Context, repositories CatalogRepositorie
 	for _, image := range model.Images {
 		desiredImages[image.ID] = image
 		if containsImage(existingImages, image.ID) {
-			if err := repositories.ProductImages.Update(ctx, model.ID, image); err != nil {
-				return fmt.Errorf("catalog base: update image %s: %w", image.ID, err)
+			if !sameImage(existingImages, image) {
+				if err := repositories.ProductImages.Update(ctx, model.ID, image); err != nil {
+					return fmt.Errorf("catalog base: update image %s: %w", image.ID, err)
+				}
 			}
 		} else if err := repositories.ProductImages.Store(ctx, model.ID, image); err != nil {
 			return fmt.Errorf("catalog base: store image %s: %w", image.ID, err)
@@ -323,8 +373,10 @@ func reconcileModelChildren(ctx context.Context, repositories CatalogRepositorie
 	for _, dimension := range model.Dimensions {
 		desiredDimensions[dimension.ID] = dimension
 		if containsDimension(existingDimensions, dimension.ID) {
-			if err := repositories.VariantDimensions.Update(ctx, model.ID, dimension); err != nil {
-				return fmt.Errorf("catalog base: update dimension %s: %w", dimension.ID, err)
+			if !sameDimension(existingDimensions, dimension) {
+				if err := repositories.VariantDimensions.Update(ctx, model.ID, dimension); err != nil {
+					return fmt.Errorf("catalog base: update dimension %s: %w", dimension.ID, err)
+				}
 			}
 		} else if err := repositories.VariantDimensions.Store(ctx, model.ID, dimension); err != nil {
 			return fmt.Errorf("catalog base: store dimension %s: %w", dimension.ID, err)
@@ -346,8 +398,10 @@ func reconcileModelChildren(ctx context.Context, repositories CatalogRepositorie
 	for _, variant := range model.Variants {
 		desiredVariants[variant.ID] = variant
 		if containsVariant(existingVariants, variant.ID) {
-			if err := repositories.Variants.Update(ctx, model.ID, variant); err != nil {
-				return fmt.Errorf("catalog base: update variant %s: %w", variant.ID, err)
+			if !sameVariant(existingVariants, variant) {
+				if err := repositories.Variants.Update(ctx, model.ID, variant); err != nil {
+					return fmt.Errorf("catalog base: update variant %s: %w", variant.ID, err)
+				}
 			}
 		} else if err := repositories.Variants.Store(ctx, model.ID, variant); err != nil {
 			return fmt.Errorf("catalog base: store variant %s: %w", variant.ID, err)
@@ -372,6 +426,15 @@ func containsImage(images []CatalogProductImage, id string) bool {
 	return false
 }
 
+func sameImage(images []CatalogProductImage, desired CatalogProductImage) bool {
+	for _, existing := range images {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
+		}
+	}
+	return false
+}
+
 func containsDimension(dimensions []CatalogVariantDimension, id string) bool {
 	for _, dimension := range dimensions {
 		if dimension.ID == id {
@@ -381,10 +444,28 @@ func containsDimension(dimensions []CatalogVariantDimension, id string) bool {
 	return false
 }
 
+func sameDimension(dimensions []CatalogVariantDimension, desired CatalogVariantDimension) bool {
+	for _, existing := range dimensions {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
+		}
+	}
+	return false
+}
+
 func containsVariant(variants []CatalogVariant, id string) bool {
 	for _, variant := range variants {
 		if variant.ID == id {
 			return true
+		}
+	}
+	return false
+}
+
+func sameVariant(variants []CatalogVariant, desired CatalogVariant) bool {
+	for _, existing := range variants {
+		if existing.ID == desired.ID {
+			return reflect.DeepEqual(existing, desired)
 		}
 	}
 	return false

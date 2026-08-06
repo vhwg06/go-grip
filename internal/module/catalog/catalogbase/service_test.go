@@ -10,7 +10,14 @@ import (
 )
 
 type memoryCatalogStore struct {
-	snapshot CatalogSnapshot
+	snapshot          CatalogSnapshot
+	categoryUpdates   int
+	definitionUpdates int
+	masterUpdates     int
+	modelUpdates      int
+	imageUpdates      int
+	dimensionUpdates  int
+	variantUpdates    int
 }
 
 func newMemoryCatalogRepositories(store *memoryCatalogStore) CatalogRepositories {
@@ -61,6 +68,7 @@ func (r *memoryCatalogCategoryRepo) Store(_ context.Context, category CatalogCat
 }
 
 func (r *memoryCatalogCategoryRepo) Update(_ context.Context, category CatalogCategory) error {
+	r.store.categoryUpdates++
 	for index := range r.store.snapshot.Categories {
 		if r.store.snapshot.Categories[index].ID == category.ID {
 			r.store.snapshot.Categories[index] = category
@@ -102,6 +110,7 @@ func (r *memoryCatalogDefinitionRepo) Store(_ context.Context, definition Catalo
 }
 
 func (r *memoryCatalogDefinitionRepo) Update(_ context.Context, definition CatalogAttributeDefinition) error {
+	r.store.definitionUpdates++
 	for index := range r.store.snapshot.Definitions {
 		if r.store.snapshot.Definitions[index].ID == definition.ID {
 			r.store.snapshot.Definitions[index] = definition
@@ -149,6 +158,7 @@ func (r *memoryCatalogMasterRepo) Store(_ context.Context, master CatalogMaster)
 }
 
 func (r *memoryCatalogMasterRepo) Update(_ context.Context, master CatalogMaster) error {
+	r.store.masterUpdates++
 	for index := range r.store.snapshot.Masters {
 		if r.store.snapshot.Masters[index].ID == master.ID {
 			r.store.snapshot.Masters[index] = master
@@ -203,6 +213,7 @@ func (r *memoryCatalogProductModelRepo) Store(_ context.Context, model CatalogPr
 }
 
 func (r *memoryCatalogProductModelRepo) Update(_ context.Context, model CatalogProductModel) error {
+	r.store.modelUpdates++
 	for index := range r.store.snapshot.Models {
 		if r.store.snapshot.Models[index].ID == model.ID {
 			model.Images = nil
@@ -239,6 +250,7 @@ func (r *memoryCatalogImageRepo) Store(_ context.Context, modelID string, image 
 }
 
 func (r *memoryCatalogImageRepo) Update(_ context.Context, modelID string, image CatalogProductImage) error {
+	r.store.imageUpdates++
 	model := memoryModel(r.store, modelID)
 	for index := range model.Images {
 		if model.Images[index].ID == image.ID {
@@ -289,6 +301,7 @@ func (r *memoryCatalogDimensionRepo) Store(_ context.Context, modelID string, di
 }
 
 func (r *memoryCatalogDimensionRepo) Update(_ context.Context, modelID string, dimension CatalogVariantDimension) error {
+	r.store.dimensionUpdates++
 	model := memoryModel(r.store, modelID)
 	for index := range model.Dimensions {
 		if model.Dimensions[index].ID == dimension.ID {
@@ -348,6 +361,7 @@ func (r *memoryCatalogVariantRepo) Store(_ context.Context, modelID string, vari
 }
 
 func (r *memoryCatalogVariantRepo) Update(_ context.Context, modelID string, variant CatalogVariant) error {
+	r.store.variantUpdates++
 	model := memoryModel(r.store, modelID)
 	for index := range model.Variants {
 		if model.Variants[index].ID == variant.ID {
@@ -729,6 +743,30 @@ func TestCatalogBaseValidatesVariantTechnicalValuesAgainstDeclaredDefinitions(t 
 		"technicalValues": map[string]any{"Projection": "60 mm"},
 	})
 	require.Error(t, err, "undeclared technical attributes must not be accepted")
+}
+
+func TestPersistSnapshotSkipsUnchangedRows(t *testing.T) {
+	store := &memoryCatalogStore{snapshot: CatalogSnapshot{
+		Categories:  []CatalogCategory{{ID: "category-1", Name: "Category", Slug: "category"}},
+		Definitions: []CatalogAttributeDefinition{{ID: "definition-1", Key: "size", DisplayName: "Size", ValueKind: "Enum"}},
+		Masters:     []CatalogMaster{{ID: "master-1", Kind: "material", Name: "Material", Active: true}},
+		Models: []CatalogProductModel{{
+			ID: "model-1", Name: "Model", CategoryID: "category-1", Status: CatalogDraft,
+			Images:     []CatalogProductImage{{ID: "image-1", URL: "https://example.test/model.png", Ordering: 1, PrimaryImage: true}},
+			Dimensions: []CatalogVariantDimension{{ID: "dimension-1", DefinitionID: "definition-1", AllowedValues: []CatalogDimensionValue{{ID: "small", Label: "Small", Active: true}}}},
+			Variants:   []CatalogVariant{{ID: "variant-1", SKU: "sku-1", CanonicalCombination: "dimension-1=small", SelectedOptions: map[string]string{"Size": "Small"}}},
+		}},
+	}}
+	repositories := newMemoryCatalogRepositories(store)
+
+	require.NoError(t, persistSnapshot(context.Background(), repositories, cloneCatalogSnapshot(store.snapshot)))
+	require.Zero(t, store.categoryUpdates)
+	require.Zero(t, store.definitionUpdates)
+	require.Zero(t, store.masterUpdates)
+	require.Zero(t, store.modelUpdates)
+	require.Zero(t, store.imageUpdates)
+	require.Zero(t, store.dimensionUpdates)
+	require.Zero(t, store.variantUpdates)
 }
 
 func measurementMapNumber(t *testing.T, value any, key string) float64 {
