@@ -26,17 +26,12 @@ func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.
 		filter.MaxPrice = &max
 	}
 
-	_, err := h.catalogBase.ListPublicModels(ctx, filter)
+	resMap, err := h.catalogBase.ListPublicModels(ctx, filter)
 	if err != nil {
 		return openapi.ListCatalogProductModels500JSONResponse{}, nil
 	}
 
-	items := make([]map[string]interface{}, 0)
-	total := 0
-	resp := openapi.PublicProductModelListResponse{
-		Items: &items,
-		Total: &total,
-	}
+	resp := toPublicProductModelListResponse(resMap)
 	return openapi.ListCatalogProductModels200JSONResponse(resp), nil
 }
 

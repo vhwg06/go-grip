@@ -79,3 +79,19 @@ func toTagListResponse(tags []catalogmodule.Tag) []openapi.TagResponse {
 	}
 	return res
 }
+
+// toPublicProductModelListResponse maps catalogbase use-case output map to openapi.PublicProductModelListResponse.
+func toPublicProductModelListResponse(resMap map[string]any) openapi.PublicProductModelListResponse {
+	items := make([]map[string]interface{}, 0)
+	if rawItems, ok := resMap["items"].([]map[string]any); ok {
+		items = rawItems
+	}
+	total := 0
+	if rawTotal, ok := resMap["total"].(int); ok {
+		total = rawTotal
+	}
+	return openapi.PublicProductModelListResponse{
+		Items: &items,
+		Total: &total,
+	}
+}
