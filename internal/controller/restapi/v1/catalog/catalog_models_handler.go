@@ -101,9 +101,8 @@ func (h *Handler) GetCatalogProductBuyMeta(ctx context.Context, request openapi.
 
 // GetCatalogAnnouncement handles GET /catalog/announcement
 func (h *Handler) GetCatalogAnnouncement(ctx context.Context, _ openapi.GetCatalogAnnouncementRequestObject) (openapi.GetCatalogAnnouncementResponseObject, error) {
-	resp := map[string]any{
-		"enabled": true,
-		"message": "Welcome to Grip Store",
-	}
-	return openapi.GetCatalogAnnouncement200JSONResponse([]map[string]any{resp}), nil
+	return openapi.GetCatalogAnnouncement200JSONResponse{
+		Enabled: true,
+		Message: "Welcome to Grip Store",
+	}, nil
 }

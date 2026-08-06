@@ -1792,6 +1792,8 @@ paths:
       responses:
         '200':
           description: Footer settings updated
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedResponse'
         '403':
@@ -1817,6 +1819,8 @@ paths:
       responses:
         '200':
           description: Homepage settings updated
+        '400':
+          $ref: '#/components/responses/BadRequestResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedResponse'
         '403':
@@ -3334,6 +3338,16 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - status
+                  - type
+                properties:
+                  status:
+                    type: string
+                    example: queued
+                  type:
+                    type: string
+                    example: email
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -3476,9 +3490,17 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                type: object
+                required:
+                  - enabled
+                  - message
+                properties:
+                  enabled:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Welcome to Grip Store
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 

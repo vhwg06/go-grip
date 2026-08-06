@@ -115,7 +115,25 @@ func (h *Handler) AdminUpdateStoreSettingsContact(ctx context.Context, request o
 func (h *Handler) AdminUpdateStoreSettingsFooter(ctx context.Context, request openapi.AdminUpdateStoreSettingsFooterRequestObject) (openapi.AdminUpdateStoreSettingsFooterResponseObject, error) {
 	actor := getActor(ctx)
 	if request.Body != nil {
-		for k, v := range *request.Body {
+		body := *request.Body
+		if columns, ok := body["columns"].([]any); ok {
+			seenTitles := make(map[string]bool)
+			for _, col := range columns {
+				if colMap, ok := col.(map[string]any); ok {
+					if title, ok := colMap["title"].(string); ok {
+						if seenTitles[title] {
+							var errResp openapi.ErrorResponse
+							_ = errResp.Error.FromErrorResponseError0("duplicate column title")
+							return openapi.AdminUpdateStoreSettingsFooter400JSONResponse{
+								BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+							}, nil
+						}
+						seenTitles[title] = true
+					}
+				}
+			}
+		}
+		for k, v := range body {
 			_ = h.adminUC.UpsertSetting(ctx, actor, "footer."+k, anyToString(v))
 		}
 	}
@@ -126,7 +144,60 @@ func (h *Handler) AdminUpdateStoreSettingsFooter(ctx context.Context, request op
 func (h *Handler) AdminUpdateStoreSettingsHomepage(ctx context.Context, request openapi.AdminUpdateStoreSettingsHomepageRequestObject) (openapi.AdminUpdateStoreSettingsHomepageResponseObject, error) {
 	actor := getActor(ctx)
 	if request.Body != nil {
-		for k, v := range *request.Body {
+		body := *request.Body
+		if newsCount, ok := body["newsCount"].(float64); ok && newsCount < 0 {
+			var errResp openapi.ErrorResponse
+			_ = errResp.Error.FromErrorResponseError0("invalid newsCount")
+			return openapi.AdminUpdateStoreSettingsHomepage400JSONResponse{
+				BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+			}, nil
+		}
+		if newsCount, ok := body["newsCount"].(int); ok && newsCount < 0 {
+			var errResp openapi.ErrorResponse
+			_ = errResp.Error.FromErrorResponseError0("invalid newsCount")
+			return openapi.AdminUpdateStoreSettingsHomepage400JSONResponse{
+				BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+			}, nil
+		}
+		if blocks, ok := body["blocks"].([]any); ok {
+			seenKeys := make(map[string]bool)
+			seenOrders := make(map[int]bool)
+			for _, b := range blocks {
+				if blockMap, ok := b.(map[string]any); ok {
+					if k, ok := blockMap["key"].(string); ok {
+						if seenKeys[k] {
+							var errResp openapi.ErrorResponse
+							_ = errResp.Error.FromErrorResponseError0("duplicate block key")
+							return openapi.AdminUpdateStoreSettingsHomepage400JSONResponse{
+								BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+							}, nil
+						}
+						seenKeys[k] = true
+					}
+					if ord, ok := blockMap["order"].(float64); ok {
+						if seenOrders[int(ord)] {
+							var errResp openapi.ErrorResponse
+							_ = errResp.Error.FromErrorResponseError0("duplicate block order")
+							return openapi.AdminUpdateStoreSettingsHomepage400JSONResponse{
+								BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+							}, nil
+						}
+						seenOrders[int(ord)] = true
+					}
+					if ord, ok := blockMap["priority"].(float64); ok {
+						if seenOrders[int(ord)] {
+							var errResp openapi.ErrorResponse
+							_ = errResp.Error.FromErrorResponseError0("duplicate block priority")
+							return openapi.AdminUpdateStoreSettingsHomepage400JSONResponse{
+								BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp),
+							}, nil
+						}
+						seenOrders[int(ord)] = true
+					}
+				}
+			}
+		}
+		for k, v := range body {
 			_ = h.adminUC.UpsertSetting(ctx, actor, "homepage."+k, anyToString(v))
 		}
 	}
