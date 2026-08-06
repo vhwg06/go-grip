@@ -69,6 +69,11 @@ run: deps swag-v1 ### swag run for API v1
 	CGO_ENABLED=0 go run -tags migrate ./cmd/app
 .PHONY: run
 
+dev: ### Run backend app directly locally
+	go run -tags migrate ./cmd/app
+.PHONY: dev
+
+
 docker-rm-volume: ### remove docker volume
 	docker volume rm go-clean-template_pg-data
 .PHONY: docker-rm-volume

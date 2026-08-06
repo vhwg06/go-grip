@@ -23,6 +23,7 @@ func (h *Handler) AdminCreateCatalogModelVariant(ctx context.Context, request op
 
 	res, err := h.catalogBase.CreateVariant(ctx, request.ModelId, input)
 	if err != nil {
+		h.logger.Error("catalog base create Variant failed", "error", err)
 		return openapi.AdminCreateCatalogModelVariant400JSONResponse{}, nil
 	}
 

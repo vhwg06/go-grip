@@ -206,4 +206,24 @@ func TestWishlistUseCase_Lifecycle(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, reviews, 1)
 	})
+
+	t.Run("delete review enforces ownership and allows admins", func(t *testing.T) {
+		deletedID := int64(0)
+		uc := NewWishlistUseCase(&wishlistRepoStub{
+			getReview: func(_ context.Context, reviewID int64) (Review, error) {
+				return Review{ID: reviewID, UserID: "u1"}, nil
+			},
+			deleteReview: func(_ context.Context, reviewID int64) error {
+				deletedID = reviewID
+				return nil
+			},
+		}, nil)
+
+		err := uc.DeleteReview(ctx, Actor{}, 9)
+		require.ErrorIs(t, err, ErrUnauthorized)
+		err = uc.DeleteReview(ctx, Actor{UserID: "u2"}, 9)
+		require.ErrorIs(t, err, ErrForbidden)
+		require.NoError(t, uc.DeleteReview(ctx, Actor{UserID: "admin", IsAdmin: true}, 9))
+		require.Equal(t, int64(9), deletedID)
+	})
 }

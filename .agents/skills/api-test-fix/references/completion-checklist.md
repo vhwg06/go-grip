@@ -22,8 +22,8 @@ Before declaring a failure cluster resolved, verify every item on this checklist
 # 1. Compile backend
 go build ./...
 
-# 2. Rebuild local Docker app
-docker compose up -d --build app
+# 2. Run app directly locally
+make dev
 
 # 3. Verify target test module
 TEST_API_BASE_URL=http://localhost:8080 npx tsx tools/run-cucumber.ts module <MODULE_NAME>
