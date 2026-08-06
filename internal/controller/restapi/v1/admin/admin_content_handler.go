@@ -339,6 +339,20 @@ func (h *Handler) AdminListCategories(ctx context.Context, _ openapi.AdminListCa
 	return resp, nil
 }
 
+// AdminUpdateProductEditorial handles PATCH /admin/products/{id}
+func (h *Handler) AdminUpdateProductEditorial(ctx context.Context, request openapi.AdminUpdateProductEditorialRequestObject) (openapi.AdminUpdateProductEditorialResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminUpdateProductEditorial401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminUpdateProductEditorial403JSONResponse{}, nil
+	}
+
+	return openapi.AdminUpdateProductEditorial200Response{}, nil
+}
+
+
 // toAdminMessageResponse maps notificationmodule.AdminMessage to openapi.AdminMessageResponse.
 func toAdminMessageResponse(m notificationmodule.AdminMessage) openapi.AdminMessageResponse {
 	id := m.ID

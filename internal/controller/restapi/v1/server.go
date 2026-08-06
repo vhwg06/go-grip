@@ -813,7 +813,7 @@ func (s *Server) QueueAdminNotificationTest(ctx context.Context, request openapi
 }
 
 func (s *Server) AdminUpdateProductEditorial(ctx context.Context, request openapi.AdminUpdateProductEditorialRequestObject) (openapi.AdminUpdateProductEditorialResponseObject, error) {
-	return nil, fmt.Errorf("AdminUpdateProductEditorial not implemented")
+	return s.adminHandler().AdminUpdateProductEditorial(ctx, request)
 }
 
 func (s *Server) AdminGetRefund(ctx context.Context, request openapi.AdminGetRefundRequestObject) (openapi.AdminGetRefundResponseObject, error) {
