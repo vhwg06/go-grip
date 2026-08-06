@@ -31,7 +31,7 @@ func (h *Handler) AdminListCatalogCategories(ctx context.Context, _ openapi.Admi
 		return openapi.AdminListCatalogCategories500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogCategories200JSONResponse(map[string]interface{}{"items": items}), nil
+	return openapi.AdminListCatalogCategories200JSONResponse(items), nil
 }
 
 // AdminCreateCatalogCategory handles POST /admin/catalog/categories

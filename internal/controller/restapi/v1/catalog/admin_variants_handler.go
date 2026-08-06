@@ -131,8 +131,9 @@ func (h *Handler) AdminBulkUpdateVariantPrices(ctx context.Context, request open
 
 // GetCatalogSettings handles GET /catalog/settings
 func (h *Handler) GetCatalogSettings(ctx context.Context, _ openapi.GetCatalogSettingsRequestObject) (openapi.GetCatalogSettingsResponseObject, error) {
-	_ = map[string]any{
-		"currency": "VND",
+	resp := map[string]any{
+		"site_name": "Grip Store",
+		"currency":  "VND",
 	}
-	return openapi.GetCatalogSettings200Response{}, nil
+	return openapi.GetCatalogSettings200JSONResponse(resp), nil
 }

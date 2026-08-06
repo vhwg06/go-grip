@@ -84,11 +84,15 @@ func (h *Handler) SearchCatalog(ctx context.Context, request openapi.SearchCatal
 	filter := catalogbase.PublicFilter{
 		Search: q,
 	}
-	_, err := h.catalogBase.ListPublicModels(ctx, filter)
+	resMap, err := h.catalogBase.ListPublicModels(ctx, filter)
 	if err != nil {
 		return openapi.SearchCatalog500JSONResponse{}, nil
 	}
-	return openapi.SearchCatalog200Response{}, nil
+	items := []map[string]any{}
+	if rawItems, ok := resMap["items"].([]map[string]any); ok {
+		items = rawItems
+	}
+	return openapi.SearchCatalog200JSONResponse(items), nil
 }
 
 // GetCatalogProductBuyMeta handles GET /catalog/products/{id}/buy-meta
@@ -102,5 +106,9 @@ func (h *Handler) GetCatalogProductBuyMeta(ctx context.Context, request openapi.
 
 // GetCatalogAnnouncement handles GET /catalog/announcement
 func (h *Handler) GetCatalogAnnouncement(ctx context.Context, _ openapi.GetCatalogAnnouncementRequestObject) (openapi.GetCatalogAnnouncementResponseObject, error) {
-	return openapi.GetCatalogAnnouncement200Response{}, nil
+	resp := map[string]any{
+		"enabled": true,
+		"message": "Welcome to Grip Store",
+	}
+	return openapi.GetCatalogAnnouncement200JSONResponse([]map[string]any{resp}), nil
 }

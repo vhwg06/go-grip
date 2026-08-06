@@ -3403,6 +3403,10 @@ paths:
       responses:
         "200":
           description: Settings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 
@@ -3431,6 +3435,12 @@ paths:
       responses:
         "200":
           description: Search results retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 
@@ -3463,6 +3473,12 @@ paths:
       responses:
         "200":
           description: Announcement retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 
@@ -3493,7 +3509,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -3640,7 +3658,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -3843,7 +3863,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -3981,7 +4003,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -4438,7 +4462,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":

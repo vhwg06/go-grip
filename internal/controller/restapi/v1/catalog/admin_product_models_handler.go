@@ -21,7 +21,7 @@ func (h *Handler) AdminListCatalogProductModels(ctx context.Context, _ openapi.A
 		return openapi.AdminListCatalogProductModels500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogProductModels200JSONResponse(map[string]interface{}{"items": items}), nil
+	return openapi.AdminListCatalogProductModels200JSONResponse(items), nil
 }
 
 // AdminCreateCatalogProductModel handles POST /admin/catalog/product-models
@@ -198,5 +198,5 @@ func (h *Handler) AdminListCatalogModelVariants(ctx context.Context, request ope
 		return openapi.AdminListCatalogModelVariants500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogModelVariants200JSONResponse(map[string]interface{}{"items": items}), nil
+	return openapi.AdminListCatalogModelVariants200JSONResponse(items), nil
 }

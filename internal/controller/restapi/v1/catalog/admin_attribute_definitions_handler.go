@@ -21,7 +21,7 @@ func (h *Handler) AdminListAttributeDefinitions(ctx context.Context, _ openapi.A
 		return openapi.AdminListAttributeDefinitions500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListAttributeDefinitions200JSONResponse(map[string]interface{}{"items": items}), nil
+	return openapi.AdminListAttributeDefinitions200JSONResponse(items), nil
 }
 
 // AdminCreateAttributeDefinition handles POST /admin/catalog/attribute-definitions

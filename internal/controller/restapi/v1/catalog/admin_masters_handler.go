@@ -21,7 +21,7 @@ func (h *Handler) AdminListCatalogMasters(ctx context.Context, request openapi.A
 		return openapi.AdminListCatalogMasters500JSONResponse{}, nil
 	}
 
-	return openapi.AdminListCatalogMasters200JSONResponse(map[string]interface{}{"items": items}), nil
+	return openapi.AdminListCatalogMasters200JSONResponse(items), nil
 }
 
 // AdminCreateCatalogMaster handles POST /admin/catalog/masters/{masterKind}
