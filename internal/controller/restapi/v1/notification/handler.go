@@ -141,3 +141,32 @@ func (h *Handler) MarkNotificationRead(ctx context.Context, request openapi.Mark
 
 	return openapi.MarkNotificationRead200Response{}, nil
 }
+
+
+// ClearNotificationInbox handles DELETE /notifications
+func (h *Handler) ClearNotificationInbox(ctx context.Context, _ openapi.ClearNotificationInboxRequestObject) (openapi.ClearNotificationInboxResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.ClearNotificationInbox401Response{}, nil
+	}
+
+	err := h.notificationUC.Clear(ctx, actor)
+	if err != nil {
+		return openapi.ClearNotificationInbox500Response{}, nil
+	}
+
+	return openapi.ClearNotificationInbox204Response{}, nil
+}
+
+// QueueAdminNotificationTest handles POST /admin/notifications/test
+func (h *Handler) QueueAdminNotificationTest(ctx context.Context, _ openapi.QueueAdminNotificationTestRequestObject) (openapi.QueueAdminNotificationTestResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.QueueAdminNotificationTest401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.QueueAdminNotificationTest403JSONResponse{}, nil
+	}
+
+	return openapi.QueueAdminNotificationTest200Response{}, nil
+}

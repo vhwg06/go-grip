@@ -166,3 +166,16 @@ func anyToString(v interface{}) string {
 		return ""
 	}
 }
+
+
+// AdminUpdateCollect handles PUT /admin/collect/setup
+func (h *Handler) AdminUpdateCollect(ctx context.Context, request openapi.AdminUpdateCollectRequestObject) (openapi.AdminUpdateCollectResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminUpdateCollect401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminUpdateCollect403JSONResponse{}, nil
+	}
+	return openapi.AdminUpdateCollect200Response{}, nil
+}

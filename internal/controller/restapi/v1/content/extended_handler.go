@@ -1,6 +1,7 @@
 package content
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
@@ -44,6 +45,13 @@ func (h *Handler) GetActiveFaqs(ctx context.Context, _ openapi.GetActiveFaqsRequ
 
 // ListContentArticles handles GET /admin/content/articles
 func (h *Handler) ListContentArticles(ctx context.Context, _ openapi.ListContentArticlesRequestObject) (openapi.ListContentArticlesResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.ListContentArticles401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.ListContentArticles403JSONResponse{}, nil
+	}
 	articles, total, err := h.contentUC.ListArticles(ctx, contentmodule.ArticleFilter{})
 	if err != nil {
 		return openapi.ListContentArticles500JSONResponse{}, nil
@@ -59,6 +67,13 @@ func (h *Handler) ListContentArticles(ctx context.Context, _ openapi.ListContent
 
 // CreateContentArticle handles POST /admin/content/articles
 func (h *Handler) CreateContentArticle(ctx context.Context, request openapi.CreateContentArticleRequestObject) (openapi.CreateContentArticleResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.CreateContentArticle401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.CreateContentArticle403JSONResponse{}, nil
+	}
 	article := contentmodule.ContentArticle{}
 	if request.Body != nil {
 		article.Title = request.Body.Title
@@ -122,4 +137,52 @@ func toArticleResponse(a contentmodule.ContentArticle) openapi.ArticleResponse {
 		PublishedAt: a.PublishedAt,
 		CreatedAt:   &a.CreatedAt,
 	}
+}
+
+
+func getActor(ctx context.Context) usermodule.Actor {
+	if val := ctx.Value("actor"); val != nil {
+		if a, ok := val.(usermodule.Actor); ok {
+			return a
+		}
+	}
+	return usermodule.Actor{}
+}
+
+
+// UpdateContentArticle handles PATCH /content/articles/{id}
+func (h *Handler) UpdateContentArticle(ctx context.Context, request openapi.UpdateContentArticleRequestObject) (openapi.UpdateContentArticleResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.UpdateContentArticle401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.UpdateContentArticle403JSONResponse{}, nil
+	}
+
+	article := contentmodule.ContentArticle{ID: request.Id}
+	if request.Body != nil {
+		bodyMap := map[string]interface{}(*request.Body)
+		if val, ok := bodyMap["title"].(string); ok { article.Title = val }
+		if val, ok := bodyMap["body"].(string); ok { article.Body = val }
+		if val, ok := bodyMap["slug"].(string); ok { article.Slug = val }
+		if val, ok := bodyMap["status"].(string); ok { article.Status = contentmodule.ContentStatus(val) }
+	}
+
+	_, err := h.contentUC.UpdateArticle(ctx, article)
+	if err != nil {
+		return openapi.UpdateContentArticle500JSONResponse{}, nil
+	}
+
+	return openapi.UpdateContentArticle200Response{}, nil
+}
+
+// ListPublicContentArticles handles GET /public/content/articles
+func (h *Handler) ListPublicContentArticles(ctx context.Context, _ openapi.ListPublicContentArticlesRequestObject) (openapi.ListPublicContentArticlesResponseObject, error) {
+	_, _, err := h.contentUC.ListArticles(ctx, contentmodule.ArticleFilter{PublicOnly: true})
+	if err != nil {
+		return openapi.ListPublicContentArticles500JSONResponse{}, nil
+	}
+
+	return openapi.ListPublicContentArticles200Response{}, nil
 }

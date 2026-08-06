@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
@@ -120,7 +121,7 @@ func (s *Server) cartHandler() *cart.Handler {
 }
 
 func (s *Server) catalogHandler() *catalog.Handler {
-	return catalog.NewHandler(s.catalogUC, s.logger)
+	return catalog.NewHandler(s.catalogUC, s.catalogBase, s.logger)
 }
 
 func (s *Server) checkoutHandler() *checkout.Handler {
@@ -642,28 +643,220 @@ func (s *Server) UpdateProfileNotifications(ctx context.Context, request openapi
 	return s.profileHandler().UpdateProfileNotifications(ctx, request)
 }
 
-// Checkin methods (delegated to user handler)
-func (s *Server) DoCheckin(ctx context.Context, request openapi.DoCheckinRequestObject) (openapi.DoCheckinResponseObject, error) {
-	return s.userHandler().DoCheckin(ctx, request)
-}
 
-func (s *Server) GetCheckinStatus(ctx context.Context, request openapi.GetCheckinStatusRequestObject) (openapi.GetCheckinStatusResponseObject, error) {
-	return s.userHandler().GetCheckinStatus(ctx, request)
-}
 
-func (s *Server) GetCheckinStatusAlt(ctx context.Context, request openapi.GetCheckinStatusAltRequestObject) (openapi.GetCheckinStatusAltResponseObject, error) {
-	return s.userHandler().GetCheckinStatusAlt(ctx, request)
-}
 
-func (s *Server) GetUserCheckinStatus(ctx context.Context, request openapi.GetUserCheckinStatusRequestObject) (openapi.GetUserCheckinStatusResponseObject, error) {
-	return s.userHandler().GetUserCheckinStatus(ctx, request)
-}
 
-func (s *Server) GetUserCheckinStatusAlt(ctx context.Context, request openapi.GetUserCheckinStatusAltRequestObject) (openapi.GetUserCheckinStatusAltResponseObject, error) {
-	return s.userHandler().GetUserCheckinStatusAlt(ctx, request)
-}
+
 
 // Catalog additional method
 func (s *Server) ListCatalogProductModels(ctx context.Context, request openapi.ListCatalogProductModelsRequestObject) (openapi.ListCatalogProductModelsResponseObject, error) {
 	return s.catalogHandler().ListCatalogProductModels(ctx, request)
+}
+
+
+// Temporary stubs for newly declared OpenAPI operations (to be wired in Batch 2 & Batch 3)
+func (s *Server) AdminDeleteBanner(ctx context.Context, request openapi.AdminDeleteBannerRequestObject) (openapi.AdminDeleteBannerResponseObject, error) {
+	return nil, fmt.Errorf("AdminDeleteBanner not implemented")
+}
+
+func (s *Server) AdminListAttributeDefinitions(ctx context.Context, request openapi.AdminListAttributeDefinitionsRequestObject) (openapi.AdminListAttributeDefinitionsResponseObject, error) {
+	return s.catalogHandler().AdminListAttributeDefinitions(ctx, request)
+}
+
+func (s *Server) AdminCreateAttributeDefinition(ctx context.Context, request openapi.AdminCreateAttributeDefinitionRequestObject) (openapi.AdminCreateAttributeDefinitionResponseObject, error) {
+	return s.catalogHandler().AdminCreateAttributeDefinition(ctx, request)
+}
+
+func (s *Server) AdminUpdateAttributeDefinition(ctx context.Context, request openapi.AdminUpdateAttributeDefinitionRequestObject) (openapi.AdminUpdateAttributeDefinitionResponseObject, error) {
+	return s.catalogHandler().AdminUpdateAttributeDefinition(ctx, request)
+}
+
+func (s *Server) AdminDeactivateAttributeDefinition(ctx context.Context, request openapi.AdminDeactivateAttributeDefinitionRequestObject) (openapi.AdminDeactivateAttributeDefinitionResponseObject, error) {
+	return s.catalogHandler().AdminDeactivateAttributeDefinition(ctx, request)
+}
+
+func (s *Server) AdminAddAttributeEnumValue(ctx context.Context, request openapi.AdminAddAttributeEnumValueRequestObject) (openapi.AdminAddAttributeEnumValueResponseObject, error) {
+	return s.catalogHandler().AdminAddAttributeEnumValue(ctx, request)
+}
+
+func (s *Server) AdminDeactivateAttributeEnumValue(ctx context.Context, request openapi.AdminDeactivateAttributeEnumValueRequestObject) (openapi.AdminDeactivateAttributeEnumValueResponseObject, error) {
+	return s.catalogHandler().AdminDeactivateAttributeEnumValue(ctx, request)
+}
+
+func (s *Server) AdminListCatalogCategories(ctx context.Context, request openapi.AdminListCatalogCategoriesRequestObject) (openapi.AdminListCatalogCategoriesResponseObject, error) {
+	return s.catalogHandler().AdminListCatalogCategories(ctx, request)
+}
+
+func (s *Server) AdminCreateCatalogCategory(ctx context.Context, request openapi.AdminCreateCatalogCategoryRequestObject) (openapi.AdminCreateCatalogCategoryResponseObject, error) {
+	return s.catalogHandler().AdminCreateCatalogCategory(ctx, request)
+}
+
+func (s *Server) AdminDeleteCatalogCategory(ctx context.Context, request openapi.AdminDeleteCatalogCategoryRequestObject) (openapi.AdminDeleteCatalogCategoryResponseObject, error) {
+	return s.catalogHandler().AdminDeleteCatalogCategory(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogCategory(ctx context.Context, request openapi.AdminUpdateCatalogCategoryRequestObject) (openapi.AdminUpdateCatalogCategoryResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogCategory(ctx, request)
+}
+
+func (s *Server) AdminDeactivateCatalogCategory(ctx context.Context, request openapi.AdminDeactivateCatalogCategoryRequestObject) (openapi.AdminDeactivateCatalogCategoryResponseObject, error) {
+	return s.catalogHandler().AdminDeactivateCatalogCategory(ctx, request)
+}
+
+func (s *Server) AdminListCatalogMasters(ctx context.Context, request openapi.AdminListCatalogMastersRequestObject) (openapi.AdminListCatalogMastersResponseObject, error) {
+	return s.catalogHandler().AdminListCatalogMasters(ctx, request)
+}
+
+func (s *Server) AdminCreateCatalogMaster(ctx context.Context, request openapi.AdminCreateCatalogMasterRequestObject) (openapi.AdminCreateCatalogMasterResponseObject, error) {
+	return s.catalogHandler().AdminCreateCatalogMaster(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogMaster(ctx context.Context, request openapi.AdminUpdateCatalogMasterRequestObject) (openapi.AdminUpdateCatalogMasterResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogMaster(ctx, request)
+}
+
+func (s *Server) AdminDeactivateCatalogMaster(ctx context.Context, request openapi.AdminDeactivateCatalogMasterRequestObject) (openapi.AdminDeactivateCatalogMasterResponseObject, error) {
+	return s.catalogHandler().AdminDeactivateCatalogMaster(ctx, request)
+}
+
+func (s *Server) AdminListCatalogProductModels(ctx context.Context, request openapi.AdminListCatalogProductModelsRequestObject) (openapi.AdminListCatalogProductModelsResponseObject, error) {
+	return s.catalogHandler().AdminListCatalogProductModels(ctx, request)
+}
+
+func (s *Server) AdminCreateCatalogProductModel(ctx context.Context, request openapi.AdminCreateCatalogProductModelRequestObject) (openapi.AdminCreateCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminCreateCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminDeleteCatalogProductModel(ctx context.Context, request openapi.AdminDeleteCatalogProductModelRequestObject) (openapi.AdminDeleteCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminDeleteCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminGetCatalogProductModel(ctx context.Context, request openapi.AdminGetCatalogProductModelRequestObject) (openapi.AdminGetCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminGetCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogProductModel(ctx context.Context, request openapi.AdminUpdateCatalogProductModelRequestObject) (openapi.AdminUpdateCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminDiscontinueCatalogProductModel(ctx context.Context, request openapi.AdminDiscontinueCatalogProductModelRequestObject) (openapi.AdminDiscontinueCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminDiscontinueCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogProductModelMedia(ctx context.Context, request openapi.AdminUpdateCatalogProductModelMediaRequestObject) (openapi.AdminUpdateCatalogProductModelMediaResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogProductModelMedia(ctx, request)
+}
+
+func (s *Server) AdminPublishCatalogProductModel(ctx context.Context, request openapi.AdminPublishCatalogProductModelRequestObject) (openapi.AdminPublishCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminPublishCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminUnpublishCatalogProductModel(ctx context.Context, request openapi.AdminUnpublishCatalogProductModelRequestObject) (openapi.AdminUnpublishCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().AdminUnpublishCatalogProductModel(ctx, request)
+}
+
+func (s *Server) AdminAddCatalogVariantDimension(ctx context.Context, request openapi.AdminAddCatalogVariantDimensionRequestObject) (openapi.AdminAddCatalogVariantDimensionResponseObject, error) {
+	return s.catalogHandler().AdminAddCatalogVariantDimension(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogVariantDimension(ctx context.Context, request openapi.AdminUpdateCatalogVariantDimensionRequestObject) (openapi.AdminUpdateCatalogVariantDimensionResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogVariantDimension(ctx, request)
+}
+
+func (s *Server) AdminAddCatalogVariantDimensionValue(ctx context.Context, request openapi.AdminAddCatalogVariantDimensionValueRequestObject) (openapi.AdminAddCatalogVariantDimensionValueResponseObject, error) {
+	return s.catalogHandler().AdminAddCatalogVariantDimensionValue(ctx, request)
+}
+
+func (s *Server) AdminDeactivateCatalogVariantDimensionValue(ctx context.Context, request openapi.AdminDeactivateCatalogVariantDimensionValueRequestObject) (openapi.AdminDeactivateCatalogVariantDimensionValueResponseObject, error) {
+	return s.catalogHandler().AdminDeactivateCatalogVariantDimensionValue(ctx, request)
+}
+
+func (s *Server) AdminListCatalogModelVariants(ctx context.Context, request openapi.AdminListCatalogModelVariantsRequestObject) (openapi.AdminListCatalogModelVariantsResponseObject, error) {
+	return s.catalogHandler().AdminListCatalogModelVariants(ctx, request)
+}
+
+func (s *Server) AdminCreateCatalogModelVariant(ctx context.Context, request openapi.AdminCreateCatalogModelVariantRequestObject) (openapi.AdminCreateCatalogModelVariantResponseObject, error) {
+	return s.catalogHandler().AdminCreateCatalogModelVariant(ctx, request)
+}
+
+func (s *Server) AdminBulkUpdateVariantPrices(ctx context.Context, request openapi.AdminBulkUpdateVariantPricesRequestObject) (openapi.AdminBulkUpdateVariantPricesResponseObject, error) {
+	return s.catalogHandler().AdminBulkUpdateVariantPrices(ctx, request)
+}
+
+func (s *Server) AdminGetCatalogVariant(ctx context.Context, request openapi.AdminGetCatalogVariantRequestObject) (openapi.AdminGetCatalogVariantResponseObject, error) {
+	return s.catalogHandler().AdminGetCatalogVariant(ctx, request)
+}
+
+func (s *Server) AdminUpdateCatalogVariant(ctx context.Context, request openapi.AdminUpdateCatalogVariantRequestObject) (openapi.AdminUpdateCatalogVariantResponseObject, error) {
+	return s.catalogHandler().AdminUpdateCatalogVariant(ctx, request)
+}
+
+func (s *Server) AdminActivateCatalogVariant(ctx context.Context, request openapi.AdminActivateCatalogVariantRequestObject) (openapi.AdminActivateCatalogVariantResponseObject, error) {
+	return s.catalogHandler().AdminActivateCatalogVariant(ctx, request)
+}
+
+func (s *Server) AdminInactivateCatalogVariant(ctx context.Context, request openapi.AdminInactivateCatalogVariantRequestObject) (openapi.AdminInactivateCatalogVariantResponseObject, error) {
+	return s.catalogHandler().AdminInactivateCatalogVariant(ctx, request)
+}
+
+func (s *Server) AdminUpdateCollect(ctx context.Context, request openapi.AdminUpdateCollectRequestObject) (openapi.AdminUpdateCollectResponseObject, error) {
+	return s.adminHandler().AdminUpdateCollect(ctx, request)
+}
+
+func (s *Server) AdminDeleteFaq(ctx context.Context, request openapi.AdminDeleteFaqRequestObject) (openapi.AdminDeleteFaqResponseObject, error) {
+	return nil, fmt.Errorf("AdminDeleteFaq not implemented")
+}
+
+func (s *Server) QueueAdminNotificationTest(ctx context.Context, request openapi.QueueAdminNotificationTestRequestObject) (openapi.QueueAdminNotificationTestResponseObject, error) {
+	return s.notificationHandler().QueueAdminNotificationTest(ctx, request)
+}
+
+func (s *Server) AdminUpdateProductEditorial(ctx context.Context, request openapi.AdminUpdateProductEditorialRequestObject) (openapi.AdminUpdateProductEditorialResponseObject, error) {
+	return nil, fmt.Errorf("AdminUpdateProductEditorial not implemented")
+}
+
+func (s *Server) AdminGetRefund(ctx context.Context, request openapi.AdminGetRefundRequestObject) (openapi.AdminGetRefundResponseObject, error) {
+	return s.adminHandler().AdminGetRefund(ctx, request)
+}
+
+func (s *Server) AdminGetReview(ctx context.Context, request openapi.AdminGetReviewRequestObject) (openapi.AdminGetReviewResponseObject, error) {
+	return s.adminHandler().AdminGetReview(ctx, request)
+}
+
+func (s *Server) GetCatalogAnnouncement(ctx context.Context, request openapi.GetCatalogAnnouncementRequestObject) (openapi.GetCatalogAnnouncementResponseObject, error) {
+	return s.catalogHandler().GetCatalogAnnouncement(ctx, request)
+}
+
+func (s *Server) GetCatalogProductModelOptions(ctx context.Context, request openapi.GetCatalogProductModelOptionsRequestObject) (openapi.GetCatalogProductModelOptionsResponseObject, error) {
+	return s.catalogHandler().GetCatalogProductModelOptions(ctx, request)
+}
+
+func (s *Server) ResolveCatalogProductModelVariant(ctx context.Context, request openapi.ResolveCatalogProductModelVariantRequestObject) (openapi.ResolveCatalogProductModelVariantResponseObject, error) {
+	return s.catalogHandler().ResolveCatalogProductModelVariant(ctx, request)
+}
+
+func (s *Server) GetCatalogProductBuyMeta(ctx context.Context, request openapi.GetCatalogProductBuyMetaRequestObject) (openapi.GetCatalogProductBuyMetaResponseObject, error) {
+	return s.catalogHandler().GetCatalogProductBuyMeta(ctx, request)
+}
+
+func (s *Server) SearchCatalog(ctx context.Context, request openapi.SearchCatalogRequestObject) (openapi.SearchCatalogResponseObject, error) {
+	return s.catalogHandler().SearchCatalog(ctx, request)
+}
+
+func (s *Server) GetCatalogSettings(ctx context.Context, request openapi.GetCatalogSettingsRequestObject) (openapi.GetCatalogSettingsResponseObject, error) {
+	return s.catalogHandler().GetCatalogSettings(ctx, request)
+}
+
+func (s *Server) UpdateContentArticle(ctx context.Context, request openapi.UpdateContentArticleRequestObject) (openapi.UpdateContentArticleResponseObject, error) {
+	return s.contentHandler().UpdateContentArticle(ctx, request)
+}
+
+func (s *Server) ListPublicContentArticles(ctx context.Context, request openapi.ListPublicContentArticlesRequestObject) (openapi.ListPublicContentArticlesResponseObject, error) {
+	return s.contentHandler().ListPublicContentArticles(ctx, request)
+}
+
+
+func (s *Server) ClearNotificationInbox(ctx context.Context, request openapi.ClearNotificationInboxRequestObject) (openapi.ClearNotificationInboxResponseObject, error) {
+	return s.notificationHandler().ClearNotificationInbox(ctx, request)
 }

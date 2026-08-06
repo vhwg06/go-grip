@@ -7,6 +7,8 @@ servers:
   - url: /v1
     description: API v1 Base Path
 tags:
+  - name: catalog-admin
+    description: Catalog management admin API
   - name: auth
     description: Authentication and Token Lifecycle
   - name: users
@@ -1431,6 +1433,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /admin/reviews/{reviewId}:
+    get:
+      tags:
+        - admin
+      summary: Get review context
+      operationId: adminGetReview
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Review detail retrieved
+        401:
+          $ref: #/components/responses/UnauthorizedResponse
+        403:
+          $ref: #/components/responses/ForbiddenResponse
+        404:
+          $ref: #/components/responses/NotFoundResponse
+        500:
+          $ref: #/components/responses/InternalErrorResponse
     delete:
       tags:
         - admin
@@ -2304,62 +2332,6 @@ paths:
           $ref: '#/components/responses/UnauthorizedResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
-  /profile/checkin:
-    post:
-      tags:
-        - profile
-      summary: Daily check-in
-      operationId: doCheckin
-      security:
-        - bearerAuth:
-            - "profile:write"
-      responses:
-        '200':
-          description: Check-in completed
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '500':
-          $ref: '#/components/responses/InternalErrorResponse'
-  /profile/checkin/status:
-    get:
-      tags:
-        - profile
-      summary: Get check-in status
-      operationId: getCheckinStatus
-      security:
-        - bearerAuth:
-            - "profile:read"
-      responses:
-        '200':
-          description: Check-in status retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CheckinStatusResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '500':
-          $ref: '#/components/responses/InternalErrorResponse'
-  /profile/checkin-status:
-    get:
-      tags:
-        - profile
-      summary: Get check-in status (alias)
-      operationId: getCheckinStatusAlt
-      security:
-        - bearerAuth:
-            - "profile:read"
-      responses:
-        '200':
-          description: Check-in status retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CheckinStatusResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '500':
-          $ref: '#/components/responses/InternalErrorResponse'
   /user/profile:
     get:
       tags:
@@ -2376,46 +2348,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountProfileResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '500':
-          $ref: '#/components/responses/InternalErrorResponse'
-  /user/profile/checkin/status:
-    get:
-      tags:
-        - profile
-      summary: Get check-in status (legacy path)
-      operationId: getUserCheckinStatus
-      security:
-        - bearerAuth:
-            - "profile:read"
-      responses:
-        '200':
-          description: Check-in status retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CheckinStatusResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '500':
-          $ref: '#/components/responses/InternalErrorResponse'
-  /user/profile/checkin-status:
-    get:
-      tags:
-        - profile
-      summary: Get check-in status (legacy path alt)
-      operationId: getUserCheckinStatusAlt
-      security:
-        - bearerAuth:
-            - "profile:read"
-      responses:
-        '200':
-          description: Check-in status retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CheckinStatusResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedResponse'
         '500':
@@ -2773,6 +2705,21 @@ paths:
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /notifications:
+    delete:
+      tags:
+        - notifications
+      summary: Clear notification inbox
+      operationId: clearNotificationInbox
+      security:
+        - bearerAuth:
+            - "notifications:write"
+      responses:
+        204:
+          description: Inbox cleared
+        401:
+          $ref: #/components/responses/UnauthorizedResponse
+        500:
+          $ref: #/components/responses/InternalErrorResponse
     get:
       tags:
         - notifications
@@ -3158,6 +3105,1381 @@ paths:
           $ref: '#/components/responses/ForbiddenResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
+  /admin/banners/{id}:
+    delete:
+      tags:
+        - admin
+      summary: Delete banner
+      operationId: adminDeleteBanner
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Banner deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/faqs/{id}:
+    delete:
+      tags:
+        - admin
+      summary: Delete FAQ
+      operationId: adminDeleteFaq
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: FAQ deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/refunds/{refundId}:
+    get:
+      tags:
+        - admin
+      summary: Get refund detail
+      operationId: adminGetRefund
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Refund detail retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRefundResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /content/articles/{id}:
+    patch:
+      tags:
+        - content
+      summary: Update article
+      operationId: updateContentArticle
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Article updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/products/{id}:
+    patch:
+      tags:
+        - admin
+      summary: Update product editorial
+      operationId: adminUpdateProductEditorial
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Product editorial updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/collect/setup:
+    put:
+      tags:
+        - admin
+      summary: Update admin collect setup
+      operationId: adminUpdateCollect
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Collect setup updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/notifications/test:
+    post:
+      tags:
+        - admin
+      summary: Queue admin notification test
+      operationId: queueAdminNotificationTest
+      security:
+        - bearerAuth:
+            - "admin:write"
+      responses:
+        "200":
+          description: Notification test queued
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/product-models/{id}/options:
+    get:
+      tags:
+        - catalog
+      summary: Get public catalog product model options
+      operationId: getCatalogProductModelOptions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: selected
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Options retrieved
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/product-models/{id}/variants:resolve:
+    post:
+      tags:
+        - catalog
+      summary: Resolve public variant from selected options
+      operationId: resolveCatalogProductModelVariant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Variant resolved
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/settings:
+    get:
+      tags:
+        - catalog
+      summary: Get catalog settings (currency etc)
+      operationId: getCatalogSettings
+      responses:
+        "200":
+          description: Settings retrieved
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/search:
+    get:
+      tags:
+        - catalog
+      summary: Search catalog
+      operationId: searchCatalog
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Search results retrieved
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/products/{id}/buy-meta:
+    get:
+      tags:
+        - catalog
+      summary: Get product buy metadata
+      operationId: getCatalogProductBuyMeta
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Buy metadata retrieved
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /catalog/announcement:
+    get:
+      tags:
+        - catalog
+      summary: Get catalog announcement
+      operationId: getCatalogAnnouncement
+      responses:
+        "200":
+          description: Announcement retrieved
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /public/content/articles:
+    get:
+      tags:
+        - content
+      summary: List public content articles
+      operationId: listPublicContentArticles
+      responses:
+        "200":
+          description: Public articles list retrieved
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/categories:
+    get:
+      tags:
+        - catalog-admin
+      summary: List catalog categories (admin)
+      operationId: adminListCatalogCategories
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        "200":
+          description: Categories retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags:
+        - catalog-admin
+      summary: Create catalog category (admin)
+      operationId: adminCreateCatalogCategory
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Category created
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/categories/{categoryId}:
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update catalog category (admin)
+      operationId: adminUpdateCatalogCategory
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Category updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    delete:
+      tags:
+        - catalog-admin
+      summary: Delete catalog category (admin)
+      operationId: adminDeleteCatalogCategory
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Category deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/categories/{categoryId}/deactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Deactivate catalog category (admin)
+      operationId: adminDeactivateCatalogCategory
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Category deactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/attribute-definitions:
+    get:
+      tags:
+        - catalog-admin
+      summary: List attribute definitions (admin)
+      operationId: adminListAttributeDefinitions
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        "200":
+          description: Attribute definitions retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags:
+        - catalog-admin
+      summary: Create attribute definition (admin)
+      operationId: adminCreateAttributeDefinition
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Attribute definition created
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/attribute-definitions/{definitionId}:
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update attribute definition (admin)
+      operationId: adminUpdateAttributeDefinition
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: definitionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Attribute definition updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/attribute-definitions/{definitionId}/deactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Deactivate attribute definition (admin)
+      operationId: adminDeactivateAttributeDefinition
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: definitionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attribute definition deactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/attribute-definitions/{definitionId}/enum-values:
+    post:
+      tags:
+        - catalog-admin
+      summary: Add enum value to attribute definition (admin)
+      operationId: adminAddAttributeEnumValue
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: definitionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Enum value added
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/attribute-definitions/{definitionId}/enum-values/{enumValueId}/deactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Deactivate enum value (admin)
+      operationId: adminDeactivateAttributeEnumValue
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: definitionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: enumValueId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Enum value deactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/masters/{masterKind}:
+    get:
+      tags:
+        - catalog-admin
+      summary: List masters by kind (admin)
+      operationId: adminListCatalogMasters
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: masterKind
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Masters retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags:
+        - catalog-admin
+      summary: Create master by kind (admin)
+      operationId: adminCreateCatalogMaster
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: masterKind
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Master created
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/masters/{masterKind}/{masterId}:
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update master (admin)
+      operationId: adminUpdateCatalogMaster
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: masterKind
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: masterId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Master updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/masters/{masterKind}/{masterId}/deactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Deactivate master (admin)
+      operationId: adminDeactivateCatalogMaster
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: masterKind
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: masterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Master deactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models:
+    get:
+      tags:
+        - catalog-admin
+      summary: List catalog product models (admin)
+      operationId: adminListCatalogProductModels
+      security:
+        - bearerAuth:
+            - "admin:read"
+      responses:
+        "200":
+          description: Product models retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags:
+        - catalog-admin
+      summary: Create catalog product model (admin)
+      operationId: adminCreateCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Product model created
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}:
+    get:
+      tags:
+        - catalog-admin
+      summary: Get catalog product model detail (admin)
+      operationId: adminGetCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product model detail retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update catalog product model (admin)
+      operationId: adminUpdateCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Product model updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    delete:
+      tags:
+        - catalog-admin
+      summary: Delete catalog product model (admin)
+      operationId: adminDeleteCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Product model deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/publish:
+    post:
+      tags:
+        - catalog-admin
+      summary: Publish product model (admin)
+      operationId: adminPublishCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product model published
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/unpublish:
+    post:
+      tags:
+        - catalog-admin
+      summary: Unpublish product model (admin)
+      operationId: adminUnpublishCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product model unpublished
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/discontinue:
+    post:
+      tags:
+        - catalog-admin
+      summary: Discontinue product model (admin)
+      operationId: adminDiscontinueCatalogProductModel
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product model discontinued
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/media:
+    put:
+      tags:
+        - catalog-admin
+      summary: Update product model media (admin)
+      operationId: adminUpdateCatalogProductModelMedia
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Product model media updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/variant-dimensions:
+    post:
+      tags:
+        - catalog-admin
+      summary: Add variant dimension to product model (admin)
+      operationId: adminAddCatalogVariantDimension
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Variant dimension added
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}:
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update variant dimension (admin)
+      operationId: adminUpdateCatalogVariantDimension
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dimensionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Variant dimension updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values:
+    post:
+      tags:
+        - catalog-admin
+      summary: Add variant dimension value (admin)
+      operationId: adminAddCatalogVariantDimensionValue
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dimensionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Variant dimension value added
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values/{valueId}/deactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Deactivate variant dimension value (admin)
+      operationId: adminDeactivateCatalogVariantDimensionValue
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dimensionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: valueId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Variant dimension value deactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/product-models/{modelId}/variants:
+    get:
+      tags:
+        - catalog-admin
+      summary: List model variants (admin)
+      operationId: adminListCatalogModelVariants
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Model variants retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    post:
+      tags:
+        - catalog-admin
+      summary: Create model variant (admin)
+      operationId: adminCreateCatalogModelVariant
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Model variant created
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/variants/prices:bulk:
+    post:
+      tags:
+        - catalog-admin
+      summary: Bulk update variant prices (admin)
+      operationId: adminBulkUpdateVariantPrices
+      security:
+        - bearerAuth:
+            - "admin:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Variant prices updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/variants/{variantId}:
+    get:
+      tags:
+        - catalog-admin
+      summary: Get variant detail (admin)
+      operationId: adminGetCatalogVariant
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Variant detail retrieved
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    patch:
+      tags:
+        - catalog-admin
+      summary: Update variant (admin)
+      operationId: adminUpdateCatalogVariant
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Variant updated
+        "400":
+          $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/variants/{variantId}/activate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Activate variant (admin)
+      operationId: adminActivateCatalogVariant
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Variant activated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+  /admin/catalog/variants/{variantId}/inactivate:
+    post:
+      tags:
+        - catalog-admin
+      summary: Inactivate variant (admin)
+      operationId: adminInactivateCatalogVariant
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Variant inactivated
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
+
 components:
   securitySchemes:
     bearerAuth:

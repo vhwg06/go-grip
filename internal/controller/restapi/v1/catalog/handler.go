@@ -6,20 +6,23 @@ import (
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
+	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
 
 // Handler implements strict OpenAPI handlers for the Catalog capability.
 type Handler struct {
-	catalogUC catalogmodule.CatalogUseCase
-	logger    logger.Interface
+	catalogUC   catalogmodule.CatalogUseCase
+	catalogBase catalogbase.UseCase
+	logger      logger.Interface
 }
 
 // NewHandler constructs a new Catalog vertical handler instance.
-func NewHandler(catalogUC catalogmodule.CatalogUseCase, l logger.Interface) *Handler {
+func NewHandler(catalogUC catalogmodule.CatalogUseCase, catalogBase catalogbase.UseCase, l logger.Interface) *Handler {
 	return &Handler{
-		catalogUC: catalogUC,
-		logger:    l,
+		catalogUC:   catalogUC,
+		catalogBase: catalogBase,
+		logger:      l,
 	}
 }
 

@@ -1,0 +1,138 @@
+package catalog
+
+import (
+	"context"
+
+	"github.com/evrone/go-clean-template/api/gen/go/openapi"
+)
+
+// AdminCreateCatalogModelVariant handles POST /admin/catalog/product-models/{modelId}/variants
+func (h *Handler) AdminCreateCatalogModelVariant(ctx context.Context, request openapi.AdminCreateCatalogModelVariantRequestObject) (openapi.AdminCreateCatalogModelVariantResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminCreateCatalogModelVariant401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminCreateCatalogModelVariant403JSONResponse{}, nil
+	}
+
+	input := map[string]any{}
+	if request.Body != nil {
+		input = map[string]any(*request.Body)
+	}
+
+	_, err := h.catalogBase.CreateVariant(ctx, request.ModelId, input)
+	if err != nil {
+		return openapi.AdminCreateCatalogModelVariant400JSONResponse{}, nil
+	}
+
+	return openapi.AdminCreateCatalogModelVariant201Response{}, nil
+}
+
+// AdminGetCatalogVariant handles GET /admin/catalog/variants/{variantId}
+func (h *Handler) AdminGetCatalogVariant(ctx context.Context, request openapi.AdminGetCatalogVariantRequestObject) (openapi.AdminGetCatalogVariantResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminGetCatalogVariant401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminGetCatalogVariant403JSONResponse{}, nil
+	}
+
+	_, err := h.catalogBase.GetVariant(ctx, request.VariantId)
+	if err != nil {
+		return openapi.AdminGetCatalogVariant404JSONResponse{}, nil
+	}
+
+	return openapi.AdminGetCatalogVariant200Response{}, nil
+}
+
+// AdminUpdateCatalogVariant handles PATCH /admin/catalog/variants/{variantId}
+func (h *Handler) AdminUpdateCatalogVariant(ctx context.Context, request openapi.AdminUpdateCatalogVariantRequestObject) (openapi.AdminUpdateCatalogVariantResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminUpdateCatalogVariant401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminUpdateCatalogVariant403JSONResponse{}, nil
+	}
+
+	input := map[string]any{}
+	if request.Body != nil {
+		input = map[string]any(*request.Body)
+	}
+
+	_, err := h.catalogBase.UpdateVariant(ctx, request.VariantId, input)
+	if err != nil {
+		return openapi.AdminUpdateCatalogVariant400JSONResponse{}, nil
+	}
+
+	return openapi.AdminUpdateCatalogVariant200Response{}, nil
+}
+
+// AdminActivateCatalogVariant handles POST /admin/catalog/variants/{variantId}/activate
+func (h *Handler) AdminActivateCatalogVariant(ctx context.Context, request openapi.AdminActivateCatalogVariantRequestObject) (openapi.AdminActivateCatalogVariantResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminActivateCatalogVariant401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminActivateCatalogVariant403JSONResponse{}, nil
+	}
+
+	_, err := h.catalogBase.ActivateVariant(ctx, request.VariantId)
+	if err != nil {
+		return openapi.AdminActivateCatalogVariant404JSONResponse{}, nil
+	}
+
+	return openapi.AdminActivateCatalogVariant200Response{}, nil
+}
+
+// AdminInactivateCatalogVariant handles POST /admin/catalog/variants/{variantId}/inactivate
+func (h *Handler) AdminInactivateCatalogVariant(ctx context.Context, request openapi.AdminInactivateCatalogVariantRequestObject) (openapi.AdminInactivateCatalogVariantResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminInactivateCatalogVariant401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminInactivateCatalogVariant403JSONResponse{}, nil
+	}
+
+	_, err := h.catalogBase.InactivateVariant(ctx, request.VariantId)
+	if err != nil {
+		return openapi.AdminInactivateCatalogVariant404JSONResponse{}, nil
+	}
+
+	return openapi.AdminInactivateCatalogVariant200Response{}, nil
+}
+
+// AdminBulkUpdateVariantPrices handles POST /admin/catalog/variants/prices:bulk
+func (h *Handler) AdminBulkUpdateVariantPrices(ctx context.Context, request openapi.AdminBulkUpdateVariantPricesRequestObject) (openapi.AdminBulkUpdateVariantPricesResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminBulkUpdateVariantPrices401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminBulkUpdateVariantPrices403JSONResponse{}, nil
+	}
+
+	input := map[string]any{}
+	if request.Body != nil {
+		input = map[string]any(*request.Body)
+	}
+
+	_, err := h.catalogBase.BulkSetPrice(ctx, input)
+	if err != nil {
+		return openapi.AdminBulkUpdateVariantPrices400JSONResponse{}, nil
+	}
+
+	return openapi.AdminBulkUpdateVariantPrices200Response{}, nil
+}
+
+// GetCatalogSettings handles GET /catalog/settings
+func (h *Handler) GetCatalogSettings(ctx context.Context, _ openapi.GetCatalogSettingsRequestObject) (openapi.GetCatalogSettingsResponseObject, error) {
+	_ = map[string]any{
+		"currency": "VND",
+	}
+	return openapi.GetCatalogSettings200Response{}, nil
+}

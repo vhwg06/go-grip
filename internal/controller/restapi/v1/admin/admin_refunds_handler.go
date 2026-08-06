@@ -45,8 +45,9 @@ func (h *Handler) AdminApproveRefund(ctx context.Context, request openapi.AdminA
 
 	refundID, err := strconv.ParseInt(request.RefundId, 10, 64)
 	if err != nil {
-		_, errResp := mapAdminError(entity.ErrNotFound)
-		return openapi.AdminApproveRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
+		resp := openapi.ErrorResponse{}
+		resp.Error.FromErrorPayload(openapi.ErrorPayload{Code: "BAD_REQUEST", Message: "Invalid refund identifier"})
+		return openapi.AdminApproveRefund400JSONResponse{BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(resp)}, nil
 	}
 
 	note := ""
@@ -79,8 +80,9 @@ func (h *Handler) AdminRejectRefund(ctx context.Context, request openapi.AdminRe
 
 	refundID, err := strconv.ParseInt(request.RefundId, 10, 64)
 	if err != nil {
-		_, errResp := mapAdminError(entity.ErrNotFound)
-		return openapi.AdminRejectRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
+		resp := openapi.ErrorResponse{}
+		resp.Error.FromErrorPayload(openapi.ErrorPayload{Code: "BAD_REQUEST", Message: "Invalid refund identifier"})
+		return openapi.AdminRejectRefund400JSONResponse{BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(resp)}, nil
 	}
 
 	note := ""
@@ -138,4 +140,39 @@ func toAdminRefundResponse(r entity.RefundRequest) openapi.AdminRefundResponse {
 		ProcessedAt:   r.ProcessedAt,
 		CreatedAt:     &r.CreatedAt,
 	}
+}
+
+
+// AdminGetRefund handles GET /admin/refunds/{refundId}
+func (h *Handler) AdminGetRefund(ctx context.Context, request openapi.AdminGetRefundRequestObject) (openapi.AdminGetRefundResponseObject, error) {
+	actor := getActor(ctx)
+
+	refundID, err := strconv.ParseInt(request.RefundId, 10, 64)
+	if err != nil {
+		_, errResp := mapAdminError(entity.ErrNotFound)
+		return openapi.AdminGetRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
+	}
+
+	refunds, err := h.adminUC.ListRefunds(ctx, actor, "all")
+	if err != nil {
+		statusCode, errResp := mapAdminError(err)
+		switch statusCode {
+		case 401:
+			return openapi.AdminGetRefund401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
+		case 403:
+			return openapi.AdminGetRefund403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
+		default:
+			return openapi.AdminGetRefund500JSONResponse{}, nil
+		}
+	}
+
+	for _, r := range refunds {
+		if r.ID == refundID {
+			resp := toAdminRefundResponse(r)
+			return openapi.AdminGetRefund200JSONResponse(resp), nil
+		}
+	}
+
+	_, errResp := mapAdminError(entity.ErrNotFound)
+	return openapi.AdminGetRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
 }

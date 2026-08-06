@@ -187,3 +187,16 @@ func toAdminReviewResponse(r entity.Review) openapi.AdminReviewResponse {
 		CreatedAt:          &r.CreatedAt,
 	}
 }
+
+
+// AdminGetReview handles GET /admin/reviews/{reviewId}
+func (h *Handler) AdminGetReview(ctx context.Context, request openapi.AdminGetReviewRequestObject) (openapi.AdminGetReviewResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminGetReview401Response{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminGetReview403Response{}, nil
+	}
+	return openapi.AdminGetReview200Response{}, nil
+}

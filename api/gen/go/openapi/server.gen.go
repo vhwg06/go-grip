@@ -37,12 +37,123 @@ type ServerInterface interface {
 	// AdminSaveBanner Create or update a banner
 	// (POST /admin/banners)
 	AdminSaveBanner(c *fiber.Ctx) error
+	// AdminDeleteBanner Delete banner
+	// (DELETE /admin/banners/{id})
+	AdminDeleteBanner(c *fiber.Ctx, id string) error
+	// AdminListAttributeDefinitions List attribute definitions (admin)
+	// (GET /admin/catalog/attribute-definitions)
+	AdminListAttributeDefinitions(c *fiber.Ctx) error
+	// AdminCreateAttributeDefinition Create attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions)
+	AdminCreateAttributeDefinition(c *fiber.Ctx) error
+	// AdminUpdateAttributeDefinition Update attribute definition (admin)
+	// (PATCH /admin/catalog/attribute-definitions/{definitionId})
+	AdminUpdateAttributeDefinition(c *fiber.Ctx, definitionId string) error
+	// AdminDeactivateAttributeDefinition Deactivate attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/deactivate)
+	AdminDeactivateAttributeDefinition(c *fiber.Ctx, definitionId string) error
+	// AdminAddAttributeEnumValue Add enum value to attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/enum-values)
+	AdminAddAttributeEnumValue(c *fiber.Ctx, definitionId string) error
+	// AdminDeactivateAttributeEnumValue Deactivate enum value (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/enum-values/{enumValueId}/deactivate)
+	AdminDeactivateAttributeEnumValue(c *fiber.Ctx, definitionId string, enumValueId string) error
+	// AdminListCatalogCategories List catalog categories (admin)
+	// (GET /admin/catalog/categories)
+	AdminListCatalogCategories(c *fiber.Ctx) error
+	// AdminCreateCatalogCategory Create catalog category (admin)
+	// (POST /admin/catalog/categories)
+	AdminCreateCatalogCategory(c *fiber.Ctx) error
+	// AdminDeleteCatalogCategory Delete catalog category (admin)
+	// (DELETE /admin/catalog/categories/{categoryId})
+	AdminDeleteCatalogCategory(c *fiber.Ctx, categoryId string) error
+	// AdminUpdateCatalogCategory Update catalog category (admin)
+	// (PATCH /admin/catalog/categories/{categoryId})
+	AdminUpdateCatalogCategory(c *fiber.Ctx, categoryId string) error
+	// AdminDeactivateCatalogCategory Deactivate catalog category (admin)
+	// (POST /admin/catalog/categories/{categoryId}/deactivate)
+	AdminDeactivateCatalogCategory(c *fiber.Ctx, categoryId string) error
+	// AdminListCatalogMasters List masters by kind (admin)
+	// (GET /admin/catalog/masters/{masterKind})
+	AdminListCatalogMasters(c *fiber.Ctx, masterKind string) error
+	// AdminCreateCatalogMaster Create master by kind (admin)
+	// (POST /admin/catalog/masters/{masterKind})
+	AdminCreateCatalogMaster(c *fiber.Ctx, masterKind string) error
+	// AdminUpdateCatalogMaster Update master (admin)
+	// (PATCH /admin/catalog/masters/{masterKind}/{masterId})
+	AdminUpdateCatalogMaster(c *fiber.Ctx, masterKind string, masterId string) error
+	// AdminDeactivateCatalogMaster Deactivate master (admin)
+	// (POST /admin/catalog/masters/{masterKind}/{masterId}/deactivate)
+	AdminDeactivateCatalogMaster(c *fiber.Ctx, masterKind string, masterId string) error
+	// AdminListCatalogProductModels List catalog product models (admin)
+	// (GET /admin/catalog/product-models)
+	AdminListCatalogProductModels(c *fiber.Ctx) error
+	// AdminCreateCatalogProductModel Create catalog product model (admin)
+	// (POST /admin/catalog/product-models)
+	AdminCreateCatalogProductModel(c *fiber.Ctx) error
+	// AdminDeleteCatalogProductModel Delete catalog product model (admin)
+	// (DELETE /admin/catalog/product-models/{modelId})
+	AdminDeleteCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminGetCatalogProductModel Get catalog product model detail (admin)
+	// (GET /admin/catalog/product-models/{modelId})
+	AdminGetCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminUpdateCatalogProductModel Update catalog product model (admin)
+	// (PATCH /admin/catalog/product-models/{modelId})
+	AdminUpdateCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminDiscontinueCatalogProductModel Discontinue product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/discontinue)
+	AdminDiscontinueCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminUpdateCatalogProductModelMedia Update product model media (admin)
+	// (PUT /admin/catalog/product-models/{modelId}/media)
+	AdminUpdateCatalogProductModelMedia(c *fiber.Ctx, modelId string) error
+	// AdminPublishCatalogProductModel Publish product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/publish)
+	AdminPublishCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminUnpublishCatalogProductModel Unpublish product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/unpublish)
+	AdminUnpublishCatalogProductModel(c *fiber.Ctx, modelId string) error
+	// AdminAddCatalogVariantDimension Add variant dimension to product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions)
+	AdminAddCatalogVariantDimension(c *fiber.Ctx, modelId string) error
+	// AdminUpdateCatalogVariantDimension Update variant dimension (admin)
+	// (PATCH /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId})
+	AdminUpdateCatalogVariantDimension(c *fiber.Ctx, modelId string, dimensionId string) error
+	// AdminAddCatalogVariantDimensionValue Add variant dimension value (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values)
+	AdminAddCatalogVariantDimensionValue(c *fiber.Ctx, modelId string, dimensionId string) error
+	// AdminDeactivateCatalogVariantDimensionValue Deactivate variant dimension value (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values/{valueId}/deactivate)
+	AdminDeactivateCatalogVariantDimensionValue(c *fiber.Ctx, modelId string, dimensionId string, valueId string) error
+	// AdminListCatalogModelVariants List model variants (admin)
+	// (GET /admin/catalog/product-models/{modelId}/variants)
+	AdminListCatalogModelVariants(c *fiber.Ctx, modelId string) error
+	// AdminCreateCatalogModelVariant Create model variant (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variants)
+	AdminCreateCatalogModelVariant(c *fiber.Ctx, modelId string) error
+	// AdminBulkUpdateVariantPrices Bulk update variant prices (admin)
+	// (POST /admin/catalog/variants/prices:bulk)
+	AdminBulkUpdateVariantPrices(c *fiber.Ctx) error
+	// AdminGetCatalogVariant Get variant detail (admin)
+	// (GET /admin/catalog/variants/{variantId})
+	AdminGetCatalogVariant(c *fiber.Ctx, variantId string) error
+	// AdminUpdateCatalogVariant Update variant (admin)
+	// (PATCH /admin/catalog/variants/{variantId})
+	AdminUpdateCatalogVariant(c *fiber.Ctx, variantId string) error
+	// AdminActivateCatalogVariant Activate variant (admin)
+	// (POST /admin/catalog/variants/{variantId}/activate)
+	AdminActivateCatalogVariant(c *fiber.Ctx, variantId string) error
+	// AdminInactivateCatalogVariant Inactivate variant (admin)
+	// (POST /admin/catalog/variants/{variantId}/inactivate)
+	AdminInactivateCatalogVariant(c *fiber.Ctx, variantId string) error
 	// AdminListCategories List categories (admin legacy)
 	// (GET /admin/categories)
 	AdminListCategories(c *fiber.Ctx) error
 	// AdminGetCollect Get admin collect/aggregate view
 	// (GET /admin/collect)
 	AdminGetCollect(c *fiber.Ctx) error
+	// AdminUpdateCollect Update admin collect setup
+	// (PUT /admin/collect/setup)
+	AdminUpdateCollect(c *fiber.Ctx) error
 	// GetAdminDashboardStats Get administrative dashboard statistics
 	// (GET /admin/dashboard/stats)
 	GetAdminDashboardStats(c *fiber.Ctx) error
@@ -52,6 +163,9 @@ type ServerInterface interface {
 	// AdminSaveFaq Create or update a FAQ
 	// (POST /admin/faqs)
 	AdminSaveFaq(c *fiber.Ctx) error
+	// AdminDeleteFaq Delete FAQ
+	// (DELETE /admin/faqs/{id})
+	AdminDeleteFaq(c *fiber.Ctx, id string) error
 	// AdminListMedia List media files (admin)
 	// (GET /admin/media)
 	AdminListMedia(c *fiber.Ctx, params AdminListMediaParams) error
@@ -70,6 +184,9 @@ type ServerInterface interface {
 	// AdminGetNotifications Get outbound notification readiness status
 	// (GET /admin/notifications)
 	AdminGetNotifications(c *fiber.Ctx) error
+	// QueueAdminNotificationTest Queue admin notification test
+	// (POST /admin/notifications/test)
+	QueueAdminNotificationTest(c *fiber.Ctx) error
 	// AdminListOrders List all orders (admin queue)
 	// (GET /admin/orders)
 	AdminListOrders(c *fiber.Ctx, params AdminListOrdersParams) error
@@ -82,9 +199,15 @@ type ServerInterface interface {
 	// AdminListProducts List all products (admin legacy)
 	// (GET /admin/products)
 	AdminListProducts(c *fiber.Ctx, params AdminListProductsParams) error
+	// AdminUpdateProductEditorial Update product editorial
+	// (PATCH /admin/products/{id})
+	AdminUpdateProductEditorial(c *fiber.Ctx, id string) error
 	// AdminListRefunds List refund requests (admin)
 	// (GET /admin/refunds)
 	AdminListRefunds(c *fiber.Ctx, params AdminListRefundsParams) error
+	// AdminGetRefund Get refund detail
+	// (GET /admin/refunds/{refundId})
+	AdminGetRefund(c *fiber.Ctx, refundId string) error
 	// AdminApproveRefund Approve a refund request
 	// (POST /admin/refunds/{refundId}/approve)
 	AdminApproveRefund(c *fiber.Ctx, refundId string) error
@@ -100,6 +223,9 @@ type ServerInterface interface {
 	// AdminDeleteReview Delete a review
 	// (DELETE /admin/reviews/{reviewId})
 	AdminDeleteReview(c *fiber.Ctx, reviewId int64) error
+	// AdminGetReview Get review context
+	// (GET /admin/reviews/{reviewId})
+	AdminGetReview(c *fiber.Ctx, reviewId int64) error
 	// AdminApproveReview Approve a review
 	// (PUT /admin/reviews/{reviewId}/approve)
 	AdminApproveReview(c *fiber.Ctx, reviewId int64) error
@@ -169,6 +295,9 @@ type ServerInterface interface {
 	// UpdateCartItem Update cart item quantity
 	// (PUT /cart/items/{itemId})
 	UpdateCartItem(c *fiber.Ctx, itemId string) error
+	// GetCatalogAnnouncement Get catalog announcement
+	// (GET /catalog/announcement)
+	GetCatalogAnnouncement(c *fiber.Ctx) error
 	// ListCategories List catalog categories
 	// (GET /catalog/categories)
 	ListCategories(c *fiber.Ctx) error
@@ -178,6 +307,12 @@ type ServerInterface interface {
 	// ListCatalogProductModels List public catalog product models
 	// (GET /catalog/product-models)
 	ListCatalogProductModels(c *fiber.Ctx, params ListCatalogProductModelsParams) error
+	// GetCatalogProductModelOptions Get public catalog product model options
+	// (GET /catalog/product-models/{id}/options)
+	GetCatalogProductModelOptions(c *fiber.Ctx, id string, params GetCatalogProductModelOptionsParams) error
+	// ResolveCatalogProductModelVariant Resolve public variant from selected options
+	// (POST /catalog/product-models/{id}/variants:resolve)
+	ResolveCatalogProductModelVariant(c *fiber.Ctx, id string) error
 	// ListProducts List catalog products
 	// (GET /catalog/products)
 	ListProducts(c *fiber.Ctx, params ListProductsParams) error
@@ -193,9 +328,18 @@ type ServerInterface interface {
 	// UpdateProduct Update catalog product
 	// (PUT /catalog/products/{id})
 	UpdateProduct(c *fiber.Ctx, id string) error
+	// GetCatalogProductBuyMeta Get product buy metadata
+	// (GET /catalog/products/{id}/buy-meta)
+	GetCatalogProductBuyMeta(c *fiber.Ctx, id string) error
 	// GetProductReviews Read public product reviews
 	// (GET /catalog/products/{id}/reviews)
 	GetProductReviews(c *fiber.Ctx, id string) error
+	// SearchCatalog Search catalog
+	// (GET /catalog/search)
+	SearchCatalog(c *fiber.Ctx, params SearchCatalogParams) error
+	// GetCatalogSettings Get catalog settings (currency etc)
+	// (GET /catalog/settings)
+	GetCatalogSettings(c *fiber.Ctx) error
 	// ListTags List catalog tags
 	// (GET /catalog/tags)
 	ListTags(c *fiber.Ctx) error
@@ -238,6 +382,9 @@ type ServerInterface interface {
 	// CreateContentArticle Create a new article
 	// (POST /content/articles)
 	CreateContentArticle(c *fiber.Ctx) error
+	// UpdateContentArticle Update article
+	// (PATCH /content/articles/{id})
+	UpdateContentArticle(c *fiber.Ctx, id string) error
 	// ListContentPages List content pages
 	// (GET /content/pages)
 	ListContentPages(c *fiber.Ctx) error
@@ -268,6 +415,9 @@ type ServerInterface interface {
 	// DeleteMedia Delete media file
 	// (DELETE /media/{id})
 	DeleteMedia(c *fiber.Ctx, id string) error
+	// ClearNotificationInbox Clear notification inbox
+	// (DELETE /notifications)
+	ClearNotificationInbox(c *fiber.Ctx) error
 	// ListNotifications List user notifications
 	// (GET /notifications)
 	ListNotifications(c *fiber.Ctx, params ListNotificationsParams) error
@@ -295,15 +445,6 @@ type ServerInterface interface {
 	// UpdateProfile Update current user profile
 	// (PATCH /profile)
 	UpdateProfile(c *fiber.Ctx) error
-	// DoCheckin Daily check-in
-	// (POST /profile/checkin)
-	DoCheckin(c *fiber.Ctx) error
-	// GetCheckinStatusAlt Get check-in status (alias)
-	// (GET /profile/checkin-status)
-	GetCheckinStatusAlt(c *fiber.Ctx) error
-	// GetCheckinStatus Get check-in status
-	// (GET /profile/checkin/status)
-	GetCheckinStatus(c *fiber.Ctx) error
 	// UpdateProfileEmail Update profile email
 	// (PATCH /profile/email)
 	UpdateProfileEmail(c *fiber.Ctx) error
@@ -316,6 +457,9 @@ type ServerInterface interface {
 	// GetProfileSessions Get active sessions list
 	// (GET /profile/sessions)
 	GetProfileSessions(c *fiber.Ctx) error
+	// ListPublicContentArticles List public content articles
+	// (GET /public/content/articles)
+	ListPublicContentArticles(c *fiber.Ctx) error
 	// GetPublicHomepage Get public homepage config
 	// (GET /public/homepage)
 	GetPublicHomepage(c *fiber.Ctx) error
@@ -328,12 +472,6 @@ type ServerInterface interface {
 	// GetUserProfile Get user profile (legacy path)
 	// (GET /user/profile)
 	GetUserProfile(c *fiber.Ctx) error
-	// GetUserCheckinStatusAlt Get check-in status (legacy path alt)
-	// (GET /user/profile/checkin-status)
-	GetUserCheckinStatusAlt(c *fiber.Ctx) error
-	// GetUserCheckinStatus Get check-in status (legacy path)
-	// (GET /user/profile/checkin/status)
-	GetUserCheckinStatus(c *fiber.Ctx) error
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(c *fiber.Ctx, params ListUsersParams) error
@@ -500,6 +638,1029 @@ func (siw *ServerInterfaceWrapper) AdminSaveBanner(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// AdminDeleteBanner operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteBanner(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeleteBanner(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListAttributeDefinitions operation middleware
+func (siw *ServerInterfaceWrapper) AdminListAttributeDefinitions(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListAttributeDefinitions(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateAttributeDefinition operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateAttributeDefinition(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateAttributeDefinition(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateAttributeDefinition operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateAttributeDefinition(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "definitionId" -------------
+	var definitionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "definitionId", c.Params("definitionId"), &definitionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter definitionId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateAttributeDefinition(c, definitionId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeactivateAttributeDefinition operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeactivateAttributeDefinition(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "definitionId" -------------
+	var definitionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "definitionId", c.Params("definitionId"), &definitionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter definitionId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeactivateAttributeDefinition(c, definitionId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminAddAttributeEnumValue operation middleware
+func (siw *ServerInterfaceWrapper) AdminAddAttributeEnumValue(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "definitionId" -------------
+	var definitionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "definitionId", c.Params("definitionId"), &definitionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter definitionId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminAddAttributeEnumValue(c, definitionId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeactivateAttributeEnumValue operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeactivateAttributeEnumValue(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "definitionId" -------------
+	var definitionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "definitionId", c.Params("definitionId"), &definitionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter definitionId: %w", err).Error())
+	}
+
+	// ------------- Path parameter "enumValueId" -------------
+	var enumValueId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "enumValueId", c.Params("enumValueId"), &enumValueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter enumValueId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeactivateAttributeEnumValue(c, definitionId, enumValueId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListCatalogCategories operation middleware
+func (siw *ServerInterfaceWrapper) AdminListCatalogCategories(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListCatalogCategories(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateCatalogCategory operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateCatalogCategory(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateCatalogCategory(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeleteCatalogCategory operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteCatalogCategory(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "categoryId" -------------
+	var categoryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "categoryId", c.Params("categoryId"), &categoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter categoryId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeleteCatalogCategory(c, categoryId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogCategory operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogCategory(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "categoryId" -------------
+	var categoryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "categoryId", c.Params("categoryId"), &categoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter categoryId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogCategory(c, categoryId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeactivateCatalogCategory operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeactivateCatalogCategory(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "categoryId" -------------
+	var categoryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "categoryId", c.Params("categoryId"), &categoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter categoryId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeactivateCatalogCategory(c, categoryId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListCatalogMasters operation middleware
+func (siw *ServerInterfaceWrapper) AdminListCatalogMasters(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "masterKind" -------------
+	var masterKind string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterKind", c.Params("masterKind"), &masterKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterKind: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListCatalogMasters(c, masterKind)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateCatalogMaster operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateCatalogMaster(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "masterKind" -------------
+	var masterKind string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterKind", c.Params("masterKind"), &masterKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterKind: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateCatalogMaster(c, masterKind)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogMaster operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogMaster(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "masterKind" -------------
+	var masterKind string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterKind", c.Params("masterKind"), &masterKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterKind: %w", err).Error())
+	}
+
+	// ------------- Path parameter "masterId" -------------
+	var masterId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterId", c.Params("masterId"), &masterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogMaster(c, masterKind, masterId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeactivateCatalogMaster operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeactivateCatalogMaster(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "masterKind" -------------
+	var masterKind string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterKind", c.Params("masterKind"), &masterKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterKind: %w", err).Error())
+	}
+
+	// ------------- Path parameter "masterId" -------------
+	var masterId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "masterId", c.Params("masterId"), &masterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter masterId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeactivateCatalogMaster(c, masterKind, masterId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListCatalogProductModels operation middleware
+func (siw *ServerInterfaceWrapper) AdminListCatalogProductModels(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListCatalogProductModels(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateCatalogProductModel(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateCatalogProductModel(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeleteCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeleteCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDiscontinueCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminDiscontinueCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDiscontinueCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogProductModelMedia operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogProductModelMedia(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogProductModelMedia(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminPublishCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminPublishCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminPublishCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUnpublishCatalogProductModel operation middleware
+func (siw *ServerInterfaceWrapper) AdminUnpublishCatalogProductModel(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUnpublishCatalogProductModel(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminAddCatalogVariantDimension operation middleware
+func (siw *ServerInterfaceWrapper) AdminAddCatalogVariantDimension(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminAddCatalogVariantDimension(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogVariantDimension operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogVariantDimension(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	// ------------- Path parameter "dimensionId" -------------
+	var dimensionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "dimensionId", c.Params("dimensionId"), &dimensionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter dimensionId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogVariantDimension(c, modelId, dimensionId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminAddCatalogVariantDimensionValue operation middleware
+func (siw *ServerInterfaceWrapper) AdminAddCatalogVariantDimensionValue(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	// ------------- Path parameter "dimensionId" -------------
+	var dimensionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "dimensionId", c.Params("dimensionId"), &dimensionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter dimensionId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminAddCatalogVariantDimensionValue(c, modelId, dimensionId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeactivateCatalogVariantDimensionValue operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeactivateCatalogVariantDimensionValue(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	// ------------- Path parameter "dimensionId" -------------
+	var dimensionId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "dimensionId", c.Params("dimensionId"), &dimensionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter dimensionId: %w", err).Error())
+	}
+
+	// ------------- Path parameter "valueId" -------------
+	var valueId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "valueId", c.Params("valueId"), &valueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter valueId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeactivateCatalogVariantDimensionValue(c, modelId, dimensionId, valueId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminListCatalogModelVariants operation middleware
+func (siw *ServerInterfaceWrapper) AdminListCatalogModelVariants(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminListCatalogModelVariants(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminCreateCatalogModelVariant operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateCatalogModelVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "modelId" -------------
+	var modelId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "modelId", c.Params("modelId"), &modelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter modelId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminCreateCatalogModelVariant(c, modelId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminBulkUpdateVariantPrices operation middleware
+func (siw *ServerInterfaceWrapper) AdminBulkUpdateVariantPrices(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminBulkUpdateVariantPrices(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetCatalogVariant operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetCatalogVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "variantId" -------------
+	var variantId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "variantId", c.Params("variantId"), &variantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter variantId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetCatalogVariant(c, variantId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCatalogVariant operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCatalogVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "variantId" -------------
+	var variantId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "variantId", c.Params("variantId"), &variantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter variantId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCatalogVariant(c, variantId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminActivateCatalogVariant operation middleware
+func (siw *ServerInterfaceWrapper) AdminActivateCatalogVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "variantId" -------------
+	var variantId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "variantId", c.Params("variantId"), &variantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter variantId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminActivateCatalogVariant(c, variantId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminInactivateCatalogVariant operation middleware
+func (siw *ServerInterfaceWrapper) AdminInactivateCatalogVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "variantId" -------------
+	var variantId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "variantId", c.Params("variantId"), &variantId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter variantId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminInactivateCatalogVariant(c, variantId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // AdminListCategories operation middleware
 func (siw *ServerInterfaceWrapper) AdminListCategories(c *fiber.Ctx) error {
 
@@ -523,6 +1684,24 @@ func (siw *ServerInterfaceWrapper) AdminGetCollect(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.AdminGetCollect(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminUpdateCollect operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateCollect(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateCollect(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -577,6 +1756,35 @@ func (siw *ServerInterfaceWrapper) AdminSaveFaq(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.AdminSaveFaq(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminDeleteFaq operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteFaq(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminDeleteFaq(c, id)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -750,6 +1958,24 @@ func (siw *ServerInterfaceWrapper) AdminGetNotifications(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// QueueAdminNotificationTest operation middleware
+func (siw *ServerInterfaceWrapper) QueueAdminNotificationTest(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.QueueAdminNotificationTest(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // AdminListOrders operation middleware
 func (siw *ServerInterfaceWrapper) AdminListOrders(c *fiber.Ctx) error {
 
@@ -910,6 +2136,35 @@ func (siw *ServerInterfaceWrapper) AdminListProducts(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// AdminUpdateProductEditorial operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateProductEditorial(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminUpdateProductEditorial(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // AdminListRefunds operation middleware
 func (siw *ServerInterfaceWrapper) AdminListRefunds(c *fiber.Ctx) error {
 
@@ -934,6 +2189,35 @@ func (siw *ServerInterfaceWrapper) AdminListRefunds(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.AdminListRefunds(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetRefund operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetRefund(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "refundId" -------------
+	var refundId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refundId", c.Params("refundId"), &refundId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter refundId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetRefund(c, refundId)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1097,6 +2381,35 @@ func (siw *ServerInterfaceWrapper) AdminDeleteReview(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.AdminDeleteReview(c, reviewId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// AdminGetReview operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetReview(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewId" -------------
+	var reviewId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewId", c.Params("reviewId"), &reviewId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter reviewId: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.AdminGetReview(c, reviewId)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1645,6 +2958,24 @@ func (siw *ServerInterfaceWrapper) UpdateCartItem(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// GetCatalogAnnouncement operation middleware
+func (siw *ServerInterfaceWrapper) GetCatalogAnnouncement(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCatalogAnnouncement(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // ListCategories operation middleware
 func (siw *ServerInterfaceWrapper) ListCategories(c *fiber.Ctx) error {
 
@@ -1719,6 +3050,80 @@ func (siw *ServerInterfaceWrapper) ListCatalogProductModels(c *fiber.Ctx) error 
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.ListCatalogProductModels(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCatalogProductModelOptions operation middleware
+func (siw *ServerInterfaceWrapper) GetCatalogProductModelOptions(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCatalogProductModelOptionsParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "selected" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "selected", query, &params.Selected, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter selected: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCatalogProductModelOptions(c, id, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// ResolveCatalogProductModelVariant operation middleware
+func (siw *ServerInterfaceWrapper) ResolveCatalogProductModelVariant(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ResolveCatalogProductModelVariant(c, id)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -1895,6 +3300,35 @@ func (siw *ServerInterfaceWrapper) UpdateProduct(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// GetCatalogProductBuyMeta operation middleware
+func (siw *ServerInterfaceWrapper) GetCatalogProductBuyMeta(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCatalogProductBuyMeta(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // GetProductReviews operation middleware
 func (siw *ServerInterfaceWrapper) GetProductReviews(c *fiber.Ctx) error {
 
@@ -1911,6 +3345,75 @@ func (siw *ServerInterfaceWrapper) GetProductReviews(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetProductReviews(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// SearchCatalog operation middleware
+func (siw *ServerInterfaceWrapper) SearchCatalog(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchCatalogParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", query, &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter q: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", query, &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter page: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", query, &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter limit: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.SearchCatalog(c, params)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetCatalogSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetCatalogSettings(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetCatalogSettings(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -2283,6 +3786,35 @@ func (siw *ServerInterfaceWrapper) CreateContentArticle(c *fiber.Ctx) error {
 	return handler(c)
 }
 
+// UpdateContentArticle operation middleware
+func (siw *ServerInterfaceWrapper) UpdateContentArticle(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.UpdateContentArticle(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
 // ListContentPages operation middleware
 func (siw *ServerInterfaceWrapper) ListContentPages(c *fiber.Ctx) error {
 
@@ -2498,6 +4030,24 @@ func (siw *ServerInterfaceWrapper) DeleteMedia(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.DeleteMedia(c, id)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// ClearNotificationInbox operation middleware
+func (siw *ServerInterfaceWrapper) ClearNotificationInbox(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ClearNotificationInbox(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -2758,60 +4308,6 @@ func (siw *ServerInterfaceWrapper) UpdateProfile(c *fiber.Ctx) error {
 	return handler(c)
 }
 
-// DoCheckin operation middleware
-func (siw *ServerInterfaceWrapper) DoCheckin(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.DoCheckin(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetCheckinStatusAlt operation middleware
-func (siw *ServerInterfaceWrapper) GetCheckinStatusAlt(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetCheckinStatusAlt(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetCheckinStatus operation middleware
-func (siw *ServerInterfaceWrapper) GetCheckinStatus(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetCheckinStatus(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
 // UpdateProfileEmail operation middleware
 func (siw *ServerInterfaceWrapper) UpdateProfileEmail(c *fiber.Ctx) error {
 
@@ -2871,6 +4367,24 @@ func (siw *ServerInterfaceWrapper) GetProfileSessions(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetProfileSessions(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// ListPublicContentArticles operation middleware
+func (siw *ServerInterfaceWrapper) ListPublicContentArticles(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.ListPublicContentArticles(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -2954,42 +4468,6 @@ func (siw *ServerInterfaceWrapper) GetUserProfile(c *fiber.Ctx) error {
 
 	handler := func(c *fiber.Ctx) error {
 		return siw.Handler.GetUserProfile(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetUserCheckinStatusAlt operation middleware
-func (siw *ServerInterfaceWrapper) GetUserCheckinStatusAlt(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetUserCheckinStatusAlt(c)
-	}
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		m := siw.HandlerMiddlewares[i]
-		next := handler
-		handler = func(c *fiber.Ctx) error {
-			return m(c, next)
-		}
-	}
-
-	return handler(c)
-}
-
-// GetUserCheckinStatus operation middleware
-func (siw *ServerInterfaceWrapper) GetUserCheckinStatus(c *fiber.Ctx) error {
-
-	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.GetUserCheckinStatus(c)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -3452,6 +4930,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Delete(options.BaseURL+"/admin/reviews/:reviewId", wrapper.AdminDeleteReview)
 
+	router.Get(options.BaseURL+"/admin/reviews/:reviewId", wrapper.AdminGetReview)
+
 	router.Put(options.BaseURL+"/admin/reviews/:reviewId/approve", wrapper.AdminApproveReview)
 
 	router.Put(options.BaseURL+"/admin/reviews/:reviewId/hide", wrapper.AdminHideReview)
@@ -3516,17 +4996,7 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Patch(options.BaseURL+"/profile/notifications", wrapper.UpdateProfileNotifications)
 
-	router.Post(options.BaseURL+"/profile/checkin", wrapper.DoCheckin)
-
-	router.Get(options.BaseURL+"/profile/checkin/status", wrapper.GetCheckinStatus)
-
-	router.Get(options.BaseURL+"/profile/checkin-status", wrapper.GetCheckinStatusAlt)
-
 	router.Get(options.BaseURL+"/user/profile", wrapper.GetUserProfile)
-
-	router.Get(options.BaseURL+"/user/profile/checkin/status", wrapper.GetUserCheckinStatus)
-
-	router.Get(options.BaseURL+"/user/profile/checkin-status", wrapper.GetUserCheckinStatusAlt)
 
 	router.Post(options.BaseURL+"/checkout/orders/:orderId/cancel", wrapper.CancelCheckoutOrder)
 
@@ -3555,6 +5025,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/homepage/config", wrapper.GetHomepageConfig)
 
 	router.Post(options.BaseURL+"/importer/execute", wrapper.ExecuteImport)
+
+	router.Delete(options.BaseURL+"/notifications", wrapper.ClearNotificationInbox)
 
 	router.Get(options.BaseURL+"/notifications", wrapper.ListNotifications)
 
@@ -3585,6 +5057,104 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/leads", wrapper.ListLeads)
 
 	router.Post(options.BaseURL+"/leads", wrapper.SubmitLead)
+
+	router.Delete(options.BaseURL+"/admin/banners/:id", wrapper.AdminDeleteBanner)
+
+	router.Delete(options.BaseURL+"/admin/faqs/:id", wrapper.AdminDeleteFaq)
+
+	router.Get(options.BaseURL+"/admin/refunds/:refundId", wrapper.AdminGetRefund)
+
+	router.Patch(options.BaseURL+"/content/articles/:id", wrapper.UpdateContentArticle)
+
+	router.Patch(options.BaseURL+"/admin/products/:id", wrapper.AdminUpdateProductEditorial)
+
+	router.Put(options.BaseURL+"/admin/collect/setup", wrapper.AdminUpdateCollect)
+
+	router.Post(options.BaseURL+"/admin/notifications/test", wrapper.QueueAdminNotificationTest)
+
+	router.Get(options.BaseURL+"/catalog/product-models/:id/options", wrapper.GetCatalogProductModelOptions)
+
+	router.Post(options.BaseURL+"/catalog/product-models/:id/variants\\:resolve", wrapper.ResolveCatalogProductModelVariant)
+
+	router.Get(options.BaseURL+"/catalog/settings", wrapper.GetCatalogSettings)
+
+	router.Get(options.BaseURL+"/catalog/search", wrapper.SearchCatalog)
+
+	router.Get(options.BaseURL+"/catalog/products/:id/buy-meta", wrapper.GetCatalogProductBuyMeta)
+
+	router.Get(options.BaseURL+"/catalog/announcement", wrapper.GetCatalogAnnouncement)
+
+	router.Get(options.BaseURL+"/public/content/articles", wrapper.ListPublicContentArticles)
+
+	router.Get(options.BaseURL+"/admin/catalog/categories", wrapper.AdminListCatalogCategories)
+
+	router.Post(options.BaseURL+"/admin/catalog/categories", wrapper.AdminCreateCatalogCategory)
+
+	router.Delete(options.BaseURL+"/admin/catalog/categories/:categoryId", wrapper.AdminDeleteCatalogCategory)
+
+	router.Patch(options.BaseURL+"/admin/catalog/categories/:categoryId", wrapper.AdminUpdateCatalogCategory)
+
+	router.Post(options.BaseURL+"/admin/catalog/categories/:categoryId/deactivate", wrapper.AdminDeactivateCatalogCategory)
+
+	router.Get(options.BaseURL+"/admin/catalog/attribute-definitions", wrapper.AdminListAttributeDefinitions)
+
+	router.Post(options.BaseURL+"/admin/catalog/attribute-definitions", wrapper.AdminCreateAttributeDefinition)
+
+	router.Patch(options.BaseURL+"/admin/catalog/attribute-definitions/:definitionId", wrapper.AdminUpdateAttributeDefinition)
+
+	router.Post(options.BaseURL+"/admin/catalog/attribute-definitions/:definitionId/deactivate", wrapper.AdminDeactivateAttributeDefinition)
+
+	router.Post(options.BaseURL+"/admin/catalog/attribute-definitions/:definitionId/enum-values", wrapper.AdminAddAttributeEnumValue)
+
+	router.Post(options.BaseURL+"/admin/catalog/attribute-definitions/:definitionId/enum-values/:enumValueId/deactivate", wrapper.AdminDeactivateAttributeEnumValue)
+
+	router.Get(options.BaseURL+"/admin/catalog/masters/:masterKind", wrapper.AdminListCatalogMasters)
+
+	router.Post(options.BaseURL+"/admin/catalog/masters/:masterKind", wrapper.AdminCreateCatalogMaster)
+
+	router.Patch(options.BaseURL+"/admin/catalog/masters/:masterKind/:masterId", wrapper.AdminUpdateCatalogMaster)
+
+	router.Post(options.BaseURL+"/admin/catalog/masters/:masterKind/:masterId/deactivate", wrapper.AdminDeactivateCatalogMaster)
+
+	router.Get(options.BaseURL+"/admin/catalog/product-models", wrapper.AdminListCatalogProductModels)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models", wrapper.AdminCreateCatalogProductModel)
+
+	router.Delete(options.BaseURL+"/admin/catalog/product-models/:modelId", wrapper.AdminDeleteCatalogProductModel)
+
+	router.Get(options.BaseURL+"/admin/catalog/product-models/:modelId", wrapper.AdminGetCatalogProductModel)
+
+	router.Patch(options.BaseURL+"/admin/catalog/product-models/:modelId", wrapper.AdminUpdateCatalogProductModel)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/publish", wrapper.AdminPublishCatalogProductModel)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/unpublish", wrapper.AdminUnpublishCatalogProductModel)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/discontinue", wrapper.AdminDiscontinueCatalogProductModel)
+
+	router.Put(options.BaseURL+"/admin/catalog/product-models/:modelId/media", wrapper.AdminUpdateCatalogProductModelMedia)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/variant-dimensions", wrapper.AdminAddCatalogVariantDimension)
+
+	router.Patch(options.BaseURL+"/admin/catalog/product-models/:modelId/variant-dimensions/:dimensionId", wrapper.AdminUpdateCatalogVariantDimension)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/variant-dimensions/:dimensionId/values", wrapper.AdminAddCatalogVariantDimensionValue)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/variant-dimensions/:dimensionId/values/:valueId/deactivate", wrapper.AdminDeactivateCatalogVariantDimensionValue)
+
+	router.Get(options.BaseURL+"/admin/catalog/product-models/:modelId/variants", wrapper.AdminListCatalogModelVariants)
+
+	router.Post(options.BaseURL+"/admin/catalog/product-models/:modelId/variants", wrapper.AdminCreateCatalogModelVariant)
+
+	router.Post(options.BaseURL+"/admin/catalog/variants/prices\\:bulk", wrapper.AdminBulkUpdateVariantPrices)
+
+	router.Get(options.BaseURL+"/admin/catalog/variants/:variantId", wrapper.AdminGetCatalogVariant)
+
+	router.Patch(options.BaseURL+"/admin/catalog/variants/:variantId", wrapper.AdminUpdateCatalogVariant)
+
+	router.Post(options.BaseURL+"/admin/catalog/variants/:variantId/activate", wrapper.AdminActivateCatalogVariant)
+
+	router.Post(options.BaseURL+"/admin/catalog/variants/:variantId/inactivate", wrapper.AdminInactivateCatalogVariant)
 
 }
 
@@ -3831,6 +5401,2128 @@ func (response AdminSaveBanner500JSONResponse) VisitAdminSaveBannerResponse(ctx 
 	return ctx.JSON(&response)
 }
 
+type AdminDeleteBannerRequestObject struct {
+	Id string `json:"id"`
+}
+
+type AdminDeleteBannerResponseObject interface {
+	VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeleteBanner204Response struct {
+}
+
+func (response AdminDeleteBanner204Response) VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type AdminDeleteBanner401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeleteBanner401JSONResponse) VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteBanner403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeleteBanner403JSONResponse) VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteBanner404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeleteBanner404JSONResponse) VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteBanner500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeleteBanner500JSONResponse) VisitAdminDeleteBannerResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListAttributeDefinitionsRequestObject struct {
+}
+
+type AdminListAttributeDefinitionsResponseObject interface {
+	VisitAdminListAttributeDefinitionsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListAttributeDefinitions200Response struct {
+}
+
+func (response AdminListAttributeDefinitions200Response) VisitAdminListAttributeDefinitionsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminListAttributeDefinitions401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListAttributeDefinitions401JSONResponse) VisitAdminListAttributeDefinitionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListAttributeDefinitions403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListAttributeDefinitions403JSONResponse) VisitAdminListAttributeDefinitionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListAttributeDefinitions500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListAttributeDefinitions500JSONResponse) VisitAdminListAttributeDefinitionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateAttributeDefinitionRequestObject struct {
+	Body *AdminCreateAttributeDefinitionJSONRequestBody
+}
+
+type AdminCreateAttributeDefinitionResponseObject interface {
+	VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateAttributeDefinition201Response struct {
+}
+
+func (response AdminCreateAttributeDefinition201Response) VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminCreateAttributeDefinition400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminCreateAttributeDefinition400JSONResponse) VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateAttributeDefinition401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateAttributeDefinition401JSONResponse) VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateAttributeDefinition403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateAttributeDefinition403JSONResponse) VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateAttributeDefinition500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateAttributeDefinition500JSONResponse) VisitAdminCreateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateAttributeDefinitionRequestObject struct {
+	DefinitionId string `json:"definitionId"`
+	Body         *AdminUpdateAttributeDefinitionJSONRequestBody
+}
+
+type AdminUpdateAttributeDefinitionResponseObject interface {
+	VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateAttributeDefinition200Response struct {
+}
+
+func (response AdminUpdateAttributeDefinition200Response) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateAttributeDefinition400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateAttributeDefinition400JSONResponse) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateAttributeDefinition401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateAttributeDefinition401JSONResponse) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateAttributeDefinition403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateAttributeDefinition403JSONResponse) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateAttributeDefinition404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateAttributeDefinition404JSONResponse) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateAttributeDefinition500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateAttributeDefinition500JSONResponse) VisitAdminUpdateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeDefinitionRequestObject struct {
+	DefinitionId string `json:"definitionId"`
+}
+
+type AdminDeactivateAttributeDefinitionResponseObject interface {
+	VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeactivateAttributeDefinition200Response struct {
+}
+
+func (response AdminDeactivateAttributeDefinition200Response) VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDeactivateAttributeDefinition401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeactivateAttributeDefinition401JSONResponse) VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeDefinition403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeactivateAttributeDefinition403JSONResponse) VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeDefinition404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeactivateAttributeDefinition404JSONResponse) VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeDefinition500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeactivateAttributeDefinition500JSONResponse) VisitAdminDeactivateAttributeDefinitionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddAttributeEnumValueRequestObject struct {
+	DefinitionId string `json:"definitionId"`
+	Body         *AdminAddAttributeEnumValueJSONRequestBody
+}
+
+type AdminAddAttributeEnumValueResponseObject interface {
+	VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error
+}
+
+type AdminAddAttributeEnumValue201Response struct {
+}
+
+func (response AdminAddAttributeEnumValue201Response) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminAddAttributeEnumValue400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminAddAttributeEnumValue400JSONResponse) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddAttributeEnumValue401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminAddAttributeEnumValue401JSONResponse) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddAttributeEnumValue403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminAddAttributeEnumValue403JSONResponse) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddAttributeEnumValue404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminAddAttributeEnumValue404JSONResponse) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddAttributeEnumValue500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminAddAttributeEnumValue500JSONResponse) VisitAdminAddAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeEnumValueRequestObject struct {
+	DefinitionId string `json:"definitionId"`
+	EnumValueId  string `json:"enumValueId"`
+}
+
+type AdminDeactivateAttributeEnumValueResponseObject interface {
+	VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeactivateAttributeEnumValue200Response struct {
+}
+
+func (response AdminDeactivateAttributeEnumValue200Response) VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDeactivateAttributeEnumValue401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeactivateAttributeEnumValue401JSONResponse) VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeEnumValue403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeactivateAttributeEnumValue403JSONResponse) VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeEnumValue404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeactivateAttributeEnumValue404JSONResponse) VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateAttributeEnumValue500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeactivateAttributeEnumValue500JSONResponse) VisitAdminDeactivateAttributeEnumValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogCategoriesRequestObject struct {
+}
+
+type AdminListCatalogCategoriesResponseObject interface {
+	VisitAdminListCatalogCategoriesResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListCatalogCategories200Response struct {
+}
+
+func (response AdminListCatalogCategories200Response) VisitAdminListCatalogCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminListCatalogCategories401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListCatalogCategories401JSONResponse) VisitAdminListCatalogCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogCategories403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListCatalogCategories403JSONResponse) VisitAdminListCatalogCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogCategories500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListCatalogCategories500JSONResponse) VisitAdminListCatalogCategoriesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogCategoryRequestObject struct {
+	Body *AdminCreateCatalogCategoryJSONRequestBody
+}
+
+type AdminCreateCatalogCategoryResponseObject interface {
+	VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateCatalogCategory201Response struct {
+}
+
+func (response AdminCreateCatalogCategory201Response) VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminCreateCatalogCategory400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminCreateCatalogCategory400JSONResponse) VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogCategory401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateCatalogCategory401JSONResponse) VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogCategory403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateCatalogCategory403JSONResponse) VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogCategory500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateCatalogCategory500JSONResponse) VisitAdminCreateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogCategoryRequestObject struct {
+	CategoryId string `json:"categoryId"`
+}
+
+type AdminDeleteCatalogCategoryResponseObject interface {
+	VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeleteCatalogCategory204Response struct {
+}
+
+func (response AdminDeleteCatalogCategory204Response) VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type AdminDeleteCatalogCategory401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeleteCatalogCategory401JSONResponse) VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogCategory403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeleteCatalogCategory403JSONResponse) VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogCategory404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeleteCatalogCategory404JSONResponse) VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogCategory500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeleteCatalogCategory500JSONResponse) VisitAdminDeleteCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogCategoryRequestObject struct {
+	CategoryId string `json:"categoryId"`
+	Body       *AdminUpdateCatalogCategoryJSONRequestBody
+}
+
+type AdminUpdateCatalogCategoryResponseObject interface {
+	VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogCategory200Response struct {
+}
+
+func (response AdminUpdateCatalogCategory200Response) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogCategory400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogCategory400JSONResponse) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogCategory401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogCategory401JSONResponse) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogCategory403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogCategory403JSONResponse) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogCategory404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogCategory404JSONResponse) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogCategory500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogCategory500JSONResponse) VisitAdminUpdateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogCategoryRequestObject struct {
+	CategoryId string `json:"categoryId"`
+}
+
+type AdminDeactivateCatalogCategoryResponseObject interface {
+	VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeactivateCatalogCategory200Response struct {
+}
+
+func (response AdminDeactivateCatalogCategory200Response) VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDeactivateCatalogCategory401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogCategory401JSONResponse) VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogCategory403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeactivateCatalogCategory403JSONResponse) VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogCategory404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeactivateCatalogCategory404JSONResponse) VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogCategory500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogCategory500JSONResponse) VisitAdminDeactivateCatalogCategoryResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogMastersRequestObject struct {
+	MasterKind string `json:"masterKind"`
+}
+
+type AdminListCatalogMastersResponseObject interface {
+	VisitAdminListCatalogMastersResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListCatalogMasters200Response struct {
+}
+
+func (response AdminListCatalogMasters200Response) VisitAdminListCatalogMastersResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminListCatalogMasters401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListCatalogMasters401JSONResponse) VisitAdminListCatalogMastersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogMasters403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListCatalogMasters403JSONResponse) VisitAdminListCatalogMastersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogMasters500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListCatalogMasters500JSONResponse) VisitAdminListCatalogMastersResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogMasterRequestObject struct {
+	MasterKind string `json:"masterKind"`
+	Body       *AdminCreateCatalogMasterJSONRequestBody
+}
+
+type AdminCreateCatalogMasterResponseObject interface {
+	VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateCatalogMaster201Response struct {
+}
+
+func (response AdminCreateCatalogMaster201Response) VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminCreateCatalogMaster400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminCreateCatalogMaster400JSONResponse) VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogMaster401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateCatalogMaster401JSONResponse) VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogMaster403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateCatalogMaster403JSONResponse) VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogMaster500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateCatalogMaster500JSONResponse) VisitAdminCreateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogMasterRequestObject struct {
+	MasterKind string `json:"masterKind"`
+	MasterId   string `json:"masterId"`
+	Body       *AdminUpdateCatalogMasterJSONRequestBody
+}
+
+type AdminUpdateCatalogMasterResponseObject interface {
+	VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogMaster200Response struct {
+}
+
+func (response AdminUpdateCatalogMaster200Response) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogMaster400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogMaster400JSONResponse) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogMaster401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogMaster401JSONResponse) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogMaster403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogMaster403JSONResponse) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogMaster404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogMaster404JSONResponse) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogMaster500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogMaster500JSONResponse) VisitAdminUpdateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogMasterRequestObject struct {
+	MasterKind string `json:"masterKind"`
+	MasterId   string `json:"masterId"`
+}
+
+type AdminDeactivateCatalogMasterResponseObject interface {
+	VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeactivateCatalogMaster200Response struct {
+}
+
+func (response AdminDeactivateCatalogMaster200Response) VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDeactivateCatalogMaster401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogMaster401JSONResponse) VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogMaster403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeactivateCatalogMaster403JSONResponse) VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogMaster404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeactivateCatalogMaster404JSONResponse) VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogMaster500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogMaster500JSONResponse) VisitAdminDeactivateCatalogMasterResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogProductModelsRequestObject struct {
+}
+
+type AdminListCatalogProductModelsResponseObject interface {
+	VisitAdminListCatalogProductModelsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListCatalogProductModels200Response struct {
+}
+
+func (response AdminListCatalogProductModels200Response) VisitAdminListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminListCatalogProductModels401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListCatalogProductModels401JSONResponse) VisitAdminListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogProductModels403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListCatalogProductModels403JSONResponse) VisitAdminListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogProductModels500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListCatalogProductModels500JSONResponse) VisitAdminListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogProductModelRequestObject struct {
+	Body *AdminCreateCatalogProductModelJSONRequestBody
+}
+
+type AdminCreateCatalogProductModelResponseObject interface {
+	VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateCatalogProductModel201Response struct {
+}
+
+func (response AdminCreateCatalogProductModel201Response) VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminCreateCatalogProductModel400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminCreateCatalogProductModel400JSONResponse) VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateCatalogProductModel401JSONResponse) VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateCatalogProductModel403JSONResponse) VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateCatalogProductModel500JSONResponse) VisitAdminCreateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminDeleteCatalogProductModelResponseObject interface {
+	VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeleteCatalogProductModel204Response struct {
+}
+
+func (response AdminDeleteCatalogProductModel204Response) VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type AdminDeleteCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeleteCatalogProductModel401JSONResponse) VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeleteCatalogProductModel403JSONResponse) VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeleteCatalogProductModel404JSONResponse) VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeleteCatalogProductModel500JSONResponse) VisitAdminDeleteCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminGetCatalogProductModelResponseObject interface {
+	VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetCatalogProductModel200Response struct {
+}
+
+func (response AdminGetCatalogProductModel200Response) VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminGetCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetCatalogProductModel401JSONResponse) VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetCatalogProductModel403JSONResponse) VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminGetCatalogProductModel404JSONResponse) VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetCatalogProductModel500JSONResponse) VisitAdminGetCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+	Body    *AdminUpdateCatalogProductModelJSONRequestBody
+}
+
+type AdminUpdateCatalogProductModelResponseObject interface {
+	VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogProductModel200Response struct {
+}
+
+func (response AdminUpdateCatalogProductModel200Response) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogProductModel400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModel400JSONResponse) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogProductModel401JSONResponse) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModel403JSONResponse) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModel404JSONResponse) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogProductModel500JSONResponse) VisitAdminUpdateCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDiscontinueCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminDiscontinueCatalogProductModelResponseObject interface {
+	VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDiscontinueCatalogProductModel200Response struct {
+}
+
+func (response AdminDiscontinueCatalogProductModel200Response) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDiscontinueCatalogProductModel400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminDiscontinueCatalogProductModel400JSONResponse) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDiscontinueCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDiscontinueCatalogProductModel401JSONResponse) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDiscontinueCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDiscontinueCatalogProductModel403JSONResponse) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDiscontinueCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDiscontinueCatalogProductModel404JSONResponse) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDiscontinueCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDiscontinueCatalogProductModel500JSONResponse) VisitAdminDiscontinueCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelMediaRequestObject struct {
+	ModelId string `json:"modelId"`
+	Body    *AdminUpdateCatalogProductModelMediaJSONRequestBody
+}
+
+type AdminUpdateCatalogProductModelMediaResponseObject interface {
+	VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogProductModelMedia200Response struct {
+}
+
+func (response AdminUpdateCatalogProductModelMedia200Response) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogProductModelMedia400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModelMedia400JSONResponse) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelMedia401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogProductModelMedia401JSONResponse) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelMedia403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModelMedia403JSONResponse) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelMedia404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogProductModelMedia404JSONResponse) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogProductModelMedia500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogProductModelMedia500JSONResponse) VisitAdminUpdateCatalogProductModelMediaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminPublishCatalogProductModelResponseObject interface {
+	VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminPublishCatalogProductModel200Response struct {
+}
+
+func (response AdminPublishCatalogProductModel200Response) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminPublishCatalogProductModel400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminPublishCatalogProductModel400JSONResponse) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminPublishCatalogProductModel401JSONResponse) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminPublishCatalogProductModel403JSONResponse) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminPublishCatalogProductModel404JSONResponse) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminPublishCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminPublishCatalogProductModel500JSONResponse) VisitAdminPublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUnpublishCatalogProductModelRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminUnpublishCatalogProductModelResponseObject interface {
+	VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUnpublishCatalogProductModel200Response struct {
+}
+
+func (response AdminUnpublishCatalogProductModel200Response) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUnpublishCatalogProductModel400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUnpublishCatalogProductModel400JSONResponse) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUnpublishCatalogProductModel401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUnpublishCatalogProductModel401JSONResponse) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUnpublishCatalogProductModel403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUnpublishCatalogProductModel403JSONResponse) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUnpublishCatalogProductModel404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUnpublishCatalogProductModel404JSONResponse) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUnpublishCatalogProductModel500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUnpublishCatalogProductModel500JSONResponse) VisitAdminUnpublishCatalogProductModelResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionRequestObject struct {
+	ModelId string `json:"modelId"`
+	Body    *AdminAddCatalogVariantDimensionJSONRequestBody
+}
+
+type AdminAddCatalogVariantDimensionResponseObject interface {
+	VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error
+}
+
+type AdminAddCatalogVariantDimension201Response struct {
+}
+
+func (response AdminAddCatalogVariantDimension201Response) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminAddCatalogVariantDimension400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimension400JSONResponse) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimension401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminAddCatalogVariantDimension401JSONResponse) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimension403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimension403JSONResponse) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimension404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimension404JSONResponse) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimension500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminAddCatalogVariantDimension500JSONResponse) VisitAdminAddCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantDimensionRequestObject struct {
+	ModelId     string `json:"modelId"`
+	DimensionId string `json:"dimensionId"`
+	Body        *AdminUpdateCatalogVariantDimensionJSONRequestBody
+}
+
+type AdminUpdateCatalogVariantDimensionResponseObject interface {
+	VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogVariantDimension200Response struct {
+}
+
+func (response AdminUpdateCatalogVariantDimension200Response) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogVariantDimension400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariantDimension400JSONResponse) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantDimension401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogVariantDimension401JSONResponse) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantDimension403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariantDimension403JSONResponse) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantDimension404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariantDimension404JSONResponse) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantDimension500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogVariantDimension500JSONResponse) VisitAdminUpdateCatalogVariantDimensionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionValueRequestObject struct {
+	ModelId     string `json:"modelId"`
+	DimensionId string `json:"dimensionId"`
+	Body        *AdminAddCatalogVariantDimensionValueJSONRequestBody
+}
+
+type AdminAddCatalogVariantDimensionValueResponseObject interface {
+	VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error
+}
+
+type AdminAddCatalogVariantDimensionValue201Response struct {
+}
+
+func (response AdminAddCatalogVariantDimensionValue201Response) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminAddCatalogVariantDimensionValue400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimensionValue400JSONResponse) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionValue401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminAddCatalogVariantDimensionValue401JSONResponse) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionValue403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimensionValue403JSONResponse) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionValue404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminAddCatalogVariantDimensionValue404JSONResponse) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminAddCatalogVariantDimensionValue500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminAddCatalogVariantDimensionValue500JSONResponse) VisitAdminAddCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogVariantDimensionValueRequestObject struct {
+	ModelId     string `json:"modelId"`
+	DimensionId string `json:"dimensionId"`
+	ValueId     string `json:"valueId"`
+}
+
+type AdminDeactivateCatalogVariantDimensionValueResponseObject interface {
+	VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeactivateCatalogVariantDimensionValue200Response struct {
+}
+
+func (response AdminDeactivateCatalogVariantDimensionValue200Response) VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminDeactivateCatalogVariantDimensionValue401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogVariantDimensionValue401JSONResponse) VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogVariantDimensionValue403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeactivateCatalogVariantDimensionValue403JSONResponse) VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogVariantDimensionValue404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeactivateCatalogVariantDimensionValue404JSONResponse) VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeactivateCatalogVariantDimensionValue500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeactivateCatalogVariantDimensionValue500JSONResponse) VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogModelVariantsRequestObject struct {
+	ModelId string `json:"modelId"`
+}
+
+type AdminListCatalogModelVariantsResponseObject interface {
+	VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error
+}
+
+type AdminListCatalogModelVariants200Response struct {
+}
+
+func (response AdminListCatalogModelVariants200Response) VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminListCatalogModelVariants401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminListCatalogModelVariants401JSONResponse) VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogModelVariants403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminListCatalogModelVariants403JSONResponse) VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogModelVariants404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminListCatalogModelVariants404JSONResponse) VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminListCatalogModelVariants500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminListCatalogModelVariants500JSONResponse) VisitAdminListCatalogModelVariantsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogModelVariantRequestObject struct {
+	ModelId string `json:"modelId"`
+	Body    *AdminCreateCatalogModelVariantJSONRequestBody
+}
+
+type AdminCreateCatalogModelVariantResponseObject interface {
+	VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error
+}
+
+type AdminCreateCatalogModelVariant201Response struct {
+}
+
+func (response AdminCreateCatalogModelVariant201Response) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(201)
+	return nil
+}
+
+type AdminCreateCatalogModelVariant400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminCreateCatalogModelVariant400JSONResponse) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogModelVariant401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminCreateCatalogModelVariant401JSONResponse) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogModelVariant403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminCreateCatalogModelVariant403JSONResponse) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogModelVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminCreateCatalogModelVariant404JSONResponse) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminCreateCatalogModelVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminCreateCatalogModelVariant500JSONResponse) VisitAdminCreateCatalogModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBulkUpdateVariantPricesRequestObject struct {
+	Body *AdminBulkUpdateVariantPricesJSONRequestBody
+}
+
+type AdminBulkUpdateVariantPricesResponseObject interface {
+	VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error
+}
+
+type AdminBulkUpdateVariantPrices200Response struct {
+}
+
+func (response AdminBulkUpdateVariantPrices200Response) VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminBulkUpdateVariantPrices400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminBulkUpdateVariantPrices400JSONResponse) VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBulkUpdateVariantPrices401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminBulkUpdateVariantPrices401JSONResponse) VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBulkUpdateVariantPrices403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminBulkUpdateVariantPrices403JSONResponse) VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminBulkUpdateVariantPrices500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminBulkUpdateVariantPrices500JSONResponse) VisitAdminBulkUpdateVariantPricesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogVariantRequestObject struct {
+	VariantId string `json:"variantId"`
+}
+
+type AdminGetCatalogVariantResponseObject interface {
+	VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetCatalogVariant200Response struct {
+}
+
+func (response AdminGetCatalogVariant200Response) VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminGetCatalogVariant401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetCatalogVariant401JSONResponse) VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogVariant403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetCatalogVariant403JSONResponse) VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminGetCatalogVariant404JSONResponse) VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetCatalogVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetCatalogVariant500JSONResponse) VisitAdminGetCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariantRequestObject struct {
+	VariantId string `json:"variantId"`
+	Body      *AdminUpdateCatalogVariantJSONRequestBody
+}
+
+type AdminUpdateCatalogVariantResponseObject interface {
+	VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCatalogVariant200Response struct {
+}
+
+func (response AdminUpdateCatalogVariant200Response) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCatalogVariant400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariant400JSONResponse) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariant401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogVariant401JSONResponse) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariant403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariant403JSONResponse) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateCatalogVariant404JSONResponse) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCatalogVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCatalogVariant500JSONResponse) VisitAdminUpdateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminActivateCatalogVariantRequestObject struct {
+	VariantId string `json:"variantId"`
+}
+
+type AdminActivateCatalogVariantResponseObject interface {
+	VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error
+}
+
+type AdminActivateCatalogVariant200Response struct {
+}
+
+func (response AdminActivateCatalogVariant200Response) VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminActivateCatalogVariant401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminActivateCatalogVariant401JSONResponse) VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminActivateCatalogVariant403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminActivateCatalogVariant403JSONResponse) VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminActivateCatalogVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminActivateCatalogVariant404JSONResponse) VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminActivateCatalogVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminActivateCatalogVariant500JSONResponse) VisitAdminActivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminInactivateCatalogVariantRequestObject struct {
+	VariantId string `json:"variantId"`
+}
+
+type AdminInactivateCatalogVariantResponseObject interface {
+	VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error
+}
+
+type AdminInactivateCatalogVariant200Response struct {
+}
+
+func (response AdminInactivateCatalogVariant200Response) VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminInactivateCatalogVariant401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminInactivateCatalogVariant401JSONResponse) VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminInactivateCatalogVariant403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminInactivateCatalogVariant403JSONResponse) VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminInactivateCatalogVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminInactivateCatalogVariant404JSONResponse) VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminInactivateCatalogVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminInactivateCatalogVariant500JSONResponse) VisitAdminInactivateCatalogVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type AdminListCategoriesRequestObject struct {
 }
 
@@ -3921,6 +7613,62 @@ type AdminGetCollect500JSONResponse struct {
 }
 
 func (response AdminGetCollect500JSONResponse) VisitAdminGetCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCollectRequestObject struct {
+	Body *AdminUpdateCollectJSONRequestBody
+}
+
+type AdminUpdateCollectResponseObject interface {
+	VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateCollect200Response struct {
+}
+
+func (response AdminUpdateCollect200Response) VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateCollect400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateCollect400JSONResponse) VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCollect401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateCollect401JSONResponse) VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCollect403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateCollect403JSONResponse) VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateCollect500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateCollect500JSONResponse) VisitAdminUpdateCollectResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -4063,6 +7811,62 @@ type AdminSaveFaq500JSONResponse struct {
 }
 
 func (response AdminSaveFaq500JSONResponse) VisitAdminSaveFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteFaqRequestObject struct {
+	Id string `json:"id"`
+}
+
+type AdminDeleteFaqResponseObject interface {
+	VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error
+}
+
+type AdminDeleteFaq204Response struct {
+}
+
+func (response AdminDeleteFaq204Response) VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type AdminDeleteFaq401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminDeleteFaq401JSONResponse) VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteFaq403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminDeleteFaq403JSONResponse) VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteFaq404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminDeleteFaq404JSONResponse) VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminDeleteFaq500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminDeleteFaq500JSONResponse) VisitAdminDeleteFaqResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -4364,6 +8168,52 @@ func (response AdminGetNotifications500JSONResponse) VisitAdminGetNotificationsR
 	return ctx.JSON(&response)
 }
 
+type QueueAdminNotificationTestRequestObject struct {
+}
+
+type QueueAdminNotificationTestResponseObject interface {
+	VisitQueueAdminNotificationTestResponse(ctx *fiber.Ctx) error
+}
+
+type QueueAdminNotificationTest200Response struct {
+}
+
+func (response QueueAdminNotificationTest200Response) VisitQueueAdminNotificationTestResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type QueueAdminNotificationTest401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response QueueAdminNotificationTest401JSONResponse) VisitQueueAdminNotificationTestResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type QueueAdminNotificationTest403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response QueueAdminNotificationTest403JSONResponse) VisitQueueAdminNotificationTestResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type QueueAdminNotificationTest500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response QueueAdminNotificationTest500JSONResponse) VisitQueueAdminNotificationTestResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type AdminListOrdersRequestObject struct {
 	Params AdminListOrdersParams
 }
@@ -4593,6 +8443,72 @@ func (response AdminListProducts500JSONResponse) VisitAdminListProductsResponse(
 	return ctx.JSON(&response)
 }
 
+type AdminUpdateProductEditorialRequestObject struct {
+	Id   string `json:"id"`
+	Body *AdminUpdateProductEditorialJSONRequestBody
+}
+
+type AdminUpdateProductEditorialResponseObject interface {
+	VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error
+}
+
+type AdminUpdateProductEditorial200Response struct {
+}
+
+func (response AdminUpdateProductEditorial200Response) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminUpdateProductEditorial400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response AdminUpdateProductEditorial400JSONResponse) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateProductEditorial401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminUpdateProductEditorial401JSONResponse) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateProductEditorial403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminUpdateProductEditorial403JSONResponse) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateProductEditorial404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminUpdateProductEditorial404JSONResponse) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminUpdateProductEditorial500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminUpdateProductEditorial500JSONResponse) VisitAdminUpdateProductEditorialResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type AdminListRefundsRequestObject struct {
 	Params AdminListRefundsParams
 }
@@ -4635,6 +8551,63 @@ type AdminListRefunds500JSONResponse struct {
 }
 
 func (response AdminListRefunds500JSONResponse) VisitAdminListRefundsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetRefundRequestObject struct {
+	RefundId string `json:"refundId"`
+}
+
+type AdminGetRefundResponseObject interface {
+	VisitAdminGetRefundResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetRefund200JSONResponse AdminRefundResponse
+
+func (response AdminGetRefund200JSONResponse) VisitAdminGetRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetRefund401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response AdminGetRefund401JSONResponse) VisitAdminGetRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetRefund403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response AdminGetRefund403JSONResponse) VisitAdminGetRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetRefund404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response AdminGetRefund404JSONResponse) VisitAdminGetRefundResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type AdminGetRefund500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response AdminGetRefund500JSONResponse) VisitAdminGetRefundResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -4951,6 +8924,54 @@ func (response AdminDeleteReview500JSONResponse) VisitAdminDeleteReviewResponse(
 	ctx.Status(500)
 
 	return ctx.JSON(&response)
+}
+
+type AdminGetReviewRequestObject struct {
+	ReviewId int64 `json:"reviewId"`
+}
+
+type AdminGetReviewResponseObject interface {
+	VisitAdminGetReviewResponse(ctx *fiber.Ctx) error
+}
+
+type AdminGetReview200Response struct {
+}
+
+func (response AdminGetReview200Response) VisitAdminGetReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type AdminGetReview401Response struct {
+}
+
+func (response AdminGetReview401Response) VisitAdminGetReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(401)
+	return nil
+}
+
+type AdminGetReview403Response struct {
+}
+
+func (response AdminGetReview403Response) VisitAdminGetReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(403)
+	return nil
+}
+
+type AdminGetReview404Response struct {
+}
+
+func (response AdminGetReview404Response) VisitAdminGetReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(404)
+	return nil
+}
+
+type AdminGetReview500Response struct {
+}
+
+func (response AdminGetReview500Response) VisitAdminGetReviewResponse(ctx *fiber.Ctx) error {
+	ctx.Status(500)
+	return nil
 }
 
 type AdminApproveReviewRequestObject struct {
@@ -6079,6 +10100,32 @@ func (response UpdateCartItem500JSONResponse) VisitUpdateCartItemResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
+type GetCatalogAnnouncementRequestObject struct {
+}
+
+type GetCatalogAnnouncementResponseObject interface {
+	VisitGetCatalogAnnouncementResponse(ctx *fiber.Ctx) error
+}
+
+type GetCatalogAnnouncement200Response struct {
+}
+
+func (response GetCatalogAnnouncement200Response) VisitGetCatalogAnnouncementResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type GetCatalogAnnouncement500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCatalogAnnouncement500JSONResponse) VisitGetCatalogAnnouncementResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type ListCategoriesRequestObject struct {
 }
 
@@ -6185,6 +10232,89 @@ type ListCatalogProductModels500JSONResponse struct {
 }
 
 func (response ListCatalogProductModels500JSONResponse) VisitListCatalogProductModelsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCatalogProductModelOptionsRequestObject struct {
+	Id     string `json:"id"`
+	Params GetCatalogProductModelOptionsParams
+}
+
+type GetCatalogProductModelOptionsResponseObject interface {
+	VisitGetCatalogProductModelOptionsResponse(ctx *fiber.Ctx) error
+}
+
+type GetCatalogProductModelOptions200Response struct {
+}
+
+func (response GetCatalogProductModelOptions200Response) VisitGetCatalogProductModelOptionsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type GetCatalogProductModelOptions404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response GetCatalogProductModelOptions404JSONResponse) VisitGetCatalogProductModelOptionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetCatalogProductModelOptions500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCatalogProductModelOptions500JSONResponse) VisitGetCatalogProductModelOptionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type ResolveCatalogProductModelVariantRequestObject struct {
+	Id   string `json:"id"`
+	Body *ResolveCatalogProductModelVariantJSONRequestBody
+}
+
+type ResolveCatalogProductModelVariantResponseObject interface {
+	VisitResolveCatalogProductModelVariantResponse(ctx *fiber.Ctx) error
+}
+
+type ResolveCatalogProductModelVariant200Response struct {
+}
+
+func (response ResolveCatalogProductModelVariant200Response) VisitResolveCatalogProductModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type ResolveCatalogProductModelVariant400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response ResolveCatalogProductModelVariant400JSONResponse) VisitResolveCatalogProductModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type ResolveCatalogProductModelVariant404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response ResolveCatalogProductModelVariant404JSONResponse) VisitResolveCatalogProductModelVariantResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type ResolveCatalogProductModelVariant500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response ResolveCatalogProductModelVariant500JSONResponse) VisitResolveCatalogProductModelVariantResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -6445,6 +10575,42 @@ func (response UpdateProduct500JSONResponse) VisitUpdateProductResponse(ctx *fib
 	return ctx.JSON(&response)
 }
 
+type GetCatalogProductBuyMetaRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetCatalogProductBuyMetaResponseObject interface {
+	VisitGetCatalogProductBuyMetaResponse(ctx *fiber.Ctx) error
+}
+
+type GetCatalogProductBuyMeta200Response struct {
+}
+
+func (response GetCatalogProductBuyMeta200Response) VisitGetCatalogProductBuyMetaResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type GetCatalogProductBuyMeta404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response GetCatalogProductBuyMeta404JSONResponse) VisitGetCatalogProductBuyMetaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetCatalogProductBuyMeta500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCatalogProductBuyMeta500JSONResponse) VisitGetCatalogProductBuyMetaResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type GetProductReviewsRequestObject struct {
 	Id string `json:"id"`
 }
@@ -6476,6 +10642,59 @@ type GetProductReviews500JSONResponse struct {
 }
 
 func (response GetProductReviews500JSONResponse) VisitGetProductReviewsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type SearchCatalogRequestObject struct {
+	Params SearchCatalogParams
+}
+
+type SearchCatalogResponseObject interface {
+	VisitSearchCatalogResponse(ctx *fiber.Ctx) error
+}
+
+type SearchCatalog200Response struct {
+}
+
+func (response SearchCatalog200Response) VisitSearchCatalogResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type SearchCatalog500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response SearchCatalog500JSONResponse) VisitSearchCatalogResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetCatalogSettingsRequestObject struct {
+}
+
+type GetCatalogSettingsResponseObject interface {
+	VisitGetCatalogSettingsResponse(ctx *fiber.Ctx) error
+}
+
+type GetCatalogSettings200Response struct {
+}
+
+func (response GetCatalogSettings200Response) VisitGetCatalogSettingsResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type GetCatalogSettings500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response GetCatalogSettings500JSONResponse) VisitGetCatalogSettingsResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -7137,6 +11356,72 @@ func (response CreateContentArticle500JSONResponse) VisitCreateContentArticleRes
 	return ctx.JSON(&response)
 }
 
+type UpdateContentArticleRequestObject struct {
+	Id   string `json:"id"`
+	Body *UpdateContentArticleJSONRequestBody
+}
+
+type UpdateContentArticleResponseObject interface {
+	VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error
+}
+
+type UpdateContentArticle200Response struct {
+}
+
+func (response UpdateContentArticle200Response) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type UpdateContentArticle400JSONResponse struct{ BadRequestResponseJSONResponse }
+
+func (response UpdateContentArticle400JSONResponse) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateContentArticle401JSONResponse struct {
+	UnauthorizedResponseJSONResponse
+}
+
+func (response UpdateContentArticle401JSONResponse) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateContentArticle403JSONResponse struct{ ForbiddenResponseJSONResponse }
+
+func (response UpdateContentArticle403JSONResponse) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateContentArticle404JSONResponse struct{ NotFoundResponseJSONResponse }
+
+func (response UpdateContentArticle404JSONResponse) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type UpdateContentArticle500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response UpdateContentArticle500JSONResponse) VisitUpdateContentArticleResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 type ListContentPagesRequestObject struct {
 }
 
@@ -7570,6 +11855,37 @@ func (response DeleteMedia500JSONResponse) VisitDeleteMediaResponse(ctx *fiber.C
 	return ctx.JSON(&response)
 }
 
+type ClearNotificationInboxRequestObject struct {
+}
+
+type ClearNotificationInboxResponseObject interface {
+	VisitClearNotificationInboxResponse(ctx *fiber.Ctx) error
+}
+
+type ClearNotificationInbox204Response struct {
+}
+
+func (response ClearNotificationInbox204Response) VisitClearNotificationInboxResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type ClearNotificationInbox401Response struct {
+}
+
+func (response ClearNotificationInbox401Response) VisitClearNotificationInboxResponse(ctx *fiber.Ctx) error {
+	ctx.Status(401)
+	return nil
+}
+
+type ClearNotificationInbox500Response struct {
+}
+
+func (response ClearNotificationInbox500Response) VisitClearNotificationInboxResponse(ctx *fiber.Ctx) error {
+	ctx.Status(500)
+	return nil
+}
+
 type ListNotificationsRequestObject struct {
 	Params ListNotificationsParams
 }
@@ -7981,119 +12297,6 @@ func (response UpdateProfile500JSONResponse) VisitUpdateProfileResponse(ctx *fib
 	return ctx.JSON(&response)
 }
 
-type DoCheckinRequestObject struct {
-}
-
-type DoCheckinResponseObject interface {
-	VisitDoCheckinResponse(ctx *fiber.Ctx) error
-}
-
-type DoCheckin200Response struct {
-}
-
-func (response DoCheckin200Response) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
-	ctx.Status(200)
-	return nil
-}
-
-type DoCheckin401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response DoCheckin401JSONResponse) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type DoCheckin500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response DoCheckin500JSONResponse) VisitDoCheckinResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatusAltRequestObject struct {
-}
-
-type GetCheckinStatusAltResponseObject interface {
-	VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error
-}
-
-type GetCheckinStatusAlt200JSONResponse CheckinStatusResponse
-
-func (response GetCheckinStatusAlt200JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatusAlt401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetCheckinStatusAlt401JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatusAlt500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetCheckinStatusAlt500JSONResponse) VisitGetCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatusRequestObject struct {
-}
-
-type GetCheckinStatusResponseObject interface {
-	VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error
-}
-
-type GetCheckinStatus200JSONResponse CheckinStatusResponse
-
-func (response GetCheckinStatus200JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatus401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetCheckinStatus401JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetCheckinStatus500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetCheckinStatus500JSONResponse) VisitGetCheckinStatusResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
 type UpdateProfileEmailRequestObject struct {
 	Body *UpdateProfileEmailJSONRequestBody
 }
@@ -8249,6 +12452,32 @@ type GetProfileSessions500JSONResponse struct {
 }
 
 func (response GetProfileSessions500JSONResponse) VisitGetProfileSessionsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type ListPublicContentArticlesRequestObject struct {
+}
+
+type ListPublicContentArticlesResponseObject interface {
+	VisitListPublicContentArticlesResponse(ctx *fiber.Ctx) error
+}
+
+type ListPublicContentArticles200Response struct {
+}
+
+func (response ListPublicContentArticles200Response) VisitListPublicContentArticlesResponse(ctx *fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type ListPublicContentArticles500JSONResponse struct {
+	InternalErrorResponseJSONResponse
+}
+
+func (response ListPublicContentArticles500JSONResponse) VisitListPublicContentArticlesResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -8418,82 +12647,6 @@ type GetUserProfile500JSONResponse struct {
 }
 
 func (response GetUserProfile500JSONResponse) VisitGetUserProfileResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatusAltRequestObject struct {
-}
-
-type GetUserCheckinStatusAltResponseObject interface {
-	VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error
-}
-
-type GetUserCheckinStatusAlt200JSONResponse CheckinStatusResponse
-
-func (response GetUserCheckinStatusAlt200JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatusAlt401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetUserCheckinStatusAlt401JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatusAlt500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetUserCheckinStatusAlt500JSONResponse) VisitGetUserCheckinStatusAltResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(500)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatusRequestObject struct {
-}
-
-type GetUserCheckinStatusResponseObject interface {
-	VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error
-}
-
-type GetUserCheckinStatus200JSONResponse CheckinStatusResponse
-
-func (response GetUserCheckinStatus200JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatus401JSONResponse struct {
-	UnauthorizedResponseJSONResponse
-}
-
-func (response GetUserCheckinStatus401JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(401)
-
-	return ctx.JSON(&response)
-}
-
-type GetUserCheckinStatus500JSONResponse struct {
-	InternalErrorResponseJSONResponse
-}
-
-func (response GetUserCheckinStatus500JSONResponse) VisitGetUserCheckinStatusResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(500)
 
@@ -9179,12 +13332,123 @@ type StrictServerInterface interface {
 	// AdminSaveBanner Create or update a banner
 	// (POST /admin/banners)
 	AdminSaveBanner(ctx context.Context, request AdminSaveBannerRequestObject) (AdminSaveBannerResponseObject, error)
+	// AdminDeleteBanner Delete banner
+	// (DELETE /admin/banners/{id})
+	AdminDeleteBanner(ctx context.Context, request AdminDeleteBannerRequestObject) (AdminDeleteBannerResponseObject, error)
+	// AdminListAttributeDefinitions List attribute definitions (admin)
+	// (GET /admin/catalog/attribute-definitions)
+	AdminListAttributeDefinitions(ctx context.Context, request AdminListAttributeDefinitionsRequestObject) (AdminListAttributeDefinitionsResponseObject, error)
+	// AdminCreateAttributeDefinition Create attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions)
+	AdminCreateAttributeDefinition(ctx context.Context, request AdminCreateAttributeDefinitionRequestObject) (AdminCreateAttributeDefinitionResponseObject, error)
+	// AdminUpdateAttributeDefinition Update attribute definition (admin)
+	// (PATCH /admin/catalog/attribute-definitions/{definitionId})
+	AdminUpdateAttributeDefinition(ctx context.Context, request AdminUpdateAttributeDefinitionRequestObject) (AdminUpdateAttributeDefinitionResponseObject, error)
+	// AdminDeactivateAttributeDefinition Deactivate attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/deactivate)
+	AdminDeactivateAttributeDefinition(ctx context.Context, request AdminDeactivateAttributeDefinitionRequestObject) (AdminDeactivateAttributeDefinitionResponseObject, error)
+	// AdminAddAttributeEnumValue Add enum value to attribute definition (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/enum-values)
+	AdminAddAttributeEnumValue(ctx context.Context, request AdminAddAttributeEnumValueRequestObject) (AdminAddAttributeEnumValueResponseObject, error)
+	// AdminDeactivateAttributeEnumValue Deactivate enum value (admin)
+	// (POST /admin/catalog/attribute-definitions/{definitionId}/enum-values/{enumValueId}/deactivate)
+	AdminDeactivateAttributeEnumValue(ctx context.Context, request AdminDeactivateAttributeEnumValueRequestObject) (AdminDeactivateAttributeEnumValueResponseObject, error)
+	// AdminListCatalogCategories List catalog categories (admin)
+	// (GET /admin/catalog/categories)
+	AdminListCatalogCategories(ctx context.Context, request AdminListCatalogCategoriesRequestObject) (AdminListCatalogCategoriesResponseObject, error)
+	// AdminCreateCatalogCategory Create catalog category (admin)
+	// (POST /admin/catalog/categories)
+	AdminCreateCatalogCategory(ctx context.Context, request AdminCreateCatalogCategoryRequestObject) (AdminCreateCatalogCategoryResponseObject, error)
+	// AdminDeleteCatalogCategory Delete catalog category (admin)
+	// (DELETE /admin/catalog/categories/{categoryId})
+	AdminDeleteCatalogCategory(ctx context.Context, request AdminDeleteCatalogCategoryRequestObject) (AdminDeleteCatalogCategoryResponseObject, error)
+	// AdminUpdateCatalogCategory Update catalog category (admin)
+	// (PATCH /admin/catalog/categories/{categoryId})
+	AdminUpdateCatalogCategory(ctx context.Context, request AdminUpdateCatalogCategoryRequestObject) (AdminUpdateCatalogCategoryResponseObject, error)
+	// AdminDeactivateCatalogCategory Deactivate catalog category (admin)
+	// (POST /admin/catalog/categories/{categoryId}/deactivate)
+	AdminDeactivateCatalogCategory(ctx context.Context, request AdminDeactivateCatalogCategoryRequestObject) (AdminDeactivateCatalogCategoryResponseObject, error)
+	// AdminListCatalogMasters List masters by kind (admin)
+	// (GET /admin/catalog/masters/{masterKind})
+	AdminListCatalogMasters(ctx context.Context, request AdminListCatalogMastersRequestObject) (AdminListCatalogMastersResponseObject, error)
+	// AdminCreateCatalogMaster Create master by kind (admin)
+	// (POST /admin/catalog/masters/{masterKind})
+	AdminCreateCatalogMaster(ctx context.Context, request AdminCreateCatalogMasterRequestObject) (AdminCreateCatalogMasterResponseObject, error)
+	// AdminUpdateCatalogMaster Update master (admin)
+	// (PATCH /admin/catalog/masters/{masterKind}/{masterId})
+	AdminUpdateCatalogMaster(ctx context.Context, request AdminUpdateCatalogMasterRequestObject) (AdminUpdateCatalogMasterResponseObject, error)
+	// AdminDeactivateCatalogMaster Deactivate master (admin)
+	// (POST /admin/catalog/masters/{masterKind}/{masterId}/deactivate)
+	AdminDeactivateCatalogMaster(ctx context.Context, request AdminDeactivateCatalogMasterRequestObject) (AdminDeactivateCatalogMasterResponseObject, error)
+	// AdminListCatalogProductModels List catalog product models (admin)
+	// (GET /admin/catalog/product-models)
+	AdminListCatalogProductModels(ctx context.Context, request AdminListCatalogProductModelsRequestObject) (AdminListCatalogProductModelsResponseObject, error)
+	// AdminCreateCatalogProductModel Create catalog product model (admin)
+	// (POST /admin/catalog/product-models)
+	AdminCreateCatalogProductModel(ctx context.Context, request AdminCreateCatalogProductModelRequestObject) (AdminCreateCatalogProductModelResponseObject, error)
+	// AdminDeleteCatalogProductModel Delete catalog product model (admin)
+	// (DELETE /admin/catalog/product-models/{modelId})
+	AdminDeleteCatalogProductModel(ctx context.Context, request AdminDeleteCatalogProductModelRequestObject) (AdminDeleteCatalogProductModelResponseObject, error)
+	// AdminGetCatalogProductModel Get catalog product model detail (admin)
+	// (GET /admin/catalog/product-models/{modelId})
+	AdminGetCatalogProductModel(ctx context.Context, request AdminGetCatalogProductModelRequestObject) (AdminGetCatalogProductModelResponseObject, error)
+	// AdminUpdateCatalogProductModel Update catalog product model (admin)
+	// (PATCH /admin/catalog/product-models/{modelId})
+	AdminUpdateCatalogProductModel(ctx context.Context, request AdminUpdateCatalogProductModelRequestObject) (AdminUpdateCatalogProductModelResponseObject, error)
+	// AdminDiscontinueCatalogProductModel Discontinue product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/discontinue)
+	AdminDiscontinueCatalogProductModel(ctx context.Context, request AdminDiscontinueCatalogProductModelRequestObject) (AdminDiscontinueCatalogProductModelResponseObject, error)
+	// AdminUpdateCatalogProductModelMedia Update product model media (admin)
+	// (PUT /admin/catalog/product-models/{modelId}/media)
+	AdminUpdateCatalogProductModelMedia(ctx context.Context, request AdminUpdateCatalogProductModelMediaRequestObject) (AdminUpdateCatalogProductModelMediaResponseObject, error)
+	// AdminPublishCatalogProductModel Publish product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/publish)
+	AdminPublishCatalogProductModel(ctx context.Context, request AdminPublishCatalogProductModelRequestObject) (AdminPublishCatalogProductModelResponseObject, error)
+	// AdminUnpublishCatalogProductModel Unpublish product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/unpublish)
+	AdminUnpublishCatalogProductModel(ctx context.Context, request AdminUnpublishCatalogProductModelRequestObject) (AdminUnpublishCatalogProductModelResponseObject, error)
+	// AdminAddCatalogVariantDimension Add variant dimension to product model (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions)
+	AdminAddCatalogVariantDimension(ctx context.Context, request AdminAddCatalogVariantDimensionRequestObject) (AdminAddCatalogVariantDimensionResponseObject, error)
+	// AdminUpdateCatalogVariantDimension Update variant dimension (admin)
+	// (PATCH /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId})
+	AdminUpdateCatalogVariantDimension(ctx context.Context, request AdminUpdateCatalogVariantDimensionRequestObject) (AdminUpdateCatalogVariantDimensionResponseObject, error)
+	// AdminAddCatalogVariantDimensionValue Add variant dimension value (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values)
+	AdminAddCatalogVariantDimensionValue(ctx context.Context, request AdminAddCatalogVariantDimensionValueRequestObject) (AdminAddCatalogVariantDimensionValueResponseObject, error)
+	// AdminDeactivateCatalogVariantDimensionValue Deactivate variant dimension value (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variant-dimensions/{dimensionId}/values/{valueId}/deactivate)
+	AdminDeactivateCatalogVariantDimensionValue(ctx context.Context, request AdminDeactivateCatalogVariantDimensionValueRequestObject) (AdminDeactivateCatalogVariantDimensionValueResponseObject, error)
+	// AdminListCatalogModelVariants List model variants (admin)
+	// (GET /admin/catalog/product-models/{modelId}/variants)
+	AdminListCatalogModelVariants(ctx context.Context, request AdminListCatalogModelVariantsRequestObject) (AdminListCatalogModelVariantsResponseObject, error)
+	// AdminCreateCatalogModelVariant Create model variant (admin)
+	// (POST /admin/catalog/product-models/{modelId}/variants)
+	AdminCreateCatalogModelVariant(ctx context.Context, request AdminCreateCatalogModelVariantRequestObject) (AdminCreateCatalogModelVariantResponseObject, error)
+	// AdminBulkUpdateVariantPrices Bulk update variant prices (admin)
+	// (POST /admin/catalog/variants/prices:bulk)
+	AdminBulkUpdateVariantPrices(ctx context.Context, request AdminBulkUpdateVariantPricesRequestObject) (AdminBulkUpdateVariantPricesResponseObject, error)
+	// AdminGetCatalogVariant Get variant detail (admin)
+	// (GET /admin/catalog/variants/{variantId})
+	AdminGetCatalogVariant(ctx context.Context, request AdminGetCatalogVariantRequestObject) (AdminGetCatalogVariantResponseObject, error)
+	// AdminUpdateCatalogVariant Update variant (admin)
+	// (PATCH /admin/catalog/variants/{variantId})
+	AdminUpdateCatalogVariant(ctx context.Context, request AdminUpdateCatalogVariantRequestObject) (AdminUpdateCatalogVariantResponseObject, error)
+	// AdminActivateCatalogVariant Activate variant (admin)
+	// (POST /admin/catalog/variants/{variantId}/activate)
+	AdminActivateCatalogVariant(ctx context.Context, request AdminActivateCatalogVariantRequestObject) (AdminActivateCatalogVariantResponseObject, error)
+	// AdminInactivateCatalogVariant Inactivate variant (admin)
+	// (POST /admin/catalog/variants/{variantId}/inactivate)
+	AdminInactivateCatalogVariant(ctx context.Context, request AdminInactivateCatalogVariantRequestObject) (AdminInactivateCatalogVariantResponseObject, error)
 	// AdminListCategories List categories (admin legacy)
 	// (GET /admin/categories)
 	AdminListCategories(ctx context.Context, request AdminListCategoriesRequestObject) (AdminListCategoriesResponseObject, error)
 	// AdminGetCollect Get admin collect/aggregate view
 	// (GET /admin/collect)
 	AdminGetCollect(ctx context.Context, request AdminGetCollectRequestObject) (AdminGetCollectResponseObject, error)
+	// AdminUpdateCollect Update admin collect setup
+	// (PUT /admin/collect/setup)
+	AdminUpdateCollect(ctx context.Context, request AdminUpdateCollectRequestObject) (AdminUpdateCollectResponseObject, error)
 	// GetAdminDashboardStats Get administrative dashboard statistics
 	// (GET /admin/dashboard/stats)
 	GetAdminDashboardStats(ctx context.Context, request GetAdminDashboardStatsRequestObject) (GetAdminDashboardStatsResponseObject, error)
@@ -9194,6 +13458,9 @@ type StrictServerInterface interface {
 	// AdminSaveFaq Create or update a FAQ
 	// (POST /admin/faqs)
 	AdminSaveFaq(ctx context.Context, request AdminSaveFaqRequestObject) (AdminSaveFaqResponseObject, error)
+	// AdminDeleteFaq Delete FAQ
+	// (DELETE /admin/faqs/{id})
+	AdminDeleteFaq(ctx context.Context, request AdminDeleteFaqRequestObject) (AdminDeleteFaqResponseObject, error)
 	// AdminListMedia List media files (admin)
 	// (GET /admin/media)
 	AdminListMedia(ctx context.Context, request AdminListMediaRequestObject) (AdminListMediaResponseObject, error)
@@ -9212,6 +13479,9 @@ type StrictServerInterface interface {
 	// AdminGetNotifications Get outbound notification readiness status
 	// (GET /admin/notifications)
 	AdminGetNotifications(ctx context.Context, request AdminGetNotificationsRequestObject) (AdminGetNotificationsResponseObject, error)
+	// QueueAdminNotificationTest Queue admin notification test
+	// (POST /admin/notifications/test)
+	QueueAdminNotificationTest(ctx context.Context, request QueueAdminNotificationTestRequestObject) (QueueAdminNotificationTestResponseObject, error)
 	// AdminListOrders List all orders (admin queue)
 	// (GET /admin/orders)
 	AdminListOrders(ctx context.Context, request AdminListOrdersRequestObject) (AdminListOrdersResponseObject, error)
@@ -9224,9 +13494,15 @@ type StrictServerInterface interface {
 	// AdminListProducts List all products (admin legacy)
 	// (GET /admin/products)
 	AdminListProducts(ctx context.Context, request AdminListProductsRequestObject) (AdminListProductsResponseObject, error)
+	// AdminUpdateProductEditorial Update product editorial
+	// (PATCH /admin/products/{id})
+	AdminUpdateProductEditorial(ctx context.Context, request AdminUpdateProductEditorialRequestObject) (AdminUpdateProductEditorialResponseObject, error)
 	// AdminListRefunds List refund requests (admin)
 	// (GET /admin/refunds)
 	AdminListRefunds(ctx context.Context, request AdminListRefundsRequestObject) (AdminListRefundsResponseObject, error)
+	// AdminGetRefund Get refund detail
+	// (GET /admin/refunds/{refundId})
+	AdminGetRefund(ctx context.Context, request AdminGetRefundRequestObject) (AdminGetRefundResponseObject, error)
 	// AdminApproveRefund Approve a refund request
 	// (POST /admin/refunds/{refundId}/approve)
 	AdminApproveRefund(ctx context.Context, request AdminApproveRefundRequestObject) (AdminApproveRefundResponseObject, error)
@@ -9242,6 +13518,9 @@ type StrictServerInterface interface {
 	// AdminDeleteReview Delete a review
 	// (DELETE /admin/reviews/{reviewId})
 	AdminDeleteReview(ctx context.Context, request AdminDeleteReviewRequestObject) (AdminDeleteReviewResponseObject, error)
+	// AdminGetReview Get review context
+	// (GET /admin/reviews/{reviewId})
+	AdminGetReview(ctx context.Context, request AdminGetReviewRequestObject) (AdminGetReviewResponseObject, error)
 	// AdminApproveReview Approve a review
 	// (PUT /admin/reviews/{reviewId}/approve)
 	AdminApproveReview(ctx context.Context, request AdminApproveReviewRequestObject) (AdminApproveReviewResponseObject, error)
@@ -9311,6 +13590,9 @@ type StrictServerInterface interface {
 	// UpdateCartItem Update cart item quantity
 	// (PUT /cart/items/{itemId})
 	UpdateCartItem(ctx context.Context, request UpdateCartItemRequestObject) (UpdateCartItemResponseObject, error)
+	// GetCatalogAnnouncement Get catalog announcement
+	// (GET /catalog/announcement)
+	GetCatalogAnnouncement(ctx context.Context, request GetCatalogAnnouncementRequestObject) (GetCatalogAnnouncementResponseObject, error)
 	// ListCategories List catalog categories
 	// (GET /catalog/categories)
 	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
@@ -9320,6 +13602,12 @@ type StrictServerInterface interface {
 	// ListCatalogProductModels List public catalog product models
 	// (GET /catalog/product-models)
 	ListCatalogProductModels(ctx context.Context, request ListCatalogProductModelsRequestObject) (ListCatalogProductModelsResponseObject, error)
+	// GetCatalogProductModelOptions Get public catalog product model options
+	// (GET /catalog/product-models/{id}/options)
+	GetCatalogProductModelOptions(ctx context.Context, request GetCatalogProductModelOptionsRequestObject) (GetCatalogProductModelOptionsResponseObject, error)
+	// ResolveCatalogProductModelVariant Resolve public variant from selected options
+	// (POST /catalog/product-models/{id}/variants:resolve)
+	ResolveCatalogProductModelVariant(ctx context.Context, request ResolveCatalogProductModelVariantRequestObject) (ResolveCatalogProductModelVariantResponseObject, error)
 	// ListProducts List catalog products
 	// (GET /catalog/products)
 	ListProducts(ctx context.Context, request ListProductsRequestObject) (ListProductsResponseObject, error)
@@ -9335,9 +13623,18 @@ type StrictServerInterface interface {
 	// UpdateProduct Update catalog product
 	// (PUT /catalog/products/{id})
 	UpdateProduct(ctx context.Context, request UpdateProductRequestObject) (UpdateProductResponseObject, error)
+	// GetCatalogProductBuyMeta Get product buy metadata
+	// (GET /catalog/products/{id}/buy-meta)
+	GetCatalogProductBuyMeta(ctx context.Context, request GetCatalogProductBuyMetaRequestObject) (GetCatalogProductBuyMetaResponseObject, error)
 	// GetProductReviews Read public product reviews
 	// (GET /catalog/products/{id}/reviews)
 	GetProductReviews(ctx context.Context, request GetProductReviewsRequestObject) (GetProductReviewsResponseObject, error)
+	// SearchCatalog Search catalog
+	// (GET /catalog/search)
+	SearchCatalog(ctx context.Context, request SearchCatalogRequestObject) (SearchCatalogResponseObject, error)
+	// GetCatalogSettings Get catalog settings (currency etc)
+	// (GET /catalog/settings)
+	GetCatalogSettings(ctx context.Context, request GetCatalogSettingsRequestObject) (GetCatalogSettingsResponseObject, error)
 	// ListTags List catalog tags
 	// (GET /catalog/tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
@@ -9380,6 +13677,9 @@ type StrictServerInterface interface {
 	// CreateContentArticle Create a new article
 	// (POST /content/articles)
 	CreateContentArticle(ctx context.Context, request CreateContentArticleRequestObject) (CreateContentArticleResponseObject, error)
+	// UpdateContentArticle Update article
+	// (PATCH /content/articles/{id})
+	UpdateContentArticle(ctx context.Context, request UpdateContentArticleRequestObject) (UpdateContentArticleResponseObject, error)
 	// ListContentPages List content pages
 	// (GET /content/pages)
 	ListContentPages(ctx context.Context, request ListContentPagesRequestObject) (ListContentPagesResponseObject, error)
@@ -9410,6 +13710,9 @@ type StrictServerInterface interface {
 	// DeleteMedia Delete media file
 	// (DELETE /media/{id})
 	DeleteMedia(ctx context.Context, request DeleteMediaRequestObject) (DeleteMediaResponseObject, error)
+	// ClearNotificationInbox Clear notification inbox
+	// (DELETE /notifications)
+	ClearNotificationInbox(ctx context.Context, request ClearNotificationInboxRequestObject) (ClearNotificationInboxResponseObject, error)
 	// ListNotifications List user notifications
 	// (GET /notifications)
 	ListNotifications(ctx context.Context, request ListNotificationsRequestObject) (ListNotificationsResponseObject, error)
@@ -9437,15 +13740,6 @@ type StrictServerInterface interface {
 	// UpdateProfile Update current user profile
 	// (PATCH /profile)
 	UpdateProfile(ctx context.Context, request UpdateProfileRequestObject) (UpdateProfileResponseObject, error)
-	// DoCheckin Daily check-in
-	// (POST /profile/checkin)
-	DoCheckin(ctx context.Context, request DoCheckinRequestObject) (DoCheckinResponseObject, error)
-	// GetCheckinStatusAlt Get check-in status (alias)
-	// (GET /profile/checkin-status)
-	GetCheckinStatusAlt(ctx context.Context, request GetCheckinStatusAltRequestObject) (GetCheckinStatusAltResponseObject, error)
-	// GetCheckinStatus Get check-in status
-	// (GET /profile/checkin/status)
-	GetCheckinStatus(ctx context.Context, request GetCheckinStatusRequestObject) (GetCheckinStatusResponseObject, error)
 	// UpdateProfileEmail Update profile email
 	// (PATCH /profile/email)
 	UpdateProfileEmail(ctx context.Context, request UpdateProfileEmailRequestObject) (UpdateProfileEmailResponseObject, error)
@@ -9458,6 +13752,9 @@ type StrictServerInterface interface {
 	// GetProfileSessions Get active sessions list
 	// (GET /profile/sessions)
 	GetProfileSessions(ctx context.Context, request GetProfileSessionsRequestObject) (GetProfileSessionsResponseObject, error)
+	// ListPublicContentArticles List public content articles
+	// (GET /public/content/articles)
+	ListPublicContentArticles(ctx context.Context, request ListPublicContentArticlesRequestObject) (ListPublicContentArticlesResponseObject, error)
 	// GetPublicHomepage Get public homepage config
 	// (GET /public/homepage)
 	GetPublicHomepage(ctx context.Context, request GetPublicHomepageRequestObject) (GetPublicHomepageResponseObject, error)
@@ -9470,12 +13767,6 @@ type StrictServerInterface interface {
 	// GetUserProfile Get user profile (legacy path)
 	// (GET /user/profile)
 	GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error)
-	// GetUserCheckinStatusAlt Get check-in status (legacy path alt)
-	// (GET /user/profile/checkin-status)
-	GetUserCheckinStatusAlt(ctx context.Context, request GetUserCheckinStatusAltRequestObject) (GetUserCheckinStatusAltResponseObject, error)
-	// GetUserCheckinStatus Get check-in status (legacy path)
-	// (GET /user/profile/checkin/status)
-	GetUserCheckinStatus(ctx context.Context, request GetUserCheckinStatusRequestObject) (GetUserCheckinStatusResponseObject, error)
 	// ListUsers List users with pagination
 	// (GET /users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -9668,6 +13959,1067 @@ func (sh *strictHandler) AdminSaveBanner(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// AdminDeleteBanner operation middleware
+func (sh *strictHandler) AdminDeleteBanner(ctx *fiber.Ctx, id string) error {
+	var request AdminDeleteBannerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteBanner(ctx.UserContext(), request.(AdminDeleteBannerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteBanner")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteBannerResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteBannerResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListAttributeDefinitions operation middleware
+func (sh *strictHandler) AdminListAttributeDefinitions(ctx *fiber.Ctx) error {
+	var request AdminListAttributeDefinitionsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListAttributeDefinitions(ctx.UserContext(), request.(AdminListAttributeDefinitionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListAttributeDefinitions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListAttributeDefinitionsResponseObject); ok {
+		if err := validResponse.VisitAdminListAttributeDefinitionsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateAttributeDefinition operation middleware
+func (sh *strictHandler) AdminCreateAttributeDefinition(ctx *fiber.Ctx) error {
+	var request AdminCreateAttributeDefinitionRequestObject
+
+	var body AdminCreateAttributeDefinitionJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateAttributeDefinition(ctx.UserContext(), request.(AdminCreateAttributeDefinitionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateAttributeDefinition")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateAttributeDefinitionResponseObject); ok {
+		if err := validResponse.VisitAdminCreateAttributeDefinitionResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateAttributeDefinition operation middleware
+func (sh *strictHandler) AdminUpdateAttributeDefinition(ctx *fiber.Ctx, definitionId string) error {
+	var request AdminUpdateAttributeDefinitionRequestObject
+
+	request.DefinitionId = definitionId
+
+	var body AdminUpdateAttributeDefinitionJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateAttributeDefinition(ctx.UserContext(), request.(AdminUpdateAttributeDefinitionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateAttributeDefinition")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateAttributeDefinitionResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateAttributeDefinitionResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeactivateAttributeDefinition operation middleware
+func (sh *strictHandler) AdminDeactivateAttributeDefinition(ctx *fiber.Ctx, definitionId string) error {
+	var request AdminDeactivateAttributeDefinitionRequestObject
+
+	request.DefinitionId = definitionId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeactivateAttributeDefinition(ctx.UserContext(), request.(AdminDeactivateAttributeDefinitionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeactivateAttributeDefinition")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeactivateAttributeDefinitionResponseObject); ok {
+		if err := validResponse.VisitAdminDeactivateAttributeDefinitionResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminAddAttributeEnumValue operation middleware
+func (sh *strictHandler) AdminAddAttributeEnumValue(ctx *fiber.Ctx, definitionId string) error {
+	var request AdminAddAttributeEnumValueRequestObject
+
+	request.DefinitionId = definitionId
+
+	var body AdminAddAttributeEnumValueJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminAddAttributeEnumValue(ctx.UserContext(), request.(AdminAddAttributeEnumValueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminAddAttributeEnumValue")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminAddAttributeEnumValueResponseObject); ok {
+		if err := validResponse.VisitAdminAddAttributeEnumValueResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeactivateAttributeEnumValue operation middleware
+func (sh *strictHandler) AdminDeactivateAttributeEnumValue(ctx *fiber.Ctx, definitionId string, enumValueId string) error {
+	var request AdminDeactivateAttributeEnumValueRequestObject
+
+	request.DefinitionId = definitionId
+	request.EnumValueId = enumValueId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeactivateAttributeEnumValue(ctx.UserContext(), request.(AdminDeactivateAttributeEnumValueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeactivateAttributeEnumValue")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeactivateAttributeEnumValueResponseObject); ok {
+		if err := validResponse.VisitAdminDeactivateAttributeEnumValueResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListCatalogCategories operation middleware
+func (sh *strictHandler) AdminListCatalogCategories(ctx *fiber.Ctx) error {
+	var request AdminListCatalogCategoriesRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCatalogCategories(ctx.UserContext(), request.(AdminListCatalogCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCatalogCategories")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCatalogCategoriesResponseObject); ok {
+		if err := validResponse.VisitAdminListCatalogCategoriesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateCatalogCategory operation middleware
+func (sh *strictHandler) AdminCreateCatalogCategory(ctx *fiber.Ctx) error {
+	var request AdminCreateCatalogCategoryRequestObject
+
+	var body AdminCreateCatalogCategoryJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateCatalogCategory(ctx.UserContext(), request.(AdminCreateCatalogCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateCatalogCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateCatalogCategoryResponseObject); ok {
+		if err := validResponse.VisitAdminCreateCatalogCategoryResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteCatalogCategory operation middleware
+func (sh *strictHandler) AdminDeleteCatalogCategory(ctx *fiber.Ctx, categoryId string) error {
+	var request AdminDeleteCatalogCategoryRequestObject
+
+	request.CategoryId = categoryId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteCatalogCategory(ctx.UserContext(), request.(AdminDeleteCatalogCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteCatalogCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteCatalogCategoryResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteCatalogCategoryResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogCategory operation middleware
+func (sh *strictHandler) AdminUpdateCatalogCategory(ctx *fiber.Ctx, categoryId string) error {
+	var request AdminUpdateCatalogCategoryRequestObject
+
+	request.CategoryId = categoryId
+
+	var body AdminUpdateCatalogCategoryJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogCategory(ctx.UserContext(), request.(AdminUpdateCatalogCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogCategoryResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogCategoryResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeactivateCatalogCategory operation middleware
+func (sh *strictHandler) AdminDeactivateCatalogCategory(ctx *fiber.Ctx, categoryId string) error {
+	var request AdminDeactivateCatalogCategoryRequestObject
+
+	request.CategoryId = categoryId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeactivateCatalogCategory(ctx.UserContext(), request.(AdminDeactivateCatalogCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeactivateCatalogCategory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeactivateCatalogCategoryResponseObject); ok {
+		if err := validResponse.VisitAdminDeactivateCatalogCategoryResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListCatalogMasters operation middleware
+func (sh *strictHandler) AdminListCatalogMasters(ctx *fiber.Ctx, masterKind string) error {
+	var request AdminListCatalogMastersRequestObject
+
+	request.MasterKind = masterKind
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCatalogMasters(ctx.UserContext(), request.(AdminListCatalogMastersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCatalogMasters")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCatalogMastersResponseObject); ok {
+		if err := validResponse.VisitAdminListCatalogMastersResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateCatalogMaster operation middleware
+func (sh *strictHandler) AdminCreateCatalogMaster(ctx *fiber.Ctx, masterKind string) error {
+	var request AdminCreateCatalogMasterRequestObject
+
+	request.MasterKind = masterKind
+
+	var body AdminCreateCatalogMasterJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateCatalogMaster(ctx.UserContext(), request.(AdminCreateCatalogMasterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateCatalogMaster")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateCatalogMasterResponseObject); ok {
+		if err := validResponse.VisitAdminCreateCatalogMasterResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogMaster operation middleware
+func (sh *strictHandler) AdminUpdateCatalogMaster(ctx *fiber.Ctx, masterKind string, masterId string) error {
+	var request AdminUpdateCatalogMasterRequestObject
+
+	request.MasterKind = masterKind
+	request.MasterId = masterId
+
+	var body AdminUpdateCatalogMasterJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogMaster(ctx.UserContext(), request.(AdminUpdateCatalogMasterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogMaster")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogMasterResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogMasterResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeactivateCatalogMaster operation middleware
+func (sh *strictHandler) AdminDeactivateCatalogMaster(ctx *fiber.Ctx, masterKind string, masterId string) error {
+	var request AdminDeactivateCatalogMasterRequestObject
+
+	request.MasterKind = masterKind
+	request.MasterId = masterId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeactivateCatalogMaster(ctx.UserContext(), request.(AdminDeactivateCatalogMasterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeactivateCatalogMaster")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeactivateCatalogMasterResponseObject); ok {
+		if err := validResponse.VisitAdminDeactivateCatalogMasterResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListCatalogProductModels operation middleware
+func (sh *strictHandler) AdminListCatalogProductModels(ctx *fiber.Ctx) error {
+	var request AdminListCatalogProductModelsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCatalogProductModels(ctx.UserContext(), request.(AdminListCatalogProductModelsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCatalogProductModels")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCatalogProductModelsResponseObject); ok {
+		if err := validResponse.VisitAdminListCatalogProductModelsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateCatalogProductModel operation middleware
+func (sh *strictHandler) AdminCreateCatalogProductModel(ctx *fiber.Ctx) error {
+	var request AdminCreateCatalogProductModelRequestObject
+
+	var body AdminCreateCatalogProductModelJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateCatalogProductModel(ctx.UserContext(), request.(AdminCreateCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminCreateCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteCatalogProductModel operation middleware
+func (sh *strictHandler) AdminDeleteCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminDeleteCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteCatalogProductModel(ctx.UserContext(), request.(AdminDeleteCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetCatalogProductModel operation middleware
+func (sh *strictHandler) AdminGetCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminGetCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetCatalogProductModel(ctx.UserContext(), request.(AdminGetCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminGetCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogProductModel operation middleware
+func (sh *strictHandler) AdminUpdateCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminUpdateCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	var body AdminUpdateCatalogProductModelJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogProductModel(ctx.UserContext(), request.(AdminUpdateCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDiscontinueCatalogProductModel operation middleware
+func (sh *strictHandler) AdminDiscontinueCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminDiscontinueCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDiscontinueCatalogProductModel(ctx.UserContext(), request.(AdminDiscontinueCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDiscontinueCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDiscontinueCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminDiscontinueCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogProductModelMedia operation middleware
+func (sh *strictHandler) AdminUpdateCatalogProductModelMedia(ctx *fiber.Ctx, modelId string) error {
+	var request AdminUpdateCatalogProductModelMediaRequestObject
+
+	request.ModelId = modelId
+
+	var body AdminUpdateCatalogProductModelMediaJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogProductModelMedia(ctx.UserContext(), request.(AdminUpdateCatalogProductModelMediaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogProductModelMedia")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogProductModelMediaResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogProductModelMediaResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminPublishCatalogProductModel operation middleware
+func (sh *strictHandler) AdminPublishCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminPublishCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminPublishCatalogProductModel(ctx.UserContext(), request.(AdminPublishCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminPublishCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminPublishCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminPublishCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUnpublishCatalogProductModel operation middleware
+func (sh *strictHandler) AdminUnpublishCatalogProductModel(ctx *fiber.Ctx, modelId string) error {
+	var request AdminUnpublishCatalogProductModelRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUnpublishCatalogProductModel(ctx.UserContext(), request.(AdminUnpublishCatalogProductModelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUnpublishCatalogProductModel")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUnpublishCatalogProductModelResponseObject); ok {
+		if err := validResponse.VisitAdminUnpublishCatalogProductModelResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminAddCatalogVariantDimension operation middleware
+func (sh *strictHandler) AdminAddCatalogVariantDimension(ctx *fiber.Ctx, modelId string) error {
+	var request AdminAddCatalogVariantDimensionRequestObject
+
+	request.ModelId = modelId
+
+	var body AdminAddCatalogVariantDimensionJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminAddCatalogVariantDimension(ctx.UserContext(), request.(AdminAddCatalogVariantDimensionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminAddCatalogVariantDimension")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminAddCatalogVariantDimensionResponseObject); ok {
+		if err := validResponse.VisitAdminAddCatalogVariantDimensionResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogVariantDimension operation middleware
+func (sh *strictHandler) AdminUpdateCatalogVariantDimension(ctx *fiber.Ctx, modelId string, dimensionId string) error {
+	var request AdminUpdateCatalogVariantDimensionRequestObject
+
+	request.ModelId = modelId
+	request.DimensionId = dimensionId
+
+	var body AdminUpdateCatalogVariantDimensionJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogVariantDimension(ctx.UserContext(), request.(AdminUpdateCatalogVariantDimensionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogVariantDimension")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogVariantDimensionResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogVariantDimensionResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminAddCatalogVariantDimensionValue operation middleware
+func (sh *strictHandler) AdminAddCatalogVariantDimensionValue(ctx *fiber.Ctx, modelId string, dimensionId string) error {
+	var request AdminAddCatalogVariantDimensionValueRequestObject
+
+	request.ModelId = modelId
+	request.DimensionId = dimensionId
+
+	var body AdminAddCatalogVariantDimensionValueJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminAddCatalogVariantDimensionValue(ctx.UserContext(), request.(AdminAddCatalogVariantDimensionValueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminAddCatalogVariantDimensionValue")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminAddCatalogVariantDimensionValueResponseObject); ok {
+		if err := validResponse.VisitAdminAddCatalogVariantDimensionValueResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeactivateCatalogVariantDimensionValue operation middleware
+func (sh *strictHandler) AdminDeactivateCatalogVariantDimensionValue(ctx *fiber.Ctx, modelId string, dimensionId string, valueId string) error {
+	var request AdminDeactivateCatalogVariantDimensionValueRequestObject
+
+	request.ModelId = modelId
+	request.DimensionId = dimensionId
+	request.ValueId = valueId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeactivateCatalogVariantDimensionValue(ctx.UserContext(), request.(AdminDeactivateCatalogVariantDimensionValueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeactivateCatalogVariantDimensionValue")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeactivateCatalogVariantDimensionValueResponseObject); ok {
+		if err := validResponse.VisitAdminDeactivateCatalogVariantDimensionValueResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListCatalogModelVariants operation middleware
+func (sh *strictHandler) AdminListCatalogModelVariants(ctx *fiber.Ctx, modelId string) error {
+	var request AdminListCatalogModelVariantsRequestObject
+
+	request.ModelId = modelId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListCatalogModelVariants(ctx.UserContext(), request.(AdminListCatalogModelVariantsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListCatalogModelVariants")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListCatalogModelVariantsResponseObject); ok {
+		if err := validResponse.VisitAdminListCatalogModelVariantsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminCreateCatalogModelVariant operation middleware
+func (sh *strictHandler) AdminCreateCatalogModelVariant(ctx *fiber.Ctx, modelId string) error {
+	var request AdminCreateCatalogModelVariantRequestObject
+
+	request.ModelId = modelId
+
+	var body AdminCreateCatalogModelVariantJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateCatalogModelVariant(ctx.UserContext(), request.(AdminCreateCatalogModelVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateCatalogModelVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminCreateCatalogModelVariantResponseObject); ok {
+		if err := validResponse.VisitAdminCreateCatalogModelVariantResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminBulkUpdateVariantPrices operation middleware
+func (sh *strictHandler) AdminBulkUpdateVariantPrices(ctx *fiber.Ctx) error {
+	var request AdminBulkUpdateVariantPricesRequestObject
+
+	var body AdminBulkUpdateVariantPricesJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminBulkUpdateVariantPrices(ctx.UserContext(), request.(AdminBulkUpdateVariantPricesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminBulkUpdateVariantPrices")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminBulkUpdateVariantPricesResponseObject); ok {
+		if err := validResponse.VisitAdminBulkUpdateVariantPricesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetCatalogVariant operation middleware
+func (sh *strictHandler) AdminGetCatalogVariant(ctx *fiber.Ctx, variantId string) error {
+	var request AdminGetCatalogVariantRequestObject
+
+	request.VariantId = variantId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetCatalogVariant(ctx.UserContext(), request.(AdminGetCatalogVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetCatalogVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetCatalogVariantResponseObject); ok {
+		if err := validResponse.VisitAdminGetCatalogVariantResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCatalogVariant operation middleware
+func (sh *strictHandler) AdminUpdateCatalogVariant(ctx *fiber.Ctx, variantId string) error {
+	var request AdminUpdateCatalogVariantRequestObject
+
+	request.VariantId = variantId
+
+	var body AdminUpdateCatalogVariantJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCatalogVariant(ctx.UserContext(), request.(AdminUpdateCatalogVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCatalogVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCatalogVariantResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCatalogVariantResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminActivateCatalogVariant operation middleware
+func (sh *strictHandler) AdminActivateCatalogVariant(ctx *fiber.Ctx, variantId string) error {
+	var request AdminActivateCatalogVariantRequestObject
+
+	request.VariantId = variantId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminActivateCatalogVariant(ctx.UserContext(), request.(AdminActivateCatalogVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminActivateCatalogVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminActivateCatalogVariantResponseObject); ok {
+		if err := validResponse.VisitAdminActivateCatalogVariantResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminInactivateCatalogVariant operation middleware
+func (sh *strictHandler) AdminInactivateCatalogVariant(ctx *fiber.Ctx, variantId string) error {
+	var request AdminInactivateCatalogVariantRequestObject
+
+	request.VariantId = variantId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminInactivateCatalogVariant(ctx.UserContext(), request.(AdminInactivateCatalogVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminInactivateCatalogVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminInactivateCatalogVariantResponseObject); ok {
+		if err := validResponse.VisitAdminInactivateCatalogVariantResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // AdminListCategories operation middleware
 func (sh *strictHandler) AdminListCategories(ctx *fiber.Ctx) error {
 	var request AdminListCategoriesRequestObject
@@ -9710,6 +15062,37 @@ func (sh *strictHandler) AdminGetCollect(ctx *fiber.Ctx) error {
 		return err
 	} else if validResponse, ok := response.(AdminGetCollectResponseObject); ok {
 		if err := validResponse.VisitAdminGetCollectResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateCollect operation middleware
+func (sh *strictHandler) AdminUpdateCollect(ctx *fiber.Ctx) error {
+	var request AdminUpdateCollectRequestObject
+
+	var body AdminUpdateCollectJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateCollect(ctx.UserContext(), request.(AdminUpdateCollectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateCollect")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateCollectResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateCollectResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -9791,6 +15174,33 @@ func (sh *strictHandler) AdminSaveFaq(ctx *fiber.Ctx) error {
 		return err
 	} else if validResponse, ok := response.(AdminSaveFaqResponseObject); ok {
 		if err := validResponse.VisitAdminSaveFaqResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminDeleteFaq operation middleware
+func (sh *strictHandler) AdminDeleteFaq(ctx *fiber.Ctx, id string) error {
+	var request AdminDeleteFaqRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteFaq(ctx.UserContext(), request.(AdminDeleteFaqRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteFaq")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminDeleteFaqResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteFaqResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -9965,6 +15375,31 @@ func (sh *strictHandler) AdminGetNotifications(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// QueueAdminNotificationTest operation middleware
+func (sh *strictHandler) QueueAdminNotificationTest(ctx *fiber.Ctx) error {
+	var request QueueAdminNotificationTestRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.QueueAdminNotificationTest(ctx.UserContext(), request.(QueueAdminNotificationTestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "QueueAdminNotificationTest")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(QueueAdminNotificationTestResponseObject); ok {
+		if err := validResponse.VisitQueueAdminNotificationTestResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // AdminListOrders operation middleware
 func (sh *strictHandler) AdminListOrders(ctx *fiber.Ctx, params AdminListOrdersParams) error {
 	var request AdminListOrdersRequestObject
@@ -10079,6 +15514,39 @@ func (sh *strictHandler) AdminListProducts(ctx *fiber.Ctx, params AdminListProdu
 	return nil
 }
 
+// AdminUpdateProductEditorial operation middleware
+func (sh *strictHandler) AdminUpdateProductEditorial(ctx *fiber.Ctx, id string) error {
+	var request AdminUpdateProductEditorialRequestObject
+
+	request.Id = id
+
+	var body AdminUpdateProductEditorialJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateProductEditorial(ctx.UserContext(), request.(AdminUpdateProductEditorialRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateProductEditorial")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateProductEditorialResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateProductEditorialResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // AdminListRefunds operation middleware
 func (sh *strictHandler) AdminListRefunds(ctx *fiber.Ctx, params AdminListRefundsParams) error {
 	var request AdminListRefundsRequestObject
@@ -10098,6 +15566,33 @@ func (sh *strictHandler) AdminListRefunds(ctx *fiber.Ctx, params AdminListRefund
 		return err
 	} else if validResponse, ok := response.(AdminListRefundsResponseObject); ok {
 		if err := validResponse.VisitAdminListRefundsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetRefund operation middleware
+func (sh *strictHandler) AdminGetRefund(ctx *fiber.Ctx, refundId string) error {
+	var request AdminGetRefundRequestObject
+
+	request.RefundId = refundId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetRefund(ctx.UserContext(), request.(AdminGetRefundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetRefund")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetRefundResponseObject); ok {
+		if err := validResponse.VisitAdminGetRefundResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -10255,6 +15750,33 @@ func (sh *strictHandler) AdminDeleteReview(ctx *fiber.Ctx, reviewId int64) error
 		return err
 	} else if validResponse, ok := response.(AdminDeleteReviewResponseObject); ok {
 		if err := validResponse.VisitAdminDeleteReviewResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetReview operation middleware
+func (sh *strictHandler) AdminGetReview(ctx *fiber.Ctx, reviewId int64) error {
+	var request AdminGetReviewRequestObject
+
+	request.ReviewId = reviewId
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetReview(ctx.UserContext(), request.(AdminGetReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetReview")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetReviewResponseObject); ok {
+		if err := validResponse.VisitAdminGetReviewResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -10934,6 +16456,31 @@ func (sh *strictHandler) UpdateCartItem(ctx *fiber.Ctx, itemId string) error {
 	return nil
 }
 
+// GetCatalogAnnouncement operation middleware
+func (sh *strictHandler) GetCatalogAnnouncement(ctx *fiber.Ctx) error {
+	var request GetCatalogAnnouncementRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCatalogAnnouncement(ctx.UserContext(), request.(GetCatalogAnnouncementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCatalogAnnouncement")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCatalogAnnouncementResponseObject); ok {
+		if err := validResponse.VisitGetCatalogAnnouncementResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListCategories operation middleware
 func (sh *strictHandler) ListCategories(ctx *fiber.Ctx) error {
 	var request ListCategoriesRequestObject
@@ -11009,6 +16556,70 @@ func (sh *strictHandler) ListCatalogProductModels(ctx *fiber.Ctx, params ListCat
 		return err
 	} else if validResponse, ok := response.(ListCatalogProductModelsResponseObject); ok {
 		if err := validResponse.VisitListCatalogProductModelsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCatalogProductModelOptions operation middleware
+func (sh *strictHandler) GetCatalogProductModelOptions(ctx *fiber.Ctx, id string, params GetCatalogProductModelOptionsParams) error {
+	var request GetCatalogProductModelOptionsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCatalogProductModelOptions(ctx.UserContext(), request.(GetCatalogProductModelOptionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCatalogProductModelOptions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCatalogProductModelOptionsResponseObject); ok {
+		if err := validResponse.VisitGetCatalogProductModelOptionsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ResolveCatalogProductModelVariant operation middleware
+func (sh *strictHandler) ResolveCatalogProductModelVariant(ctx *fiber.Ctx, id string) error {
+	var request ResolveCatalogProductModelVariantRequestObject
+
+	request.Id = id
+
+	var body ResolveCatalogProductModelVariantJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveCatalogProductModelVariant(ctx.UserContext(), request.(ResolveCatalogProductModelVariantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveCatalogProductModelVariant")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ResolveCatalogProductModelVariantResponseObject); ok {
+		if err := validResponse.VisitResolveCatalogProductModelVariantResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -11162,6 +16773,33 @@ func (sh *strictHandler) UpdateProduct(ctx *fiber.Ctx, id string) error {
 	return nil
 }
 
+// GetCatalogProductBuyMeta operation middleware
+func (sh *strictHandler) GetCatalogProductBuyMeta(ctx *fiber.Ctx, id string) error {
+	var request GetCatalogProductBuyMetaRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCatalogProductBuyMeta(ctx.UserContext(), request.(GetCatalogProductBuyMetaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCatalogProductBuyMeta")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCatalogProductBuyMetaResponseObject); ok {
+		if err := validResponse.VisitGetCatalogProductBuyMetaResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetProductReviews operation middleware
 func (sh *strictHandler) GetProductReviews(ctx *fiber.Ctx, id string) error {
 	var request GetProductReviewsRequestObject
@@ -11181,6 +16819,58 @@ func (sh *strictHandler) GetProductReviews(ctx *fiber.Ctx, id string) error {
 		return err
 	} else if validResponse, ok := response.(GetProductReviewsResponseObject); ok {
 		if err := validResponse.VisitGetProductReviewsResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// SearchCatalog operation middleware
+func (sh *strictHandler) SearchCatalog(ctx *fiber.Ctx, params SearchCatalogParams) error {
+	var request SearchCatalogRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchCatalog(ctx.UserContext(), request.(SearchCatalogRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchCatalog")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(SearchCatalogResponseObject); ok {
+		if err := validResponse.VisitSearchCatalogResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetCatalogSettings operation middleware
+func (sh *strictHandler) GetCatalogSettings(ctx *fiber.Ctx) error {
+	var request GetCatalogSettingsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCatalogSettings(ctx.UserContext(), request.(GetCatalogSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCatalogSettings")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetCatalogSettingsResponseObject); ok {
+		if err := validResponse.VisitGetCatalogSettingsResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -11583,6 +17273,39 @@ func (sh *strictHandler) CreateContentArticle(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// UpdateContentArticle operation middleware
+func (sh *strictHandler) UpdateContentArticle(ctx *fiber.Ctx, id string) error {
+	var request UpdateContentArticleRequestObject
+
+	request.Id = id
+
+	var body UpdateContentArticleJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateContentArticle(ctx.UserContext(), request.(UpdateContentArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateContentArticle")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateContentArticleResponseObject); ok {
+		if err := validResponse.VisitUpdateContentArticleResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListContentPages operation middleware
 func (sh *strictHandler) ListContentPages(ctx *fiber.Ctx) error {
 	var request ListContentPagesRequestObject
@@ -11857,6 +17580,31 @@ func (sh *strictHandler) DeleteMedia(ctx *fiber.Ctx, id string) error {
 	return nil
 }
 
+// ClearNotificationInbox operation middleware
+func (sh *strictHandler) ClearNotificationInbox(ctx *fiber.Ctx) error {
+	var request ClearNotificationInboxRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ClearNotificationInbox(ctx.UserContext(), request.(ClearNotificationInboxRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ClearNotificationInbox")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ClearNotificationInboxResponseObject); ok {
+		if err := validResponse.VisitClearNotificationInboxResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListNotifications operation middleware
 func (sh *strictHandler) ListNotifications(ctx *fiber.Ctx, params ListNotificationsParams) error {
 	var request ListNotificationsRequestObject
@@ -12104,81 +17852,6 @@ func (sh *strictHandler) UpdateProfile(ctx *fiber.Ctx) error {
 	return nil
 }
 
-// DoCheckin operation middleware
-func (sh *strictHandler) DoCheckin(ctx *fiber.Ctx) error {
-	var request DoCheckinRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.DoCheckin(ctx.UserContext(), request.(DoCheckinRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DoCheckin")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(DoCheckinResponseObject); ok {
-		if err := validResponse.VisitDoCheckinResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetCheckinStatusAlt operation middleware
-func (sh *strictHandler) GetCheckinStatusAlt(ctx *fiber.Ctx) error {
-	var request GetCheckinStatusAltRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCheckinStatusAlt(ctx.UserContext(), request.(GetCheckinStatusAltRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCheckinStatusAlt")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetCheckinStatusAltResponseObject); ok {
-		if err := validResponse.VisitGetCheckinStatusAltResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetCheckinStatus operation middleware
-func (sh *strictHandler) GetCheckinStatus(ctx *fiber.Ctx) error {
-	var request GetCheckinStatusRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCheckinStatus(ctx.UserContext(), request.(GetCheckinStatusRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCheckinStatus")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetCheckinStatusResponseObject); ok {
-		if err := validResponse.VisitGetCheckinStatusResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
 // UpdateProfileEmail operation middleware
 func (sh *strictHandler) UpdateProfileEmail(ctx *fiber.Ctx) error {
 	var request UpdateProfileEmailRequestObject
@@ -12291,6 +17964,31 @@ func (sh *strictHandler) GetProfileSessions(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// ListPublicContentArticles operation middleware
+func (sh *strictHandler) ListPublicContentArticles(ctx *fiber.Ctx) error {
+	var request ListPublicContentArticlesRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPublicContentArticles(ctx.UserContext(), request.(ListPublicContentArticlesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPublicContentArticles")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListPublicContentArticlesResponseObject); ok {
+		if err := validResponse.VisitListPublicContentArticlesResponse(ctx); err != nil {
+			return err
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetPublicHomepage operation middleware
 func (sh *strictHandler) GetPublicHomepage(ctx *fiber.Ctx) error {
 	var request GetPublicHomepageRequestObject
@@ -12391,56 +18089,6 @@ func (sh *strictHandler) GetUserProfile(ctx *fiber.Ctx) error {
 		return err
 	} else if validResponse, ok := response.(GetUserProfileResponseObject); ok {
 		if err := validResponse.VisitGetUserProfileResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetUserCheckinStatusAlt operation middleware
-func (sh *strictHandler) GetUserCheckinStatusAlt(ctx *fiber.Ctx) error {
-	var request GetUserCheckinStatusAltRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetUserCheckinStatusAlt(ctx.UserContext(), request.(GetUserCheckinStatusAltRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetUserCheckinStatusAlt")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetUserCheckinStatusAltResponseObject); ok {
-		if err := validResponse.VisitGetUserCheckinStatusAltResponse(ctx); err != nil {
-			return err
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetUserCheckinStatus operation middleware
-func (sh *strictHandler) GetUserCheckinStatus(ctx *fiber.Ctx) error {
-	var request GetUserCheckinStatusRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetUserCheckinStatus(ctx.UserContext(), request.(GetUserCheckinStatusRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetUserCheckinStatus")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(GetUserCheckinStatusResponseObject); ok {
-		if err := validResponse.VisitGetUserCheckinStatusResponse(ctx); err != nil {
 			return err
 		}
 	} else if response != nil {
@@ -12817,149 +18465,174 @@ func (sh *strictHandler) VoteWishlistItem(ctx *fiber.Ctx, id string) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

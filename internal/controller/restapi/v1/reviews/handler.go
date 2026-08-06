@@ -1,6 +1,7 @@
 package reviews
 
 import (
+	"strconv"
 	"context"
 	"time"
 
@@ -49,7 +50,7 @@ func (h *Handler) CreateReview(ctx context.Context, request openapi.CreateReview
 	now := time.Now().UTC()
 	userID := actor.UserID
 	rev := openapi.ReviewResponse{
-		Id:        "rev-1",
+		Id:        strconv.FormatInt(time.Now().UnixMilli(), 10),
 		ProductId: request.Body.ProductId,
 		UserId:    &userID,
 		Rating:    request.Body.Rating,

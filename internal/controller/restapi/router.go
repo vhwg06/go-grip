@@ -109,5 +109,4 @@ func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, cat
 		BaseURL: "/v1",
 	})
 
-	v1.RegisterAdminCatalogRoutes(app, catalogBase)
 }

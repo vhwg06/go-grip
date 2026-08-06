@@ -420,13 +420,6 @@ type CategoryResponse struct {
 	Slug *string `json:"slug,omitempty"`
 }
 
-// CheckinStatusResponse defines model for CheckinStatusResponse.
-type CheckinStatusResponse struct {
-	CheckedIn     *bool      `json:"checkedIn,omitempty"`
-	LastCheckinAt *time.Time `json:"lastCheckinAt,omitempty"`
-	Streak        *int       `json:"streak,omitempty"`
-}
-
 // CheckoutOrderResponse defines model for CheckoutOrderResponse.
 type CheckoutOrderResponse struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -1047,6 +1040,57 @@ type ListAdminAuditLogsParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// AdminCreateAttributeDefinitionJSONBody defines parameters for AdminCreateAttributeDefinition.
+type AdminCreateAttributeDefinitionJSONBody = map[string]interface{}
+
+// AdminUpdateAttributeDefinitionJSONBody defines parameters for AdminUpdateAttributeDefinition.
+type AdminUpdateAttributeDefinitionJSONBody = map[string]interface{}
+
+// AdminAddAttributeEnumValueJSONBody defines parameters for AdminAddAttributeEnumValue.
+type AdminAddAttributeEnumValueJSONBody = map[string]interface{}
+
+// AdminCreateCatalogCategoryJSONBody defines parameters for AdminCreateCatalogCategory.
+type AdminCreateCatalogCategoryJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogCategoryJSONBody defines parameters for AdminUpdateCatalogCategory.
+type AdminUpdateCatalogCategoryJSONBody = map[string]interface{}
+
+// AdminCreateCatalogMasterJSONBody defines parameters for AdminCreateCatalogMaster.
+type AdminCreateCatalogMasterJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogMasterJSONBody defines parameters for AdminUpdateCatalogMaster.
+type AdminUpdateCatalogMasterJSONBody = map[string]interface{}
+
+// AdminCreateCatalogProductModelJSONBody defines parameters for AdminCreateCatalogProductModel.
+type AdminCreateCatalogProductModelJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogProductModelJSONBody defines parameters for AdminUpdateCatalogProductModel.
+type AdminUpdateCatalogProductModelJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogProductModelMediaJSONBody defines parameters for AdminUpdateCatalogProductModelMedia.
+type AdminUpdateCatalogProductModelMediaJSONBody = map[string]interface{}
+
+// AdminAddCatalogVariantDimensionJSONBody defines parameters for AdminAddCatalogVariantDimension.
+type AdminAddCatalogVariantDimensionJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogVariantDimensionJSONBody defines parameters for AdminUpdateCatalogVariantDimension.
+type AdminUpdateCatalogVariantDimensionJSONBody = map[string]interface{}
+
+// AdminAddCatalogVariantDimensionValueJSONBody defines parameters for AdminAddCatalogVariantDimensionValue.
+type AdminAddCatalogVariantDimensionValueJSONBody = map[string]interface{}
+
+// AdminCreateCatalogModelVariantJSONBody defines parameters for AdminCreateCatalogModelVariant.
+type AdminCreateCatalogModelVariantJSONBody = map[string]interface{}
+
+// AdminBulkUpdateVariantPricesJSONBody defines parameters for AdminBulkUpdateVariantPrices.
+type AdminBulkUpdateVariantPricesJSONBody = map[string]interface{}
+
+// AdminUpdateCatalogVariantJSONBody defines parameters for AdminUpdateCatalogVariant.
+type AdminUpdateCatalogVariantJSONBody = map[string]interface{}
+
+// AdminUpdateCollectJSONBody defines parameters for AdminUpdateCollect.
+type AdminUpdateCollectJSONBody = map[string]interface{}
+
 // AdminListMediaParams defines parameters for AdminListMedia.
 type AdminListMediaParams struct {
 	Page     *int `form:"page,omitempty" json:"page,omitempty"`
@@ -1075,6 +1119,9 @@ type AdminListProductsParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
+
+// AdminUpdateProductEditorialJSONBody defines parameters for AdminUpdateProductEditorial.
+type AdminUpdateProductEditorialJSONBody = map[string]interface{}
 
 // AdminListRefundsParams defines parameters for AdminListRefunds.
 type AdminListRefundsParams struct {
@@ -1121,12 +1168,27 @@ type ListCatalogProductModelsParams struct {
 	Limit    *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetCatalogProductModelOptionsParams defines parameters for GetCatalogProductModelOptions.
+type GetCatalogProductModelOptionsParams struct {
+	Selected *string `form:"selected,omitempty" json:"selected,omitempty"`
+}
+
+// ResolveCatalogProductModelVariantJSONBody defines parameters for ResolveCatalogProductModelVariant.
+type ResolveCatalogProductModelVariantJSONBody = map[string]interface{}
+
 // ListProductsParams defines parameters for ListProducts.
 type ListProductsParams struct {
 	CategoryId *string `form:"category_id,omitempty" json:"category_id,omitempty"`
 	Search     *string `form:"search,omitempty" json:"search,omitempty"`
 	Limit      *int    `form:"limit,omitempty" json:"limit,omitempty"`
 	Offset     *int    `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// SearchCatalogParams defines parameters for SearchCatalog.
+type SearchCatalogParams struct {
+	Q     *string `form:"q,omitempty" json:"q,omitempty"`
+	Page  *int    `form:"page,omitempty" json:"page,omitempty"`
+	Limit *int    `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // PaymentNotifyJSONBody defines parameters for PaymentNotify.
@@ -1143,6 +1205,9 @@ type ListContentArticlesParams struct {
 	Page     *int `form:"page,omitempty" json:"page,omitempty"`
 	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
+
+// UpdateContentArticleJSONBody defines parameters for UpdateContentArticle.
+type UpdateContentArticleJSONBody = map[string]interface{}
 
 // ListLeadsParams defines parameters for ListLeads.
 type ListLeadsParams struct {
@@ -1177,6 +1242,57 @@ type UpdateAccountProfileJSONRequestBody = UpdateAccountProfileRequest
 // AdminSaveBannerJSONRequestBody defines body for AdminSaveBanner for application/json ContentType.
 type AdminSaveBannerJSONRequestBody = AdminBannerRequest
 
+// AdminCreateAttributeDefinitionJSONRequestBody defines body for AdminCreateAttributeDefinition for application/json ContentType.
+type AdminCreateAttributeDefinitionJSONRequestBody = AdminCreateAttributeDefinitionJSONBody
+
+// AdminUpdateAttributeDefinitionJSONRequestBody defines body for AdminUpdateAttributeDefinition for application/json ContentType.
+type AdminUpdateAttributeDefinitionJSONRequestBody = AdminUpdateAttributeDefinitionJSONBody
+
+// AdminAddAttributeEnumValueJSONRequestBody defines body for AdminAddAttributeEnumValue for application/json ContentType.
+type AdminAddAttributeEnumValueJSONRequestBody = AdminAddAttributeEnumValueJSONBody
+
+// AdminCreateCatalogCategoryJSONRequestBody defines body for AdminCreateCatalogCategory for application/json ContentType.
+type AdminCreateCatalogCategoryJSONRequestBody = AdminCreateCatalogCategoryJSONBody
+
+// AdminUpdateCatalogCategoryJSONRequestBody defines body for AdminUpdateCatalogCategory for application/json ContentType.
+type AdminUpdateCatalogCategoryJSONRequestBody = AdminUpdateCatalogCategoryJSONBody
+
+// AdminCreateCatalogMasterJSONRequestBody defines body for AdminCreateCatalogMaster for application/json ContentType.
+type AdminCreateCatalogMasterJSONRequestBody = AdminCreateCatalogMasterJSONBody
+
+// AdminUpdateCatalogMasterJSONRequestBody defines body for AdminUpdateCatalogMaster for application/json ContentType.
+type AdminUpdateCatalogMasterJSONRequestBody = AdminUpdateCatalogMasterJSONBody
+
+// AdminCreateCatalogProductModelJSONRequestBody defines body for AdminCreateCatalogProductModel for application/json ContentType.
+type AdminCreateCatalogProductModelJSONRequestBody = AdminCreateCatalogProductModelJSONBody
+
+// AdminUpdateCatalogProductModelJSONRequestBody defines body for AdminUpdateCatalogProductModel for application/json ContentType.
+type AdminUpdateCatalogProductModelJSONRequestBody = AdminUpdateCatalogProductModelJSONBody
+
+// AdminUpdateCatalogProductModelMediaJSONRequestBody defines body for AdminUpdateCatalogProductModelMedia for application/json ContentType.
+type AdminUpdateCatalogProductModelMediaJSONRequestBody = AdminUpdateCatalogProductModelMediaJSONBody
+
+// AdminAddCatalogVariantDimensionJSONRequestBody defines body for AdminAddCatalogVariantDimension for application/json ContentType.
+type AdminAddCatalogVariantDimensionJSONRequestBody = AdminAddCatalogVariantDimensionJSONBody
+
+// AdminUpdateCatalogVariantDimensionJSONRequestBody defines body for AdminUpdateCatalogVariantDimension for application/json ContentType.
+type AdminUpdateCatalogVariantDimensionJSONRequestBody = AdminUpdateCatalogVariantDimensionJSONBody
+
+// AdminAddCatalogVariantDimensionValueJSONRequestBody defines body for AdminAddCatalogVariantDimensionValue for application/json ContentType.
+type AdminAddCatalogVariantDimensionValueJSONRequestBody = AdminAddCatalogVariantDimensionValueJSONBody
+
+// AdminCreateCatalogModelVariantJSONRequestBody defines body for AdminCreateCatalogModelVariant for application/json ContentType.
+type AdminCreateCatalogModelVariantJSONRequestBody = AdminCreateCatalogModelVariantJSONBody
+
+// AdminBulkUpdateVariantPricesJSONRequestBody defines body for AdminBulkUpdateVariantPrices for application/json ContentType.
+type AdminBulkUpdateVariantPricesJSONRequestBody = AdminBulkUpdateVariantPricesJSONBody
+
+// AdminUpdateCatalogVariantJSONRequestBody defines body for AdminUpdateCatalogVariant for application/json ContentType.
+type AdminUpdateCatalogVariantJSONRequestBody = AdminUpdateCatalogVariantJSONBody
+
+// AdminUpdateCollectJSONRequestBody defines body for AdminUpdateCollect for application/json ContentType.
+type AdminUpdateCollectJSONRequestBody = AdminUpdateCollectJSONBody
+
 // AdminSaveFaqJSONRequestBody defines body for AdminSaveFaq for application/json ContentType.
 type AdminSaveFaqJSONRequestBody = AdminFaqRequest
 
@@ -1188,6 +1304,9 @@ type AdminBroadcastMessageJSONRequestBody = AdminBroadcastMessageRequest
 
 // AdminUpdateOrderJSONRequestBody defines body for AdminUpdateOrder for application/json ContentType.
 type AdminUpdateOrderJSONRequestBody = AdminUpdateOrderRequest
+
+// AdminUpdateProductEditorialJSONRequestBody defines body for AdminUpdateProductEditorial for application/json ContentType.
+type AdminUpdateProductEditorialJSONRequestBody = AdminUpdateProductEditorialJSONBody
 
 // AdminApproveRefundJSONRequestBody defines body for AdminApproveRefund for application/json ContentType.
 type AdminApproveRefundJSONRequestBody = AdminProcessRefundRequest
@@ -1240,6 +1359,9 @@ type UpdateCartItemJSONRequestBody = UpdateCartItemRequest
 // CreateCategoryJSONRequestBody defines body for CreateCategory for application/json ContentType.
 type CreateCategoryJSONRequestBody = CategoryRequest
 
+// ResolveCatalogProductModelVariantJSONRequestBody defines body for ResolveCatalogProductModelVariant for application/json ContentType.
+type ResolveCatalogProductModelVariantJSONRequestBody = ResolveCatalogProductModelVariantJSONBody
+
 // CreateProductJSONRequestBody defines body for CreateProduct for application/json ContentType.
 type CreateProductJSONRequestBody = ProductRequest
 
@@ -1260,6 +1382,9 @@ type PreviewCheckoutJSONRequestBody = CheckoutPreviewRequest
 
 // CreateContentArticleJSONRequestBody defines body for CreateContentArticle for application/json ContentType.
 type CreateContentArticleJSONRequestBody = ArticleRequest
+
+// UpdateContentArticleJSONRequestBody defines body for UpdateContentArticle for application/json ContentType.
+type UpdateContentArticleJSONRequestBody = UpdateContentArticleJSONBody
 
 // CreateContentPageJSONRequestBody defines body for CreateContentPage for application/json ContentType.
 type CreateContentPageJSONRequestBody = StaticPageRequest
