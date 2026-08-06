@@ -2,6 +2,7 @@ package persistent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -203,4 +204,49 @@ func (r *WishlistRepo) ListReviews(ctx context.Context, productID string) ([]wis
 		})
 	}
 	return reviews, nil
+}
+
+func reviewModelToModule(row models.Review) wishlistmodule.Review {
+	return wishlistmodule.Review{
+		ID: row.ID, ProductID: row.ProductID, OrderID: row.OrderID, UserID: row.UserID,
+		Username: row.Username, Rating: row.Rating, Comment: row.Comment,
+		Status: wishlistmodule.ReviewStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}
+}
+
+func (r *WishlistRepo) GetReview(ctx context.Context, reviewID int64) (wishlistmodule.Review, error) {
+	var row models.Review
+	if err := r.Gorm.WithContext(ctx).First(&row, reviewID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return wishlistmodule.Review{}, wishlistmodule.ErrNotFound
+		}
+		return wishlistmodule.Review{}, fmt.Errorf("WishlistRepo.GetReview: %w", err)
+	}
+	return reviewModelToModule(row), nil
+}
+
+func (r *WishlistRepo) DeleteReview(ctx context.Context, reviewID int64) error {
+	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
+		var review models.Review
+		if err := tx.First(&review, reviewID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return wishlistmodule.ErrNotFound
+			}
+			return fmt.Errorf("WishlistRepo.DeleteReview(find): %w", err)
+		}
+		if err := tx.Delete(&review).Error; err != nil {
+			return fmt.Errorf("WishlistRepo.DeleteReview(delete): %w", err)
+		}
+		var aggregate struct {
+			Count int64
+			Avg   float64
+		}
+		if err := tx.Model(&models.Review{}).Where("product_id = ?", review.ProductID).Select("COUNT(*) as count, COALESCE(AVG(rating), 0) as avg").Scan(&aggregate).Error; err != nil {
+			return fmt.Errorf("WishlistRepo.DeleteReview(aggregate): %w", err)
+		}
+		if err := tx.Model(&models.Product{}).Where("id = ?", review.ProductID).Updates(map[string]any{"rating": aggregate.Avg, "review_count": int(aggregate.Count), "updated_at": time.Now().UTC()}).Error; err != nil {
+			return fmt.Errorf("WishlistRepo.DeleteReview(update product): %w", err)
+		}
+		return nil
+	})
 }

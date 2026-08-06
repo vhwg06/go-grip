@@ -1213,6 +1213,7 @@ paths:
           $ref: '#/components/responses/NotFoundResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
+
     patch:
       tags:
         - admin
@@ -1250,6 +1251,62 @@ paths:
           $ref: '#/components/responses/NotFoundResponse'
         '409':
           $ref: '#/components/responses/ConflictResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+    delete:
+      tags:
+        - admin
+      summary: Delete an order (admin)
+      operationId: adminDeleteOrder
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Order deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+  /admin/orders/{orderId}/refund-status:
+    get:
+      tags:
+        - admin
+      summary: Get refund relevance for an order
+      operationId: adminGetOrderRefundStatus
+      security:
+        - bearerAuth:
+            - "admin:read"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Refund signal retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/ForbiddenResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
         '500':
           $ref: '#/components/responses/InternalErrorResponse'
   /admin/refunds:
@@ -2449,6 +2506,12 @@ paths:
       summary: List public catalog product models
       operationId: listCatalogProductModels
       parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
         - name: minPrice
           in: query
           required: false
@@ -2465,6 +2528,31 @@ paths:
           schema:
             type: integer
             default: 20
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: materialId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: finishId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Product models retrieved
@@ -3249,8 +3337,37 @@ paths:
       responses:
         "200":
           description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleResponse"
         "400":
           $ref: "#/components/responses/BadRequestResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "403":
+          $ref: "#/components/responses/ForbiddenResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+    delete:
+      tags:
+        - content
+      summary: Delete article
+      operationId: deleteContentArticle
+      security:
+        - bearerAuth:
+            - "admin:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Article deleted
         "401":
           $ref: "#/components/responses/UnauthorizedResponse"
         "403":
@@ -3375,6 +3492,11 @@ paths:
       responses:
         "200":
           description: Options retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
         "404":
           $ref: "#/components/responses/NotFoundResponse"
         "500":
@@ -3401,6 +3523,11 @@ paths:
       responses:
         "200":
           description: Variant resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
         "400":
           $ref: "#/components/responses/BadRequestResponse"
         "404":
@@ -3473,6 +3600,11 @@ paths:
       responses:
         "200":
           description: Buy metadata retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
         "404":
           $ref: "#/components/responses/NotFoundResponse"
         "500":
@@ -3510,9 +3642,24 @@ paths:
         - content
       summary: List public content articles
       operationId: listPublicContentArticles
+      parameters:
+        - name: topic
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Public articles list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleListResponse"
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 
@@ -4740,7 +4887,31 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ArticleResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/InternalErrorResponse'
+
+  /public/content/pages/{slug}:
+    get:
+      tags:
+        - content
+      summary: Get public static page by slug
+      operationId: getPublicContentPage
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Public static page retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticPageResponse'
         '404':
           $ref: '#/components/responses/NotFoundResponse'
         '500':
@@ -5347,6 +5518,16 @@ components:
         content:
           type: string
           example: Welcome to Go-Grip shop!
+        body:
+          type: string
+        gallery:
+          type: array
+          items:
+            type: string
+        template_key:
+          type: string
+        status:
+          type: string
         created_at:
           type: string
           format: date-time
@@ -5641,6 +5822,33 @@ components:
         updatedAt:
           type: string
           format: date-time
+        customerId:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        shippingAddress:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        timeline:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        actions:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        customer:
+          type: object
+          additionalProperties: true
     AdminUpdateOrderRequest:
       type: object
       properties:
@@ -5812,11 +6020,12 @@ components:
           format: date-time
     AdminUpsertSettingRequest:
       type: object
-      required:
-        - value
       properties:
         value:
           type: string
+        article_id:
+          type: string
+          nullable: true
     AdminStoreSettingsResponse:
       type: object
       additionalProperties: true
@@ -5849,6 +6058,12 @@ components:
     AdminPresignedUrlResponse:
       type: object
       properties:
+        id:
+          type: string
+        public_url:
+          type: string
+        upload_url:
+          type: string
         url:
           type: string
         key:
@@ -5878,6 +6093,16 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        subtitle:
+          type: string
+        image:
+          type: string
+        mobileImage:
+          type: string
+        ctaText:
+          type: string
+        ctaLink:
+          type: string
     AdminBannerRequest:
       type: object
       properties:
@@ -5893,6 +6118,16 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        subtitle:
+          type: string
+        image:
+          type: string
+        mobileImage:
+          type: string
+        ctaText:
+          type: string
+        ctaLink:
+          type: string
     AdminFaqListResponse:
       type: object
       properties:
@@ -6044,6 +6279,10 @@ components:
             additionalProperties: true
         total:
           type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
     ArticleListResponse:
       type: object
       properties:
@@ -6073,6 +6312,16 @@ components:
         createdAt:
           type: string
           format: date-time
+        image_url:
+          type: string
+        topic:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
     ArticleRequest:
       type: object
       required:
@@ -6087,6 +6336,16 @@ components:
           type: string
         status:
           type: string
+        image_url:
+          type: string
+        topic:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
     StaticPageRequest:
       type: object
       required:
@@ -6099,6 +6358,14 @@ components:
         title:
           type: string
         body:
+          type: string
+        gallery:
+          type: array
+          items:
+            type: string
+        template_key:
+          type: string
+        status:
           type: string
     ErrorDetail:
       type: object

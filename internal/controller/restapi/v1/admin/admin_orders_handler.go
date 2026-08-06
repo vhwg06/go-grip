@@ -99,6 +99,8 @@ func (h *Handler) AdminUpdateOrder(ctx context.Context, request openapi.AdminUpd
 	if err := h.adminUC.UpdateOrderStatus(ctx, actor, request.OrderId, orderStatus); err != nil {
 		statusCode, errResp := mapAdminError(err)
 		switch statusCode {
+		case 400:
+			return openapi.AdminUpdateOrder400JSONResponse{BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp)}, nil
 		case 401:
 			return openapi.AdminUpdateOrder401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
 		case 403:
@@ -117,6 +119,51 @@ func (h *Handler) AdminUpdateOrder(ctx context.Context, request openapi.AdminUpd
 	}
 	detail := toAdminOrderDetail(order)
 	return openapi.AdminUpdateOrder200JSONResponse(detail), nil
+}
+
+// AdminDeleteOrder handles DELETE /admin/orders/{orderId}.
+func (h *Handler) AdminDeleteOrder(ctx context.Context, request openapi.AdminDeleteOrderRequestObject) (openapi.AdminDeleteOrderResponseObject, error) {
+	actor := getActor(ctx)
+	if err := h.adminUC.DeleteOrder(ctx, actor, request.OrderId); err != nil {
+		statusCode, errResp := mapAdminError(err)
+		switch statusCode {
+		case 401:
+			return openapi.AdminDeleteOrder401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
+		case 403:
+			return openapi.AdminDeleteOrder403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
+		case 404:
+			return openapi.AdminDeleteOrder404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
+		default:
+			return openapi.AdminDeleteOrder500JSONResponse{}, nil
+		}
+	}
+	return openapi.AdminDeleteOrder204Response{}, nil
+}
+
+// AdminGetOrderRefundStatus handles GET /admin/orders/{orderId}/refund-status.
+func (h *Handler) AdminGetOrderRefundStatus(ctx context.Context, request openapi.AdminGetOrderRefundStatusRequestObject) (openapi.AdminGetOrderRefundStatusResponseObject, error) {
+	actor := getActor(ctx)
+	refund, err := h.adminUC.GetOrderRefundStatus(ctx, actor, request.OrderId)
+	if err != nil {
+		statusCode, errResp := mapAdminError(err)
+		switch statusCode {
+		case 401:
+			return openapi.AdminGetOrderRefundStatus401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
+		case 403:
+			return openapi.AdminGetOrderRefundStatus403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
+		case 404:
+			return openapi.AdminGetOrderRefundStatus404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
+		default:
+			return openapi.AdminGetOrderRefundStatus500JSONResponse{}, nil
+		}
+	}
+	return openapi.AdminGetOrderRefundStatus200JSONResponse{
+		"id":               refund.ID,
+		"orderId":          refund.OrderID,
+		"status":           refund.Status,
+		"requested":        true,
+		"hasRefundRequest": true,
+	}, nil
 }
 
 // AdminGetCollect handles GET /admin/collect — returns aggregated backoffice counts.
@@ -147,7 +194,6 @@ func (h *Handler) AdminGetCollect(ctx context.Context, _ openapi.AdminGetCollect
 	return openapi.AdminGetCollect200JSONResponse(resp), nil
 }
 
-
 // toAdminOrderDetail maps ordermodule.Order to openapi.AdminOrderDetailResponse.
 func toAdminOrderDetail(o ordermodule.Order) openapi.AdminOrderDetailResponse {
 	orderID := o.ID
@@ -158,17 +204,61 @@ func toAdminOrderDetail(o ordermodule.Order) openapi.AdminOrderDetailResponse {
 	amount := int64(o.Amount)
 	qty := o.Quantity
 	status := string(o.Status)
+	customerID := o.UserID
+	customerEmail := o.Email
+	customerPhone := ""
+	shippingAddress := ""
+	paymentMethod := ""
+	notes := ""
+	unitPrice := int64(o.Amount)
+	if o.Quantity > 0 {
+		unitPrice /= int64(o.Quantity)
+	}
+	items := []map[string]interface{}{{
+		"productId":   o.ProductID,
+		"productName": o.ProductName,
+		"quantity":    o.Quantity,
+		"unitPrice":   unitPrice,
+		"total":       o.Amount,
+	}}
+	timeline := []map[string]interface{}{{"status": "PENDING", "timestamp": o.CreatedAt}}
+	if status != "PENDING" {
+		timeline = append(timeline, map[string]interface{}{"status": status, "timestamp": o.UpdatedAt})
+	}
+	actions := allowedOrderActions(o.Status)
+	customer := map[string]interface{}{"id": o.UserID, "email": o.Email, "username": o.Username}
 
 	return openapi.AdminOrderDetailResponse{
-		OrderId:     &orderID,
-		UserId:      &userID,
-		Username:    &username,
-		Email:       &email,
-		ProductName: &productName,
-		Amount:      &amount,
-		Quantity:    &qty,
-		Status:      &status,
-		CreatedAt:   &o.CreatedAt,
-		UpdatedAt:   &o.UpdatedAt,
+		OrderId:         &orderID,
+		UserId:          &userID,
+		Username:        &username,
+		Email:           &email,
+		ProductName:     &productName,
+		Amount:          &amount,
+		Quantity:        &qty,
+		Status:          &status,
+		CreatedAt:       &o.CreatedAt,
+		UpdatedAt:       &o.UpdatedAt,
+		CustomerId:      &customerID,
+		CustomerEmail:   &customerEmail,
+		CustomerPhone:   &customerPhone,
+		ShippingAddress: &shippingAddress,
+		PaymentMethod:   &paymentMethod,
+		Notes:           &notes,
+		Items:           &items,
+		Timeline:        &timeline,
+		Actions:         &actions,
+		Customer:        &customer,
+	}
+}
+
+func allowedOrderActions(status ordermodule.OrderStatus) []string {
+	switch status {
+	case ordermodule.OrderStatusPending:
+		return []string{"PAID", "CANCELLED"}
+	case ordermodule.OrderStatusPaid:
+		return []string{"DELIVERED", "CANCELLED"}
+	default:
+		return []string{}
 	}
 }

@@ -100,22 +100,32 @@ type AdminBannerListResponse struct {
 
 // AdminBannerRequest defines model for AdminBannerRequest.
 type AdminBannerRequest struct {
-	Id        *string `json:"id,omitempty"`
-	ImageUrl  *string `json:"imageUrl,omitempty"`
-	IsActive  *bool   `json:"isActive,omitempty"`
-	LinkUrl   *string `json:"linkUrl,omitempty"`
-	SortOrder *int    `json:"sortOrder,omitempty"`
-	Title     *string `json:"title,omitempty"`
+	CtaLink     *string `json:"ctaLink,omitempty"`
+	CtaText     *string `json:"ctaText,omitempty"`
+	Id          *string `json:"id,omitempty"`
+	Image       *string `json:"image,omitempty"`
+	ImageUrl    *string `json:"imageUrl,omitempty"`
+	IsActive    *bool   `json:"isActive,omitempty"`
+	LinkUrl     *string `json:"linkUrl,omitempty"`
+	MobileImage *string `json:"mobileImage,omitempty"`
+	SortOrder   *int    `json:"sortOrder,omitempty"`
+	Subtitle    *string `json:"subtitle,omitempty"`
+	Title       *string `json:"title,omitempty"`
 }
 
 // AdminBannerResponse defines model for AdminBannerResponse.
 type AdminBannerResponse struct {
-	Id        *string `json:"id,omitempty"`
-	ImageUrl  *string `json:"imageUrl,omitempty"`
-	IsActive  *bool   `json:"isActive,omitempty"`
-	LinkUrl   *string `json:"linkUrl,omitempty"`
-	SortOrder *int    `json:"sortOrder,omitempty"`
-	Title     *string `json:"title,omitempty"`
+	CtaLink     *string `json:"ctaLink,omitempty"`
+	CtaText     *string `json:"ctaText,omitempty"`
+	Id          *string `json:"id,omitempty"`
+	Image       *string `json:"image,omitempty"`
+	ImageUrl    *string `json:"imageUrl,omitempty"`
+	IsActive    *bool   `json:"isActive,omitempty"`
+	LinkUrl     *string `json:"linkUrl,omitempty"`
+	MobileImage *string `json:"mobileImage,omitempty"`
+	SortOrder   *int    `json:"sortOrder,omitempty"`
+	Subtitle    *string `json:"subtitle,omitempty"`
+	Title       *string `json:"title,omitempty"`
 }
 
 // AdminBlockUserRequest defines model for AdminBlockUserRequest.
@@ -212,18 +222,27 @@ type AdminNotificationStatusResponse map[string]interface{}
 
 // AdminOrderDetailResponse defines model for AdminOrderDetailResponse.
 type AdminOrderDetailResponse struct {
-	Address       *string    `json:"address,omitempty"`
-	Amount        *int64     `json:"amount,omitempty"`
-	CreatedAt     *time.Time `json:"createdAt,omitempty"`
-	Email         *string    `json:"email,omitempty"`
-	OrderId       *string    `json:"orderId,omitempty"`
-	PaymentMethod *string    `json:"paymentMethod,omitempty"`
-	ProductName   *string    `json:"productName,omitempty"`
-	Quantity      *int       `json:"quantity,omitempty"`
-	Status        *string    `json:"status,omitempty"`
-	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
-	UserId        *string    `json:"userId,omitempty"`
-	Username      *string    `json:"username,omitempty"`
+	Actions         *[]string                 `json:"actions,omitempty"`
+	Address         *string                   `json:"address,omitempty"`
+	Amount          *int64                    `json:"amount,omitempty"`
+	CreatedAt       *time.Time                `json:"createdAt,omitempty"`
+	Customer        *map[string]interface{}   `json:"customer,omitempty"`
+	CustomerEmail   *string                   `json:"customerEmail,omitempty"`
+	CustomerId      *string                   `json:"customerId,omitempty"`
+	CustomerPhone   *string                   `json:"customerPhone,omitempty"`
+	Email           *string                   `json:"email,omitempty"`
+	Items           *[]map[string]interface{} `json:"items,omitempty"`
+	Notes           *string                   `json:"notes,omitempty"`
+	OrderId         *string                   `json:"orderId,omitempty"`
+	PaymentMethod   *string                   `json:"paymentMethod,omitempty"`
+	ProductName     *string                   `json:"productName,omitempty"`
+	Quantity        *int                      `json:"quantity,omitempty"`
+	ShippingAddress *string                   `json:"shippingAddress,omitempty"`
+	Status          *string                   `json:"status,omitempty"`
+	Timeline        *[]map[string]interface{} `json:"timeline,omitempty"`
+	UpdatedAt       *time.Time                `json:"updatedAt,omitempty"`
+	UserId          *string                   `json:"userId,omitempty"`
+	Username        *string                   `json:"username,omitempty"`
 }
 
 // AdminOrderListResponse defines model for AdminOrderListResponse.
@@ -237,7 +256,10 @@ type AdminOrderListResponse struct {
 // AdminPresignedUrlResponse defines model for AdminPresignedUrlResponse.
 type AdminPresignedUrlResponse struct {
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	Id        *string    `json:"id,omitempty"`
 	Key       *string    `json:"key,omitempty"`
+	PublicUrl *string    `json:"public_url,omitempty"`
+	UploadUrl *string    `json:"upload_url,omitempty"`
 	Url       *string    `json:"url,omitempty"`
 }
 
@@ -314,7 +336,8 @@ type AdminUpdateOrderRequest struct {
 
 // AdminUpsertSettingRequest defines model for AdminUpsertSettingRequest.
 type AdminUpsertSettingRequest struct {
-	Value string `json:"value"`
+	ArticleId *string `json:"article_id,omitempty"`
+	Value     *string `json:"value,omitempty"`
 }
 
 // AdminUserListResponse defines model for AdminUserListResponse.
@@ -348,10 +371,14 @@ type ArticleListResponse struct {
 
 // ArticleRequest defines model for ArticleRequest.
 type ArticleRequest struct {
-	Body   string  `json:"body"`
-	Slug   *string `json:"slug,omitempty"`
-	Status *string `json:"status,omitempty"`
-	Title  string  `json:"title"`
+	Body     string    `json:"body"`
+	ImageUrl *string   `json:"image_url,omitempty"`
+	Priority *int      `json:"priority,omitempty"`
+	Slug     *string   `json:"slug,omitempty"`
+	Status   *string   `json:"status,omitempty"`
+	Tags     *[]string `json:"tags,omitempty"`
+	Title    string    `json:"title"`
+	Topic    *string   `json:"topic,omitempty"`
 }
 
 // ArticleResponse defines model for ArticleResponse.
@@ -359,10 +386,14 @@ type ArticleResponse struct {
 	Body        *string    `json:"body,omitempty"`
 	CreatedAt   *time.Time `json:"createdAt,omitempty"`
 	Id          *string    `json:"id,omitempty"`
+	ImageUrl    *string    `json:"image_url,omitempty"`
+	Priority    *int       `json:"priority,omitempty"`
 	PublishedAt *time.Time `json:"publishedAt,omitempty"`
 	Slug        *string    `json:"slug,omitempty"`
 	Status      *string    `json:"status,omitempty"`
+	Tags        *[]string  `json:"tags,omitempty"`
 	Title       *string    `json:"title,omitempty"`
+	Topic       *string    `json:"topic,omitempty"`
 }
 
 // CartItemResponse defines model for CartItemResponse.
@@ -784,6 +815,8 @@ type PublicHomepageResponse map[string]interface{}
 // PublicProductModelListResponse defines model for PublicProductModelListResponse.
 type PublicProductModelListResponse struct {
 	Items *[]map[string]interface{} `json:"items,omitempty"`
+	Limit *int                      `json:"limit,omitempty"`
+	Page  *int                      `json:"page,omitempty"`
 	Total *int                      `json:"total,omitempty"`
 }
 
@@ -859,22 +892,30 @@ type ReviewResponse struct {
 
 // StaticPageRequest defines model for StaticPageRequest.
 type StaticPageRequest struct {
-	Body  string `json:"body"`
-	Slug  string `json:"slug"`
-	Title string `json:"title"`
+	Body        string    `json:"body"`
+	Gallery     *[]string `json:"gallery,omitempty"`
+	Slug        string    `json:"slug"`
+	Status      *string   `json:"status,omitempty"`
+	TemplateKey *string   `json:"template_key,omitempty"`
+	Title       string    `json:"title"`
 }
 
 // StaticPageResponse defines model for StaticPageResponse.
 type StaticPageResponse struct {
+	Body *string `json:"body,omitempty"`
+
 	// Content Example: Welcome to Go-Grip shop!
 	Content   *string    `json:"content,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Gallery   *[]string  `json:"gallery,omitempty"`
 
 	// Id Example: page-1
 	Id string `json:"id"`
 
 	// Slug Example: about-us
-	Slug string `json:"slug"`
+	Slug        string  `json:"slug"`
+	Status      *string `json:"status,omitempty"`
+	TemplateKey *string `json:"template_key,omitempty"`
 
 	// Title Example: About Us
 	Title string `json:"title"`
@@ -1163,9 +1204,15 @@ type AdminListUsersParams struct {
 
 // ListCatalogProductModelsParams defines parameters for ListCatalogProductModels.
 type ListCatalogProductModelsParams struct {
-	MinPrice *int `form:"minPrice,omitempty" json:"minPrice,omitempty"`
-	MaxPrice *int `form:"maxPrice,omitempty" json:"maxPrice,omitempty"`
-	Limit    *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Page       *int    `form:"page,omitempty" json:"page,omitempty"`
+	MinPrice   *int    `form:"minPrice,omitempty" json:"minPrice,omitempty"`
+	MaxPrice   *int    `form:"maxPrice,omitempty" json:"maxPrice,omitempty"`
+	Limit      *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	CategoryId *string `form:"categoryId,omitempty" json:"categoryId,omitempty"`
+	MaterialId *string `form:"materialId,omitempty" json:"materialId,omitempty"`
+	FinishId   *string `form:"finishId,omitempty" json:"finishId,omitempty"`
+	Search     *string `form:"search,omitempty" json:"search,omitempty"`
+	Sort       *string `form:"sort,omitempty" json:"sort,omitempty"`
 }
 
 // GetCatalogProductModelOptionsParams defines parameters for GetCatalogProductModelOptions.
@@ -1232,6 +1279,12 @@ type ListOrdersParams struct {
 
 // UpdateProfileNotificationsJSONBody defines parameters for UpdateProfileNotifications.
 type UpdateProfileNotificationsJSONBody map[string]interface{}
+
+// ListPublicContentArticlesParams defines parameters for ListPublicContentArticles.
+type ListPublicContentArticlesParams struct {
+	Topic *string `form:"topic,omitempty" json:"topic,omitempty"`
+	Tag   *string `form:"tag,omitempty" json:"tag,omitempty"`
+}
 
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {

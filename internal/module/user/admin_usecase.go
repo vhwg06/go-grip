@@ -8,7 +8,7 @@ import (
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
-	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist" 
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
@@ -44,6 +44,7 @@ type AdminUseCase interface {
 	UpdateUserStatus(ctx context.Context, actor Actor, userID string, status UserStatus) error
 	ListOrders(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]ordermodule.Order, int, error)
 	GetOrder(ctx context.Context, actor Actor, orderID string) (ordermodule.Order, error)
+	GetOrderRefundStatus(ctx context.Context, actor Actor, orderID string) (ordermodule.RefundRequest, error)
 	UpdateOrderStatus(ctx context.Context, actor Actor, orderID string, status ordermodule.OrderStatus) error
 	DeleteOrder(ctx context.Context, actor Actor, orderID string) error
 	ListRefunds(ctx context.Context, actor Actor, status string) ([]ordermodule.RefundRequest, error)
@@ -126,6 +127,13 @@ func (uc *adminUseCase) GetOrder(ctx context.Context, actor Actor, orderID strin
 		return ordermodule.Order{}, err
 	}
 	return uc.repo.GetOrderByID(ctx, orderID)
+}
+
+func (uc *adminUseCase) GetOrderRefundStatus(ctx context.Context, actor Actor, orderID string) (ordermodule.RefundRequest, error) {
+	if err := uc.ensureAdmin(actor); err != nil {
+		return ordermodule.RefundRequest{}, err
+	}
+	return uc.repo.GetOrderRefundStatus(ctx, orderID)
 }
 
 // UpdateOrderStatus transitions an order to a new status, enforcing admin access and
@@ -298,4 +306,3 @@ func (uc *adminUseCase) ensureAdmin(actor Actor) error {
 	}
 	return ErrForbidden
 }
-

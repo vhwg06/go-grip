@@ -8,12 +8,18 @@ import (
 // toStaticPageResponse maps contentmodule.StaticPage to openapi.StaticPageResponse DTO.
 func toStaticPageResponse(p contentmodule.StaticPage) openapi.StaticPageResponse {
 	content := p.Body
+	templateKey := p.TemplateKey
+	status := string(p.Status)
 	return openapi.StaticPageResponse{
-		Id:        p.ID,
-		Slug:      p.Slug,
-		Title:     p.Title,
-		Content:   &content,
-		CreatedAt: &p.UpdatedAt,
+		Id:          p.ID,
+		Slug:        p.Slug,
+		Title:       p.Title,
+		Content:     &content,
+		Body:        &content,
+		CreatedAt:   &p.UpdatedAt,
+		Gallery:     &p.Gallery,
+		TemplateKey: &templateKey,
+		Status:      &status,
 	}
 }
 

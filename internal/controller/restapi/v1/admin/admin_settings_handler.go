@@ -5,10 +5,15 @@ import (
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 
 	"context"
+	"fmt"
+	"net/mail"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
+	"github.com/gofiber/fiber/v2"
 )
 
 // AdminGetSetting handles GET /admin/settings/{key}
@@ -44,7 +49,12 @@ func (h *Handler) AdminUpsertSetting(ctx context.Context, request openapi.AdminU
 
 	value := ""
 	if request.Body != nil {
-		value = request.Body.Value
+		if request.Body.Value != nil {
+			value = *request.Body.Value
+		}
+		if request.Body.ArticleId != nil {
+			value = *request.Body.ArticleId
+		}
 	}
 
 	if err := h.adminUC.UpsertSetting(ctx, actor, request.Key, value); err != nil {
@@ -82,19 +92,27 @@ func (h *Handler) AdminGetStoreSettings(ctx context.Context, _ openapi.AdminGetS
 		}
 	}
 
-	m := make(openapi.AdminStoreSettingsResponse, len(settings))
-	for _, s := range settings {
-		m[s.Key] = s.Value
-	}
+	m := settingsProjection(settings)
 	return openapi.AdminGetStoreSettings200JSONResponse(m), nil
 }
 
 // AdminUpdateStoreSettingsBrand handles PUT /admin/store-settings/brand
 func (h *Handler) AdminUpdateStoreSettingsBrand(ctx context.Context, request openapi.AdminUpdateStoreSettingsBrandRequestObject) (openapi.AdminUpdateStoreSettingsBrandResponseObject, error) {
 	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminUpdateStoreSettingsBrand401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminUpdateStoreSettingsBrand403JSONResponse{}, nil
+	}
 	if request.Body != nil {
+		if err := h.replaceSettingsGroup(ctx, actor, "brand.", map[string]interface{}(*request.Body)); err != nil {
+			return openapi.AdminUpdateStoreSettingsBrand500JSONResponse{}, nil
+		}
 		for k, v := range *request.Body {
-			_ = h.adminUC.UpsertSetting(ctx, actor, "brand."+k, anyToString(v))
+			if err := h.adminUC.UpsertSetting(ctx, actor, "brand."+k, anyToString(v)); err != nil {
+				return openapi.AdminUpdateStoreSettingsBrand500JSONResponse{}, nil
+			}
 		}
 	}
 	return openapi.AdminUpdateStoreSettingsBrand200Response{}, nil
@@ -103,12 +121,49 @@ func (h *Handler) AdminUpdateStoreSettingsBrand(ctx context.Context, request ope
 // AdminUpdateStoreSettingsContact handles PUT /admin/store-settings/contact
 func (h *Handler) AdminUpdateStoreSettingsContact(ctx context.Context, request openapi.AdminUpdateStoreSettingsContactRequestObject) (openapi.AdminUpdateStoreSettingsContactResponseObject, error) {
 	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminUpdateStoreSettingsContact401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminUpdateStoreSettingsContact403JSONResponse{}, nil
+	}
 	if request.Body != nil {
 		for k, v := range *request.Body {
-			_ = h.adminUC.UpsertSetting(ctx, actor, "contact."+k, anyToString(v))
+			if strings.Contains(strings.ToLower(k), "email") && !validEmail(anyToString(v)) {
+				return adminContactBadRequestResponse{}, nil
+			}
+		}
+		if err := h.replaceSettingsGroup(ctx, actor, "contact.", map[string]interface{}(*request.Body)); err != nil {
+			return openapi.AdminUpdateStoreSettingsContact500JSONResponse{}, nil
+		}
+		for k, v := range *request.Body {
+			if err := h.adminUC.UpsertSetting(ctx, actor, "contact."+k, anyToString(v)); err != nil {
+				return openapi.AdminUpdateStoreSettingsContact500JSONResponse{}, nil
+			}
 		}
 	}
 	return openapi.AdminUpdateStoreSettingsContact200Response{}, nil
+}
+
+func (h *Handler) replaceSettingsGroup(ctx context.Context, actor usermodule.Actor, prefix string, body map[string]interface{}) error {
+	settings, err := h.adminUC.ListSettings(ctx, actor)
+	if err != nil {
+		return err
+	}
+	keep := make(map[string]struct{}, len(body))
+	for key := range body {
+		keep[prefix+key] = struct{}{}
+	}
+	for _, setting := range settings {
+		if strings.HasPrefix(setting.Key, prefix) {
+			if _, ok := keep[setting.Key]; !ok {
+				if err := h.adminUC.DeleteSetting(ctx, actor, setting.Key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // AdminUpdateStoreSettingsFooter handles PUT /admin/store-settings/footer
@@ -208,11 +263,68 @@ func (h *Handler) AdminUpdateStoreSettingsHomepage(ctx context.Context, request 
 func (h *Handler) AdminUpdateStoreSettingsFloatingSupport(ctx context.Context, request openapi.AdminUpdateStoreSettingsFloatingSupportRequestObject) (openapi.AdminUpdateStoreSettingsFloatingSupportResponseObject, error) {
 	actor := getActor(ctx)
 	if request.Body != nil {
+		body := *request.Body
+		if actions, ok := body["actions"].([]any); ok {
+			for _, raw := range actions {
+				action, ok := raw.(map[string]any)
+				if !ok {
+					return adminFloatingSupportBadRequestResponse{}, nil
+				}
+				target, present := action["target"]
+				if !present || target == nil || strings.TrimSpace(fmt.Sprint(target)) == "" {
+					continue
+				}
+				parsed, err := url.Parse(strings.TrimSpace(fmt.Sprint(target)))
+				if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+					return adminFloatingSupportBadRequestResponse{}, nil
+				}
+			}
+		}
 		for k, v := range *request.Body {
-			_ = h.adminUC.UpsertSetting(ctx, actor, "floating_support."+k, anyToString(v))
+			if err := h.adminUC.UpsertSetting(ctx, actor, "floating_support."+k, anyToString(v)); err != nil {
+				return openapi.AdminUpdateStoreSettingsFloatingSupport500JSONResponse{}, nil
+			}
 		}
 	}
 	return openapi.AdminUpdateStoreSettingsFloatingSupport200Response{}, nil
+}
+
+func validEmail(value string) bool {
+	address, err := mail.ParseAddress(strings.TrimSpace(value))
+	return err == nil && address.Address == strings.TrimSpace(value) && strings.Contains(address.Address, "@")
+}
+
+func settingsProjection(settings []catalogmodule.Setting) openapi.AdminStoreSettingsResponse {
+	result := make(openapi.AdminStoreSettingsResponse, len(settings)+3)
+	brand := map[string]any{}
+	contact := map[string]any{}
+	for _, setting := range settings {
+		result[setting.Key] = setting.Value
+		if strings.HasPrefix(setting.Key, "brand.") {
+			brand[strings.TrimPrefix(setting.Key, "brand.")] = setting.Value
+		}
+		if strings.HasPrefix(setting.Key, "contact.") {
+			contact[strings.TrimPrefix(setting.Key, "contact.")] = setting.Value
+		}
+	}
+	result["config"] = map[string]any{"brand": brand, "contact": contact}
+	result["stats"] = map[string]any{"settingsCount": len(settings)}
+	result["visitorCount"] = 0
+	return result
+}
+
+type adminContactBadRequestResponse struct{}
+
+func (adminContactBadRequestResponse) VisitAdminUpdateStoreSettingsContactResponse(ctx *fiber.Ctx) error {
+	ctx.Status(400)
+	return nil
+}
+
+type adminFloatingSupportBadRequestResponse struct{}
+
+func (adminFloatingSupportBadRequestResponse) VisitAdminUpdateStoreSettingsFloatingSupportResponse(ctx *fiber.Ctx) error {
+	ctx.Status(400)
+	return nil
 }
 
 // toAdminSettingResponse maps catalogmodule.Setting to openapi.AdminSettingResponse.
@@ -239,7 +351,6 @@ func anyToString(v interface{}) string {
 		return ""
 	}
 }
-
 
 // AdminUpdateCollect handles PUT /admin/collect/setup
 func (h *Handler) AdminUpdateCollect(ctx context.Context, request openapi.AdminUpdateCollectRequestObject) (openapi.AdminUpdateCollectResponseObject, error) {

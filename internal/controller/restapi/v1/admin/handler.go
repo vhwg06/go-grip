@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
+	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/logger"
@@ -11,15 +13,19 @@ import (
 
 // Handler implements strict OpenAPI handlers for the Admin capability.
 type Handler struct {
-	adminUC usermodule.AdminUseCase
-	logger  logger.Interface
+	adminUC    usermodule.AdminUseCase
+	mediaUC    mediamodule.MediaUseCase
+	homepageUC contentmodule.HomepageUseCase
+	logger     logger.Interface
 }
 
 // NewHandler constructs a new Admin vertical handler instance.
-func NewHandler(adminUC usermodule.AdminUseCase, l logger.Interface) *Handler {
+func NewHandler(adminUC usermodule.AdminUseCase, mediaUC mediamodule.MediaUseCase, homepageUC contentmodule.HomepageUseCase, l logger.Interface) *Handler {
 	return &Handler{
-		adminUC: adminUC,
-		logger:  l,
+		adminUC:    adminUC,
+		mediaUC:    mediaUC,
+		homepageUC: homepageUC,
+		logger:     l,
 	}
 }
 

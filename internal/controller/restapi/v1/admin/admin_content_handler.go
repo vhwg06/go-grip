@@ -1,9 +1,11 @@
 package admin
 
 import (
-	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
-
 	"context"
+	"sort"
+
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
@@ -22,20 +24,25 @@ func (h *Handler) AdminListMedia(ctx context.Context, request openapi.AdminListM
 		pageSize = *request.Params.PageSize
 	}
 	offset := (page - 1) * pageSize
-	_, total, err := h.adminUC.ListProducts(ctx, actor, pagination.New(pageSize, offset))
+	if h.mediaUC == nil {
+		return openapi.AdminListMedia500JSONResponse{}, nil
+	}
+	assets, total, err := h.mediaUC.List(ctx, pagination.New(pageSize, offset), "")
 	if err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminListMedia401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminListMedia403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
-			return openapi.AdminListMedia500JSONResponse{}, nil
-		}
+		return openapi.AdminListMedia500JSONResponse{}, nil
 	}
 
-	items := []openapi.AdminMediaResponse{}
+	if actor.UserID == "" {
+		return openapi.AdminListMedia401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin {
+		return openapi.AdminListMedia403JSONResponse{}, nil
+	}
+	items := make([]openapi.AdminMediaResponse, 0, len(assets))
+	for _, asset := range assets {
+		id, url, fileName, mimeType, size := asset.ID, asset.URL, asset.FileName, asset.MimeType, asset.SizeBytes
+		items = append(items, openapi.AdminMediaResponse{Id: &id, Url: &url, FileName: &fileName, MimeType: &mimeType, Size: &size, CreatedAt: &asset.CreatedAt})
+	}
 	resp := openapi.AdminMediaListResponse{Items: &items, Total: &total}
 	return openapi.AdminListMedia200JSONResponse(resp), nil
 }
@@ -60,50 +67,56 @@ func (h *Handler) AdminCreateMedia(ctx context.Context, _ openapi.AdminCreateMed
 }
 
 // AdminGetPresignedUrl handles GET /admin/media/presigned
-func (h *Handler) AdminGetPresignedUrl(ctx context.Context, _ openapi.AdminGetPresignedUrlRequestObject) (openapi.AdminGetPresignedUrlResponseObject, error) {
+func (h *Handler) AdminGetPresignedUrl(ctx context.Context, request openapi.AdminGetPresignedUrlRequestObject) (openapi.AdminGetPresignedUrlResponseObject, error) {
 	actor := getActor(ctx)
-	_, _, err := h.adminUC.ListUsers(ctx, actor, pagination.New(1, 0))
-	if err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminGetPresignedUrl401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminGetPresignedUrl403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
-			return openapi.AdminGetPresignedUrl500JSONResponse{}, nil
-		}
+	if actor.UserID == "" {
+		return openapi.AdminGetPresignedUrl401JSONResponse{}, nil
 	}
-	resp := openapi.AdminPresignedUrlResponse{}
-	return openapi.AdminGetPresignedUrl200JSONResponse(resp), nil
+	if !actor.IsAdmin {
+		return openapi.AdminGetPresignedUrl403JSONResponse{}, nil
+	}
+	if h.mediaUC == nil {
+		return openapi.AdminGetPresignedUrl500JSONResponse{}, nil
+	}
+	contentType := "image/png"
+	if request.Params.ContentType != nil && *request.Params.ContentType != "" {
+		contentType = *request.Params.ContentType
+	}
+	uploadURL, publicURL, fileID, err := h.mediaUC.GeneratePresignedURL(ctx, request.Params.FileName, contentType)
+	if err != nil {
+		return openapi.AdminGetPresignedUrl500JSONResponse{}, nil
+	}
+	return openapi.AdminGetPresignedUrl200JSONResponse{
+		Id:        &fileID,
+		PublicUrl: &publicURL,
+		UploadUrl: &uploadURL,
+		Url:       &publicURL,
+		Key:       &fileID,
+	}, nil
 }
 
 // AdminListBanners handles GET /admin/banners
 func (h *Handler) AdminListBanners(ctx context.Context, _ openapi.AdminListBannersRequestObject) (openapi.AdminListBannersResponseObject, error) {
 	actor := getActor(ctx)
-
-	settings, err := h.adminUC.ListSettings(ctx, actor)
+	if actor.UserID == "" {
+		return openapi.AdminListBanners401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin || h.homepageUC == nil {
+		return openapi.AdminListBanners403JSONResponse{}, nil
+	}
+	blocks, err := h.homepageUC.ListBlocks(ctx, false)
 	if err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminListBanners401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminListBanners403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
-			return openapi.AdminListBanners500JSONResponse{}, nil
-		}
+		return openapi.AdminListBanners500JSONResponse{}, nil
 	}
-
-	// Banners are stored as settings with "banner.*" prefix keys.
 	items := make([]openapi.AdminBannerResponse, 0)
-	for _, s := range settings {
-		if len(s.Key) > 7 && s.Key[:7] == "banner." {
-			title := s.Key[7:]
-			val := s.Value
-			items = append(items, openapi.AdminBannerResponse{Title: &title, ImageUrl: &val})
+	for _, block := range blocks {
+		if block.BlockType == "banner" {
+			items = append(items, bannerResponse(block))
 		}
 	}
+	sort.SliceStable(items, func(i, j int) bool {
+		return items[i].SortOrder != nil && items[j].SortOrder != nil && *items[i].SortOrder < *items[j].SortOrder
+	})
 	resp := openapi.AdminBannerListResponse{Items: &items}
 	return openapi.AdminListBanners200JSONResponse(resp), nil
 }
@@ -111,60 +124,51 @@ func (h *Handler) AdminListBanners(ctx context.Context, _ openapi.AdminListBanne
 // AdminSaveBanner handles POST /admin/banners
 func (h *Handler) AdminSaveBanner(ctx context.Context, request openapi.AdminSaveBannerRequestObject) (openapi.AdminSaveBannerResponseObject, error) {
 	actor := getActor(ctx)
-
-	title := ""
-	imageURL := ""
-	if request.Body != nil {
-		if request.Body.Title != nil {
-			title = *request.Body.Title
-		}
-		if request.Body.ImageUrl != nil {
-			imageURL = *request.Body.ImageUrl
-		}
+	if actor.UserID == "" {
+		return openapi.AdminSaveBanner401JSONResponse{}, nil
 	}
-
-	if err := h.adminUC.UpsertSetting(ctx, actor, "banner."+title, imageURL); err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminSaveBanner401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminSaveBanner403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
+	if !actor.IsAdmin || h.homepageUC == nil || request.Body == nil {
+		return openapi.AdminSaveBanner403JSONResponse{}, nil
+	}
+	block := bannerBlock(*request.Body)
+	if request.Body.Id != nil && *request.Body.Id != "" {
+		block.ID = *request.Body.Id
+		if _, err := h.homepageUC.UpdateBlock(ctx, block); err != nil {
 			return openapi.AdminSaveBanner500JSONResponse{}, nil
 		}
+	} else {
+		created, err := h.homepageUC.StoreBlock(ctx, block)
+		if err != nil {
+			return openapi.AdminSaveBanner500JSONResponse{}, nil
+		}
+		block = created
 	}
-
-	resp := openapi.AdminBannerResponse{Title: &title, ImageUrl: &imageURL}
+	resp := bannerResponse(block)
 	return openapi.AdminSaveBanner201JSONResponse(resp), nil
 }
 
 // AdminListFaqs handles GET /admin/faqs
 func (h *Handler) AdminListFaqs(ctx context.Context, _ openapi.AdminListFaqsRequestObject) (openapi.AdminListFaqsResponseObject, error) {
 	actor := getActor(ctx)
-
-	settings, err := h.adminUC.ListSettings(ctx, actor)
+	if actor.UserID == "" {
+		return openapi.AdminListFaqs401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin || h.homepageUC == nil {
+		return openapi.AdminListFaqs403JSONResponse{}, nil
+	}
+	blocks, err := h.homepageUC.ListBlocks(ctx, false)
 	if err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminListFaqs401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminListFaqs403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
-			return openapi.AdminListFaqs500JSONResponse{}, nil
-		}
+		return openapi.AdminListFaqs500JSONResponse{}, nil
 	}
-
-	// FAQs are stored as settings with "faq.*" prefix keys.
 	items := make([]openapi.AdminFaqResponse, 0)
-	for _, s := range settings {
-		if len(s.Key) > 4 && s.Key[:4] == "faq." {
-			question := s.Key[4:]
-			answer := s.Value
-			items = append(items, openapi.AdminFaqResponse{Question: &question, Answer: &answer})
+	for _, block := range blocks {
+		if block.BlockType == "faq" {
+			items = append(items, faqResponse(block))
 		}
 	}
+	sort.SliceStable(items, func(i, j int) bool {
+		return items[i].SortOrder != nil && items[j].SortOrder != nil && *items[i].SortOrder < *items[j].SortOrder
+	})
 	resp := openapi.AdminFaqListResponse{Items: &items}
 	return openapi.AdminListFaqs200JSONResponse(resp), nil
 }
@@ -172,32 +176,137 @@ func (h *Handler) AdminListFaqs(ctx context.Context, _ openapi.AdminListFaqsRequ
 // AdminSaveFaq handles POST /admin/faqs
 func (h *Handler) AdminSaveFaq(ctx context.Context, request openapi.AdminSaveFaqRequestObject) (openapi.AdminSaveFaqResponseObject, error) {
 	actor := getActor(ctx)
-
-	question := ""
-	answer := ""
-	if request.Body != nil {
-		if request.Body.Question != nil {
-			question = *request.Body.Question
-		}
-		if request.Body.Answer != nil {
-			answer = *request.Body.Answer
-		}
+	if actor.UserID == "" {
+		return openapi.AdminSaveFaq401JSONResponse{}, nil
 	}
-
-	if err := h.adminUC.UpsertSetting(ctx, actor, "faq."+question, answer); err != nil {
-		statusCode, errResp := mapAdminError(err)
-		switch statusCode {
-		case 401:
-			return openapi.AdminSaveFaq401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 403:
-			return openapi.AdminSaveFaq403JSONResponse{ForbiddenResponseJSONResponse: openapi.ForbiddenResponseJSONResponse(errResp)}, nil
-		default:
+	if !actor.IsAdmin || h.homepageUC == nil || request.Body == nil {
+		return openapi.AdminSaveFaq403JSONResponse{}, nil
+	}
+	block := faqBlock(*request.Body)
+	if request.Body.Id != nil && *request.Body.Id != "" {
+		block.ID = *request.Body.Id
+		if _, err := h.homepageUC.UpdateBlock(ctx, block); err != nil {
 			return openapi.AdminSaveFaq500JSONResponse{}, nil
 		}
+	} else {
+		created, err := h.homepageUC.StoreBlock(ctx, block)
+		if err != nil {
+			return openapi.AdminSaveFaq500JSONResponse{}, nil
+		}
+		block = created
 	}
-
-	resp := openapi.AdminFaqResponse{Question: &question, Answer: &answer}
+	resp := faqResponse(block)
 	return openapi.AdminSaveFaq201JSONResponse(resp), nil
+}
+
+func bannerBlock(request openapi.AdminBannerRequest) contentmodule.HomepageBlock {
+	config := map[string]any{}
+	if request.Title != nil {
+		config["title"] = *request.Title
+	}
+	if request.Subtitle != nil {
+		config["subtitle"] = *request.Subtitle
+	}
+	if request.Image != nil {
+		config["image"] = *request.Image
+	}
+	if request.ImageUrl != nil {
+		config["imageUrl"] = *request.ImageUrl
+	}
+	if request.MobileImage != nil {
+		config["mobileImage"] = *request.MobileImage
+	}
+	if request.CtaText != nil {
+		config["ctaText"] = *request.CtaText
+	}
+	if request.CtaLink != nil {
+		config["ctaLink"] = *request.CtaLink
+	}
+	if request.LinkUrl != nil {
+		config["linkUrl"] = *request.LinkUrl
+	}
+	active := false
+	if request.IsActive != nil {
+		active = *request.IsActive
+	}
+	position := 0
+	if request.SortOrder != nil {
+		position = *request.SortOrder
+	}
+	return contentmodule.HomepageBlock{ID: stringValue(config, "id"), BlockType: "banner", Config: config, Position: position, IsActive: active}
+}
+
+func bannerResponse(block contentmodule.HomepageBlock) openapi.AdminBannerResponse {
+	config := block.Config
+	id, title, subtitle, image, imageURL, mobileImage := block.ID, mapString(config, "title"), mapString(config, "subtitle"), mapString(config, "image"), mapString(config, "imageUrl"), mapString(config, "mobileImage")
+	ctaText, ctaLink, linkURL := mapString(config, "ctaText"), mapString(config, "ctaLink"), mapString(config, "linkUrl")
+	active, position := block.IsActive, block.Position
+	return openapi.AdminBannerResponse{Id: &id, Title: &title, Subtitle: &subtitle, Image: &image, ImageUrl: &imageURL, MobileImage: &mobileImage, CtaText: &ctaText, CtaLink: &ctaLink, LinkUrl: &linkURL, IsActive: &active, SortOrder: &position}
+}
+
+func faqBlock(request openapi.AdminFaqRequest) contentmodule.HomepageBlock {
+	config := map[string]any{}
+	if request.Question != nil {
+		config["question"] = *request.Question
+	}
+	if request.Answer != nil {
+		config["answer"] = *request.Answer
+	}
+	active := false
+	if request.IsActive != nil {
+		active = *request.IsActive
+	}
+	position := 0
+	if request.SortOrder != nil {
+		position = *request.SortOrder
+	}
+	return contentmodule.HomepageBlock{BlockType: "faq", Config: config, Position: position, IsActive: active}
+}
+
+func faqResponse(block contentmodule.HomepageBlock) openapi.AdminFaqResponse {
+	config := block.Config
+	id, question, answer := block.ID, mapString(config, "question"), mapString(config, "answer")
+	active, position := block.IsActive, block.Position
+	return openapi.AdminFaqResponse{Id: &id, Question: &question, Answer: &answer, IsActive: &active, SortOrder: &position}
+}
+
+func mapString(values map[string]any, key string) string {
+	if value, ok := values[key].(string); ok {
+		return value
+	}
+	return ""
+}
+
+func stringValue(values map[string]any, key string) string { return mapString(values, key) }
+
+// AdminDeleteBanner handles DELETE /admin/banners/{id}.
+func (h *Handler) AdminDeleteBanner(ctx context.Context, request openapi.AdminDeleteBannerRequestObject) (openapi.AdminDeleteBannerResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminDeleteBanner401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin || h.homepageUC == nil {
+		return openapi.AdminDeleteBanner403JSONResponse{}, nil
+	}
+	if err := h.homepageUC.DeleteBlock(ctx, request.Id); err != nil {
+		return openapi.AdminDeleteBanner500JSONResponse{}, nil
+	}
+	return openapi.AdminDeleteBanner204Response{}, nil
+}
+
+// AdminDeleteFaq handles DELETE /admin/faqs/{id}.
+func (h *Handler) AdminDeleteFaq(ctx context.Context, request openapi.AdminDeleteFaqRequestObject) (openapi.AdminDeleteFaqResponseObject, error) {
+	actor := getActor(ctx)
+	if actor.UserID == "" {
+		return openapi.AdminDeleteFaq401JSONResponse{}, nil
+	}
+	if !actor.IsAdmin || h.homepageUC == nil {
+		return openapi.AdminDeleteFaq403JSONResponse{}, nil
+	}
+	if err := h.homepageUC.DeleteBlock(ctx, request.Id); err != nil {
+		return openapi.AdminDeleteFaq500JSONResponse{}, nil
+	}
+	return openapi.AdminDeleteFaq204Response{}, nil
 }
 
 // AdminListMessages handles GET /admin/messages
@@ -351,7 +460,6 @@ func (h *Handler) AdminUpdateProductEditorial(ctx context.Context, request opena
 
 	return openapi.AdminUpdateProductEditorial200Response{}, nil
 }
-
 
 // toAdminMessageResponse maps notificationmodule.AdminMessage to openapi.AdminMessageResponse.
 func toAdminMessageResponse(m notificationmodule.AdminMessage) openapi.AdminMessageResponse {

@@ -18,6 +18,7 @@ type WishlistUseCase interface {
 	ToggleVote(ctx context.Context, actor Actor, itemID int64) error
 	CreateReview(ctx context.Context, actor Actor, review Review) (Review, error)
 	ListReviews(ctx context.Context, productID string) ([]Review, error)
+	DeleteReview(ctx context.Context, actor Actor, reviewID int64) error
 }
 
 type wishlistUseCase struct {
@@ -129,4 +130,21 @@ func (uc *wishlistUseCase) ListReviews(ctx context.Context, productID string) ([
 		return nil, ErrInvalidInput
 	}
 	return uc.repo.ListReviews(ctx, productID)
+}
+
+func (uc *wishlistUseCase) DeleteReview(ctx context.Context, actor Actor, reviewID int64) error {
+	if actor.UserID == "" {
+		return ErrUnauthorized
+	}
+	review, err := uc.repo.GetReview(ctx, reviewID)
+	if err != nil {
+		return fmt.Errorf("WishlistUseCase.DeleteReview - repo.GetReview: %w", err)
+	}
+	if !actor.IsAdmin && review.UserID != actor.UserID {
+		return ErrForbidden
+	}
+	if err := uc.repo.DeleteReview(ctx, reviewID); err != nil {
+		return fmt.Errorf("WishlistUseCase.DeleteReview - repo.DeleteReview: %w", err)
+	}
+	return nil
 }

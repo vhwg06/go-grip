@@ -26,6 +26,15 @@ func mapCheckoutError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
+	if errors.Is(err, ordermodule.ErrOutOfStock) {
+		resp := openapi.ErrorResponse{}
+		resp.Error.FromErrorPayload(openapi.ErrorPayload{
+			Code:    "OUT_OF_STOCK",
+			Message: "The requested product quantity is not available",
+		})
+		return http.StatusBadRequest, resp
+	}
+
 	if errors.Is(err, ordermodule.ErrPaymentInvalidSign) || errors.Is(err, ordermodule.ErrInvalidInput) || errors.Is(err, ordermodule.ErrPaymentInvalidSign) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{

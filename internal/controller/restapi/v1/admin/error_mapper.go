@@ -50,6 +50,15 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
+	if errors.Is(err, usermodule.ErrInvalidInput) || errors.Is(err, ordermodule.ErrInvalidInput) {
+		resp := openapi.ErrorResponse{}
+		resp.Error.FromErrorPayload(openapi.ErrorPayload{
+			Code:    "INVALID_INPUT",
+			Message: "Invalid administrative request",
+		})
+		return http.StatusBadRequest, resp
+	}
+
 	resp := openapi.ErrorResponse{}
 	resp.Error.FromErrorPayload(openapi.ErrorPayload{
 		Code:    "INTERNAL_ERROR",

@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
@@ -24,14 +23,14 @@ import (
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
-	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
-	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
@@ -109,7 +108,7 @@ func NewServer(
 // Handler instantiations for vertical capabilities
 
 func (s *Server) adminHandler() *admin.Handler {
-	return admin.NewHandler(s.adminUC, s.logger)
+	return admin.NewHandler(s.adminUC, s.mediaUC, s.homepageUC, s.logger)
 }
 
 func (s *Server) authHandler() *auth.Handler {
@@ -165,7 +164,7 @@ func (s *Server) wishlistHandler() *wishlist.Handler {
 }
 
 func (s *Server) reviewsHandler() *reviews.Handler {
-	return reviews.NewHandler(s.logger)
+	return reviews.NewHandler(s.wishlistUC, s.logger)
 }
 
 // -----------------------------------------------------------------------------
@@ -192,6 +191,14 @@ func (s *Server) AdminGetOrder(ctx context.Context, request openapi.AdminGetOrde
 
 func (s *Server) AdminUpdateOrder(ctx context.Context, request openapi.AdminUpdateOrderRequestObject) (openapi.AdminUpdateOrderResponseObject, error) {
 	return s.adminHandler().AdminUpdateOrder(ctx, request)
+}
+
+func (s *Server) AdminDeleteOrder(ctx context.Context, request openapi.AdminDeleteOrderRequestObject) (openapi.AdminDeleteOrderResponseObject, error) {
+	return s.adminHandler().AdminDeleteOrder(ctx, request)
+}
+
+func (s *Server) AdminGetOrderRefundStatus(ctx context.Context, request openapi.AdminGetOrderRefundStatusRequestObject) (openapi.AdminGetOrderRefundStatusResponseObject, error) {
+	return s.adminHandler().AdminGetOrderRefundStatus(ctx, request)
 }
 
 func (s *Server) AdminGetCollect(ctx context.Context, request openapi.AdminGetCollectRequestObject) (openapi.AdminGetCollectResponseObject, error) {
@@ -447,6 +454,10 @@ func (s *Server) GetStaticPage(ctx context.Context, request openapi.GetStaticPag
 	return s.contentHandler().GetStaticPage(ctx, request)
 }
 
+func (s *Server) GetPublicContentPage(ctx context.Context, request openapi.GetPublicContentPageRequestObject) (openapi.GetPublicContentPageResponseObject, error) {
+	return s.contentHandler().GetPublicContentPage(ctx, request)
+}
+
 func (s *Server) GetHomepageConfig(ctx context.Context, request openapi.GetHomepageConfigRequestObject) (openapi.GetHomepageConfigResponseObject, error) {
 	return s.contentHandler().GetHomepageConfig(ctx, request)
 }
@@ -643,21 +654,14 @@ func (s *Server) UpdateProfileNotifications(ctx context.Context, request openapi
 	return s.profileHandler().UpdateProfileNotifications(ctx, request)
 }
 
-
-
-
-
-
-
 // Catalog additional method
 func (s *Server) ListCatalogProductModels(ctx context.Context, request openapi.ListCatalogProductModelsRequestObject) (openapi.ListCatalogProductModelsResponseObject, error) {
 	return s.catalogHandler().ListCatalogProductModels(ctx, request)
 }
 
-
 // Temporary stubs for newly declared OpenAPI operations (to be wired in Batch 2 & Batch 3)
 func (s *Server) AdminDeleteBanner(ctx context.Context, request openapi.AdminDeleteBannerRequestObject) (openapi.AdminDeleteBannerResponseObject, error) {
-	return nil, fmt.Errorf("AdminDeleteBanner not implemented")
+	return s.adminHandler().AdminDeleteBanner(ctx, request)
 }
 
 func (s *Server) AdminListAttributeDefinitions(ctx context.Context, request openapi.AdminListAttributeDefinitionsRequestObject) (openapi.AdminListAttributeDefinitionsResponseObject, error) {
@@ -805,7 +809,7 @@ func (s *Server) AdminUpdateCollect(ctx context.Context, request openapi.AdminUp
 }
 
 func (s *Server) AdminDeleteFaq(ctx context.Context, request openapi.AdminDeleteFaqRequestObject) (openapi.AdminDeleteFaqResponseObject, error) {
-	return nil, fmt.Errorf("AdminDeleteFaq not implemented")
+	return s.adminHandler().AdminDeleteFaq(ctx, request)
 }
 
 func (s *Server) QueueAdminNotificationTest(ctx context.Context, request openapi.QueueAdminNotificationTestRequestObject) (openapi.QueueAdminNotificationTestResponseObject, error) {
@@ -852,10 +856,13 @@ func (s *Server) UpdateContentArticle(ctx context.Context, request openapi.Updat
 	return s.contentHandler().UpdateContentArticle(ctx, request)
 }
 
+func (s *Server) DeleteContentArticle(ctx context.Context, request openapi.DeleteContentArticleRequestObject) (openapi.DeleteContentArticleResponseObject, error) {
+	return s.contentHandler().DeleteContentArticle(ctx, request)
+}
+
 func (s *Server) ListPublicContentArticles(ctx context.Context, request openapi.ListPublicContentArticlesRequestObject) (openapi.ListPublicContentArticlesResponseObject, error) {
 	return s.contentHandler().ListPublicContentArticles(ctx, request)
 }
-
 
 func (s *Server) ClearNotificationInbox(ctx context.Context, request openapi.ClearNotificationInboxRequestObject) (openapi.ClearNotificationInboxResponseObject, error) {
 	return s.notificationHandler().ClearNotificationInbox(ctx, request)

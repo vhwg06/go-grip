@@ -16,6 +16,8 @@ type WishlistRepo interface {
 	ToggleWishlistVote(ctx context.Context, itemID int64, userID string) (bool, error)
 	StoreReview(ctx context.Context, review Review) (Review, error)
 	ListReviews(ctx context.Context, productID string) ([]Review, error)
+	GetReview(ctx context.Context, reviewID int64) (Review, error)
+	DeleteReview(ctx context.Context, reviewID int64) error
 }
 
 // OrderReader defines read operations consumed by WishlistUseCase for review verification.

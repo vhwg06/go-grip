@@ -10,11 +10,16 @@ import (
 // ListCatalogProductModels handles GET /catalog/product-models
 func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.ListCatalogProductModelsRequestObject) (openapi.ListCatalogProductModelsResponseObject, error) {
 	limit := 20
+	page := 1
+	if request.Params.Page != nil && *request.Params.Page > 0 {
+		page = *request.Params.Page
+	}
 	if request.Params.Limit != nil && *request.Params.Limit > 0 {
 		limit = *request.Params.Limit
 	}
 
 	filter := catalogbase.PublicFilter{
+		Page:  page,
 		Limit: limit,
 	}
 	if request.Params.MinPrice != nil {
@@ -24,6 +29,21 @@ func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.
 	if request.Params.MaxPrice != nil {
 		max := int64(*request.Params.MaxPrice)
 		filter.MaxPrice = &max
+	}
+	if request.Params.CategoryId != nil {
+		filter.CategoryID = *request.Params.CategoryId
+	}
+	if request.Params.MaterialId != nil {
+		filter.MaterialID = *request.Params.MaterialId
+	}
+	if request.Params.FinishId != nil {
+		filter.FinishID = *request.Params.FinishId
+	}
+	if request.Params.Search != nil {
+		filter.Search = *request.Params.Search
+	}
+	if request.Params.Sort != nil {
+		filter.Sort = *request.Params.Sort
 	}
 
 	resMap, err := h.catalogBase.ListPublicModels(ctx, filter)
@@ -42,11 +62,11 @@ func (h *Handler) GetCatalogProductModelOptions(ctx context.Context, request ope
 		selected["Size"] = *request.Params.Selected
 	}
 
-	_, err := h.catalogBase.AvailableOptions(ctx, request.Id, selected)
+	result, err := h.catalogBase.AvailableOptions(ctx, request.Id, selected)
 	if err != nil {
 		return openapi.GetCatalogProductModelOptions404JSONResponse{}, nil
 	}
-	return openapi.GetCatalogProductModelOptions200Response{}, nil
+	return openapi.GetCatalogProductModelOptions200JSONResponse(result), nil
 }
 
 // ResolveCatalogProductModelVariant handles POST /catalog/product-models/{id}/variants:resolve
@@ -63,11 +83,11 @@ func (h *Handler) ResolveCatalogProductModelVariant(ctx context.Context, request
 		}
 	}
 
-	_, err := h.catalogBase.ResolvePublicVariant(ctx, request.Id, selected)
+	result, err := h.catalogBase.ResolvePublicVariant(ctx, request.Id, selected)
 	if err != nil {
 		return openapi.ResolveCatalogProductModelVariant400JSONResponse{}, nil
 	}
-	return openapi.ResolveCatalogProductModelVariant200Response{}, nil
+	return openapi.ResolveCatalogProductModelVariant200JSONResponse(result), nil
 }
 
 // SearchCatalog handles GET /catalog/search
@@ -92,11 +112,14 @@ func (h *Handler) SearchCatalog(ctx context.Context, request openapi.SearchCatal
 
 // GetCatalogProductBuyMeta handles GET /catalog/products/{id}/buy-meta
 func (h *Handler) GetCatalogProductBuyMeta(ctx context.Context, request openapi.GetCatalogProductBuyMetaRequestObject) (openapi.GetCatalogProductBuyMetaResponseObject, error) {
-	_, err := h.catalogBase.GetPublicModel(ctx, request.Id)
+	model, err := h.catalogBase.GetPublicModel(ctx, request.Id)
 	if err != nil {
 		return openapi.GetCatalogProductBuyMeta404JSONResponse{}, nil
 	}
-	return openapi.GetCatalogProductBuyMeta200Response{}, nil
+	return openapi.GetCatalogProductBuyMeta200JSONResponse{
+		"productModelId": request.Id,
+		"productModel":   model,
+	}, nil
 }
 
 // GetCatalogAnnouncement handles GET /catalog/announcement

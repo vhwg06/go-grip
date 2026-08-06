@@ -128,8 +128,21 @@ func (h *Handler) GetProfileSessions(ctx context.Context, _ openapi.GetProfileSe
 		return openapi.GetProfileSessions401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
 	}
 
-	// Sessions listing is a read-only operation; return empty list stub until infrastructure is wired.
+	raw, err := h.profileUC.GetRecentSessions(ctx, actor)
+	if err != nil {
+		return openapi.GetProfileSessions500JSONResponse{}, nil
+	}
 	items := []openapi.ProfileSessionResponse{}
+	if rows, ok := raw.([]map[string]any); ok {
+		for _, row := range rows {
+			id, _ := row["id"].(string)
+			userAgent, _ := row["userAgent"].(string)
+			if userAgent == "" {
+				userAgent, _ = row["device"].(string)
+			}
+			items = append(items, openapi.ProfileSessionResponse{Id: &id, UserAgent: &userAgent})
+		}
+	}
 	resp := openapi.ProfileSessionListResponse{Items: &items}
 	return openapi.GetProfileSessions200JSONResponse(resp), nil
 }

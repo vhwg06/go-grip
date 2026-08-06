@@ -60,6 +60,9 @@ func (uc *checkoutUseCase) Preview(_ context.Context, _ Actor, _ string, quantit
 }
 
 func (uc *checkoutUseCase) CreateOrder(ctx context.Context, actor Actor, productID string, quantity int, email string) (Order, error) {
+	if _, err := uuid.Parse(productID); err != nil || quantity <= 0 || email == "" {
+		return Order{}, ErrInvalidInput
+	}
 	preview, err := uc.Preview(ctx, actor, productID, quantity)
 	if err != nil {
 		return Order{}, err

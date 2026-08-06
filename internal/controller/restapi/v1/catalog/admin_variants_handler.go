@@ -131,9 +131,26 @@ func (h *Handler) AdminBulkUpdateVariantPrices(ctx context.Context, request open
 
 // GetCatalogSettings handles GET /catalog/settings
 func (h *Handler) GetCatalogSettings(ctx context.Context, _ openapi.GetCatalogSettingsRequestObject) (openapi.GetCatalogSettingsResponseObject, error) {
+	settings, err := h.catalogUC.ListPublicSettings(ctx)
+	if err != nil {
+		return openapi.GetCatalogSettings500JSONResponse{}, nil
+	}
 	resp := map[string]any{
-		"site_name": "Grip Store",
-		"currency":  "VND",
+		"site_name":       "Grip Store",
+		"currency":        "VND",
+		"shopName":        "Grip Store",
+		"shopDescription": "",
+		"themeColor":      "",
+	}
+	for _, setting := range settings {
+		switch setting.Key {
+		case "brand.shopName":
+			resp["shopName"] = setting.Value
+		case "brand.shopDescription":
+			resp["shopDescription"] = setting.Value
+		case "brand.themeColor":
+			resp["themeColor"] = setting.Value
+		}
 	}
 	return openapi.GetCatalogSettings200JSONResponse(resp), nil
 }

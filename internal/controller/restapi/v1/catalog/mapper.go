@@ -90,8 +90,18 @@ func toPublicProductModelListResponse(resMap map[string]any) openapi.PublicProdu
 	if rawTotal, ok := resMap["total"].(int); ok {
 		total = rawTotal
 	}
+	page := 1
+	if rawPage, ok := resMap["page"].(int); ok {
+		page = rawPage
+	}
+	limit := 20
+	if rawLimit, ok := resMap["limit"].(int); ok {
+		limit = rawLimit
+	}
 	return openapi.PublicProductModelListResponse{
 		Items: &items,
 		Total: &total,
+		Page:  &page,
+		Limit: &limit,
 	}
 }

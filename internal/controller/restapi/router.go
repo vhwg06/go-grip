@@ -13,14 +13,14 @@ import (
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
+	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	importermodule "github.com/evrone/go-clean-template/internal/module/importer"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
-	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
-	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 	"github.com/evrone/go-clean-template/pkg/jwt"
 	"github.com/evrone/go-clean-template/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -107,6 +107,26 @@ func NewRouter(app *fiber.App, cfg *config.Config, u usermodule.UserUseCase, cat
 	strictHandler := openapi.NewStrictHandler(server, nil)
 	openapi.RegisterHandlersWithOptions(app, strictHandler, openapi.FiberServerOptions{
 		BaseURL: "/v1",
+	})
+
+	// Public storefront identity is read from the same settings projection as
+	// the catalog settings endpoint. It intentionally has no admin guard.
+	app.Get("/v1/site-config", func(c *fiber.Ctx) error {
+		settings, err := catalog.ListPublicSettings(c.UserContext())
+		if err != nil {
+			return c.SendStatus(http.StatusInternalServerError)
+		}
+		brand := map[string]any{}
+		contact := map[string]any{}
+		for _, setting := range settings {
+			if len(setting.Key) > len("brand.") && setting.Key[:len("brand.")] == "brand." {
+				brand[setting.Key[len("brand."):]] = setting.Value
+			}
+			if len(setting.Key) > len("contact.") && setting.Key[:len("contact.")] == "contact." {
+				contact[setting.Key[len("contact."):]] = setting.Value
+			}
+		}
+		return c.JSON(map[string]any{"brand": brand, "contact": contact})
 	})
 
 }

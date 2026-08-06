@@ -17,6 +17,8 @@ type wishlistRepoStub struct {
 	toggleVoteFunc func(ctx context.Context, itemID int64, userID string) (bool, error)
 	storeReview    func(ctx context.Context, review Review) (Review, error)
 	listReviews    func(ctx context.Context, productID string) ([]Review, error)
+	getReview      func(ctx context.Context, reviewID int64) (Review, error)
+	deleteReview   func(ctx context.Context, reviewID int64) error
 }
 
 func (s *wishlistRepoStub) ListWishlistItems(ctx context.Context, page pagination.Pagination) ([]WishlistItem, int, error) {
@@ -66,6 +68,20 @@ func (s *wishlistRepoStub) ListReviews(ctx context.Context, productID string) ([
 		return s.listReviews(ctx, productID)
 	}
 	return nil, nil
+}
+
+func (s *wishlistRepoStub) GetReview(ctx context.Context, reviewID int64) (Review, error) {
+	if s.getReview != nil {
+		return s.getReview(ctx, reviewID)
+	}
+	return Review{ID: reviewID, UserID: "u1"}, nil
+}
+
+func (s *wishlistRepoStub) DeleteReview(ctx context.Context, reviewID int64) error {
+	if s.deleteReview != nil {
+		return s.deleteReview(ctx, reviewID)
+	}
+	return nil
 }
 
 type orderReaderStub struct {

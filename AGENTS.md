@@ -66,6 +66,10 @@ shell commands, and other important information, read specs/002-grip-backend-api
 - Only add unit tests for use-case behavior unless another test type is explicitly requested.
 - Do not add unit tests for application wiring, delivery handlers, infrastructure, repositories, or adapters unless explicitly requested.
 - The final diff must contain only changes required by the task and its proven compile-time or runtime dependencies.
+- Do not alter, weaken, or bypass test assertions to match incorrect backend responses; fix the backend Go handler, DTO projection, validation, or error mapping to match openapi.yaml.
+- Do not diagnose API test failures or classify contract errors without inspecting exact HTTP request and response JSON payloads for each failing scenario.
+- Do not apply superficial patches, dummy returns, or fallback wrappers to mask API contract violations; fix failures at the backend root cause.
+
 
 ## Non-Violable Repository and Aggregate Rules
 
@@ -88,3 +92,5 @@ Aggregate Root -> Child Entities
 - Reverse operation or dependency direction from child entities or child persistence components to the Aggregate Root is forbidden.
 - Child entities and child persistence components must not coordinate, load, save, or invoke the Aggregate Root repository.
 - Infrastructure-private child persistence helpers must not be surfaced as domain or application ports.
+
+
