@@ -3472,6 +3472,31 @@ paths:
         "500":
           $ref: "#/components/responses/InternalErrorResponse"
 
+  /catalog/product-models/{id}:
+    get:
+      tags:
+        - catalog
+      summary: Get public catalog product model detail
+      operationId: getCatalogProductModel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public product model retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "500":
+          $ref: "#/components/responses/InternalErrorResponse"
+
   /catalog/product-models/{id}/options:
     get:
       tags:

@@ -832,6 +832,10 @@ func (s *Server) GetCatalogAnnouncement(ctx context.Context, request openapi.Get
 	return s.catalogHandler().GetCatalogAnnouncement(ctx, request)
 }
 
+func (s *Server) GetCatalogProductModel(ctx context.Context, request openapi.GetCatalogProductModelRequestObject) (openapi.GetCatalogProductModelResponseObject, error) {
+	return s.catalogHandler().GetCatalogProductModel(ctx, request)
+}
+
 func (s *Server) GetCatalogProductModelOptions(ctx context.Context, request openapi.GetCatalogProductModelOptionsRequestObject) (openapi.GetCatalogProductModelOptionsResponseObject, error) {
 	return s.catalogHandler().GetCatalogProductModelOptions(ctx, request)
 }

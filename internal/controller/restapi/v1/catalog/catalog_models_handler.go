@@ -2,10 +2,24 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
 	"github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 )
+
+// GetCatalogProductModel handles GET /catalog/product-models/{id}.
+func (h *Handler) GetCatalogProductModel(ctx context.Context, request openapi.GetCatalogProductModelRequestObject) (openapi.GetCatalogProductModelResponseObject, error) {
+	result, err := h.catalogBase.GetPublicModel(ctx, request.Id)
+	if err != nil {
+		status, _ := catalogbase.ErrorStatus(err)
+		if status == 404 {
+			return openapi.GetCatalogProductModel404JSONResponse{}, nil
+		}
+		return openapi.GetCatalogProductModel500JSONResponse{}, nil
+	}
+	return openapi.GetCatalogProductModel200JSONResponse(result), nil
+}
 
 // ListCatalogProductModels handles GET /catalog/product-models
 func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.ListCatalogProductModelsRequestObject) (openapi.ListCatalogProductModelsResponseObject, error) {
@@ -59,7 +73,10 @@ func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.
 func (h *Handler) GetCatalogProductModelOptions(ctx context.Context, request openapi.GetCatalogProductModelOptionsRequestObject) (openapi.GetCatalogProductModelOptionsResponseObject, error) {
 	selected := map[string]string{}
 	if request.Params.Selected != nil && *request.Params.Selected != "" {
-		selected["Size"] = *request.Params.Selected
+		value := *request.Params.Selected
+		if err := json.Unmarshal([]byte(value), &selected); err != nil {
+			selected["Size"] = value
+		}
 	}
 
 	result, err := h.catalogBase.AvailableOptions(ctx, request.Id, selected)
@@ -85,6 +102,10 @@ func (h *Handler) ResolveCatalogProductModelVariant(ctx context.Context, request
 
 	result, err := h.catalogBase.ResolvePublicVariant(ctx, request.Id, selected)
 	if err != nil {
+		status, _ := catalogbase.ErrorStatus(err)
+		if status == 404 {
+			return openapi.ResolveCatalogProductModelVariant404JSONResponse{}, nil
+		}
 		return openapi.ResolveCatalogProductModelVariant400JSONResponse{}, nil
 	}
 	return openapi.ResolveCatalogProductModelVariant200JSONResponse(result), nil

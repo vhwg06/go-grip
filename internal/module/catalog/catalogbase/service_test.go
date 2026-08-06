@@ -641,7 +641,7 @@ func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) 
 			referenceID: "Inox 304",
 			surfaceID:   surfaceValue["id"],
 		},
-		"measurements":    map[string]any{"overallLength": map[string]any{"value": 20, "unit": "cm"}},
+		"measurements": map[string]any{"overallLength": map[string]any{"value": 20, "unit": "cm"}},
 	})
 	require.NoError(t, err)
 	modelID := mapString(t, model, "id")
@@ -696,6 +696,39 @@ func TestCatalogBaseCanonicalizesMeasurementsAndReferenceIdentity(t *testing.T) 
 	publicModel, err := service.GetPublicModel(ctx, modelID)
 	require.NoError(t, err)
 	require.Equal(t, model["specs"], publicModel["specs"])
+}
+
+func TestCatalogBaseValidatesVariantTechnicalValuesAgainstDeclaredDefinitions(t *testing.T) {
+	service := newCatalogBaseTestService(t)
+	ctx := context.Background()
+	categoryID := catalogCategory(t, service)
+	model, err := service.CreateModel(ctx, map[string]any{"name": "Technical values", "categoryId": categoryID})
+	require.NoError(t, err)
+	modelID := mapString(t, model, "id")
+	_, err = service.CreateDefinition(ctx, map[string]any{
+		"key": "weight-" + t.Name(), "displayName": "Weight", "valueKind": "Scalar", "dataType": "Number", "unitFamily": "mass", "unit": "kg",
+	})
+	require.NoError(t, err)
+	sizeDefinition, err := service.CreateDefinition(ctx, map[string]any{"key": "size-" + t.Name(), "displayName": "Size", "valueKind": "Enum"})
+	require.NoError(t, err)
+	dimension, err := service.CreateDimension(ctx, modelID, map[string]any{
+		"definitionId":  sizeDefinition["id"],
+		"allowedValues": []any{map[string]any{"id": "small", "label": "Small", "active": true}},
+	})
+	require.NoError(t, err)
+	_, err = service.CreateVariant(ctx, modelID, map[string]any{
+		"selectedOptions": map[string]any{"Size": "Small"},
+		"technicalValues": map[string]any{"Weight": "1.2 kg"},
+	})
+	require.NoError(t, err)
+	_, err = service.AddDimensionValue(ctx, modelID, mapString(t, dimension, "id"), map[string]any{"id": "large", "label": "Large"})
+	require.NoError(t, err)
+
+	_, err = service.CreateVariant(ctx, modelID, map[string]any{
+		"selectedOptions": map[string]any{"Size": "Large"},
+		"technicalValues": map[string]any{"Projection": "60 mm"},
+	})
+	require.Error(t, err, "undeclared technical attributes must not be accepted")
 }
 
 func measurementMapNumber(t *testing.T, value any, key string) float64 {

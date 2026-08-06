@@ -166,6 +166,236 @@ func (s *Service) save(ctx context.Context, snapshot CatalogSnapshot) error {
 }
 
 func persistSnapshot(ctx context.Context, repositories CatalogRepositories, snapshot CatalogSnapshot) error {
+	existingCategories, err := repositories.Categories.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing categories: %w", err)
+	}
+	if err := reconcileCategories(ctx, repositories.Categories, existingCategories, snapshot.Categories); err != nil {
+		return err
+	}
+	existingDefinitions, err := repositories.Definitions.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing definitions: %w", err)
+	}
+	for _, definition := range snapshot.Definitions {
+		if containsDefinition(existingDefinitions, definition.ID) {
+			if err := repositories.Definitions.Update(ctx, definition); err != nil {
+				return fmt.Errorf("catalog base: update definition %s: %w", definition.ID, err)
+			}
+		} else if err := repositories.Definitions.Store(ctx, definition); err != nil {
+			return fmt.Errorf("catalog base: store definition %s: %w", definition.ID, err)
+		}
+	}
+	existingMasters, err := repositories.Masters.List(ctx, "")
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing masters: %w", err)
+	}
+	for _, master := range snapshot.Masters {
+		if containsMaster(existingMasters, master.Kind, master.ID) {
+			if err := repositories.Masters.Update(ctx, master); err != nil {
+				return fmt.Errorf("catalog base: update master %s: %w", master.ID, err)
+			}
+		} else if err := repositories.Masters.Store(ctx, master); err != nil {
+			return fmt.Errorf("catalog base: store master %s: %w", master.ID, err)
+		}
+	}
+	existingModels, err := repositories.ProductModels.List(ctx)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing ProductModels: %w", err)
+	}
+	for _, model := range snapshot.Models {
+		if containsModel(existingModels, model.ID) {
+			if err := repositories.ProductModels.Update(ctx, model); err != nil {
+				return fmt.Errorf("catalog base: update ProductModel %s: %w", model.ID, err)
+			}
+		} else if err := repositories.ProductModels.Store(ctx, model); err != nil {
+			return fmt.Errorf("catalog base: store ProductModel %s: %w", model.ID, err)
+		}
+		if err := reconcileModelChildren(ctx, repositories, model); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func reconcileCategories(ctx context.Context, repository CatalogCategoryRepository, existing, desired []CatalogCategory) error {
+	remaining := append([]CatalogCategory(nil), desired...)
+	persisted := make(map[string]struct{}, len(existing))
+	for _, category := range existing {
+		persisted[category.ID] = struct{}{}
+	}
+	for len(remaining) > 0 {
+		progress := false
+		next := make([]CatalogCategory, 0, len(remaining))
+		for _, category := range remaining {
+			if category.ParentID != nil && !containsCategory(desired, *category.ParentID) {
+				return fmt.Errorf("catalog base: category %s references a missing parent", category.ID)
+			}
+			if category.ParentID != nil {
+				if _, ok := persisted[*category.ParentID]; !ok {
+					next = append(next, category)
+					continue
+				}
+			}
+			if containsCategory(existing, category.ID) {
+				if err := repository.Update(ctx, category); err != nil {
+					return fmt.Errorf("catalog base: update category %s: %w", category.ID, err)
+				}
+			} else if err := repository.Store(ctx, category); err != nil {
+				return fmt.Errorf("catalog base: store category %s: %w", category.ID, err)
+			}
+			persisted[category.ID] = struct{}{}
+			progress = true
+		}
+		if !progress {
+			return errors.New("catalog base: category hierarchy contains an unresolved parent")
+		}
+		remaining = next
+	}
+	return nil
+}
+
+func containsCategory(categories []CatalogCategory, id string) bool {
+	for _, category := range categories {
+		if category.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func containsDefinition(definitions []CatalogAttributeDefinition, id string) bool {
+	for _, definition := range definitions {
+		if definition.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func containsMaster(masters []CatalogMaster, kind, id string) bool {
+	for _, master := range masters {
+		if master.Kind == kind && master.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func containsModel(models []CatalogProductModel, id string) bool {
+	for _, model := range models {
+		if model.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func reconcileModelChildren(ctx context.Context, repositories CatalogRepositories, model CatalogProductModel) error {
+	existingImages, err := repositories.ProductImages.ListByModelID(ctx, model.ID)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing images for %s: %w", model.ID, err)
+	}
+	desiredImages := make(map[string]CatalogProductImage, len(model.Images))
+	for _, image := range model.Images {
+		desiredImages[image.ID] = image
+		if containsImage(existingImages, image.ID) {
+			if err := repositories.ProductImages.Update(ctx, model.ID, image); err != nil {
+				return fmt.Errorf("catalog base: update image %s: %w", image.ID, err)
+			}
+		} else if err := repositories.ProductImages.Store(ctx, model.ID, image); err != nil {
+			return fmt.Errorf("catalog base: store image %s: %w", image.ID, err)
+		}
+	}
+	for _, image := range existingImages {
+		if _, ok := desiredImages[image.ID]; !ok {
+			if err := repositories.ProductImages.Delete(ctx, model.ID, image.ID); err != nil {
+				return fmt.Errorf("catalog base: delete image %s: %w", image.ID, err)
+			}
+		}
+	}
+
+	existingDimensions, err := repositories.VariantDimensions.ListByModelID(ctx, model.ID)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing dimensions for %s: %w", model.ID, err)
+	}
+	desiredDimensions := make(map[string]CatalogVariantDimension, len(model.Dimensions))
+	for _, dimension := range model.Dimensions {
+		desiredDimensions[dimension.ID] = dimension
+		if containsDimension(existingDimensions, dimension.ID) {
+			if err := repositories.VariantDimensions.Update(ctx, model.ID, dimension); err != nil {
+				return fmt.Errorf("catalog base: update dimension %s: %w", dimension.ID, err)
+			}
+		} else if err := repositories.VariantDimensions.Store(ctx, model.ID, dimension); err != nil {
+			return fmt.Errorf("catalog base: store dimension %s: %w", dimension.ID, err)
+		}
+	}
+	for _, dimension := range existingDimensions {
+		if _, ok := desiredDimensions[dimension.ID]; !ok {
+			if err := repositories.VariantDimensions.Delete(ctx, model.ID, dimension.ID); err != nil {
+				return fmt.Errorf("catalog base: delete dimension %s: %w", dimension.ID, err)
+			}
+		}
+	}
+
+	existingVariants, err := repositories.Variants.ListByModelID(ctx, model.ID)
+	if err != nil {
+		return fmt.Errorf("catalog base: list existing variants for %s: %w", model.ID, err)
+	}
+	desiredVariants := make(map[string]CatalogVariant, len(model.Variants))
+	for _, variant := range model.Variants {
+		desiredVariants[variant.ID] = variant
+		if containsVariant(existingVariants, variant.ID) {
+			if err := repositories.Variants.Update(ctx, model.ID, variant); err != nil {
+				return fmt.Errorf("catalog base: update variant %s: %w", variant.ID, err)
+			}
+		} else if err := repositories.Variants.Store(ctx, model.ID, variant); err != nil {
+			return fmt.Errorf("catalog base: store variant %s: %w", variant.ID, err)
+		}
+	}
+	for _, variant := range existingVariants {
+		if _, ok := desiredVariants[variant.ID]; !ok {
+			if err := repositories.Variants.Delete(ctx, model.ID, variant.ID); err != nil {
+				return fmt.Errorf("catalog base: delete variant %s: %w", variant.ID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func containsImage(images []CatalogProductImage, id string) bool {
+	for _, image := range images {
+		if image.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func containsDimension(dimensions []CatalogVariantDimension, id string) bool {
+	for _, dimension := range dimensions {
+		if dimension.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func containsVariant(variants []CatalogVariant, id string) bool {
+	for _, variant := range variants {
+		if variant.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+The snapshot replacement implementation is kept below for reference by
+older in-memory callers. Persistent writes use the ID-based reconciliation
+above so foreign-key references remain valid during ordinary mutations.
+*/
+func persistSnapshotReplacement(ctx context.Context, repositories CatalogRepositories, snapshot CatalogSnapshot) error {
 	if err := clearSnapshot(ctx, repositories); err != nil {
 		return err
 	}
@@ -303,15 +533,6 @@ func deleteCategories(ctx context.Context, repository CatalogCategoryRepository,
 		remaining = next
 	}
 	return nil
-}
-
-func containsCategory(categories []CatalogCategory, id string) bool {
-	for _, category := range categories {
-		if category.ID == id {
-			return true
-		}
-	}
-	return false
 }
 
 func findCategory(snapshot *CatalogSnapshot, id string) (*CatalogCategory, error) {
@@ -2061,6 +2282,55 @@ func (s *Service) validatePackAssignment(snapshot *CatalogSnapshot, model *Catal
 	return packID, nil
 }
 
+func (s *Service) validateTechnicalValues(snapshot *CatalogSnapshot, model *CatalogProductModel, input map[string]any) (map[string]any, error) {
+	raw, ok := mapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
+	if !ok || raw == nil {
+		return map[string]any{}, nil
+	}
+	values := recordMap(raw)
+	if len(values) == 0 && raw != nil {
+		return nil, bad("technicalValues must be an object")
+	}
+	result := make(map[string]any, len(values))
+	for key, value := range values {
+		definition, err := fixedAttributeDefinition(snapshot, key)
+		if err != nil {
+			return nil, bad("Variant technical value must reference a declared attribute definition")
+		}
+		if _, fixed := model.FixedAttributes[definition.ID]; fixed {
+			return nil, conflict("a fixed attribute cannot also be Variant-specific")
+		}
+		for _, dimension := range model.Dimensions {
+			if dimension.DefinitionID == definition.ID {
+				return nil, conflict("a VariantDimension cannot also be Variant-specific")
+			}
+		}
+		if !definition.Active {
+			return nil, conflict("inactive attribute definition cannot be assigned")
+		}
+		switch definition.ValueKind {
+		case "Scalar":
+			if err := validateScalarValue(definition, value); err != nil {
+				return nil, err
+			}
+		case "Enum":
+			if !enumValueMatches(definition.EnumValues, fmt.Sprint(value)) {
+				return nil, conflict("Variant technical value must use an active enum value")
+			}
+		case "Reference":
+			master, masterErr := s.findActiveMasterByValue(snapshot, strings.ToLower(definition.ReferenceTarget), fmt.Sprint(value))
+			if masterErr != nil {
+				return nil, masterErr
+			}
+			value = master.ID
+		default:
+			return nil, bad("unsupported Variant technical attribute")
+		}
+		result[key] = value
+	}
+	return result, nil
+}
+
 func normalizeSKU(snapshot CatalogSnapshot, value, currentID string) (string, error) {
 	sku := strings.ToLower(strings.TrimSpace(value))
 	if sku == "" {
@@ -2118,7 +2388,10 @@ func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[s
 	if err != nil {
 		return nil, err
 	}
-	technicalValues := recordMapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
+	technicalValues, err := s.validateTechnicalValues(&snapshot, model, input)
+	if err != nil {
+		return nil, err
+	}
 	variant := CatalogVariant{ID: uuid.NewString(), SelectedOptions: selected, TechnicalValues: technicalValues, SKU: sku, SellingPrice: price, PackID: packID, Status: CatalogVariantActive, CanonicalCombination: canonical, History: appendHistory(nil, "created"), CreatedAt: now(), UpdatedAt: now()}
 	if !hasPrice {
 		variant.SellingPrice = nil
@@ -2189,7 +2462,11 @@ func (s *Service) UpdateVariant(ctx context.Context, id string, input map[string
 		variant.SellingPrice = price
 	}
 	if _, ok := mapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes"); ok {
-		variant.TechnicalValues = recordMapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
+		technicalValues, technicalErr := s.validateTechnicalValues(&snapshot, model, input)
+		if technicalErr != nil {
+			return nil, technicalErr
+		}
+		variant.TechnicalValues = technicalValues
 	}
 	if rawPack, ok := mapValue(input, "packId", "pack_id"); ok {
 		if rawPack == nil || strings.TrimSpace(fmt.Sprint(rawPack)) == "" {
