@@ -84,8 +84,7 @@ func (h *Handler) CreateContentArticle(ctx context.Context, request openapi.Crea
 func (h *Handler) ListContentPages(ctx context.Context, _ openapi.ListContentPagesRequestObject) (openapi.ListContentPagesResponseObject, error) {
 	// StaticPages are looked up individually; return empty list as there is no bulk-list in ContentUseCase.
 	items := []openapi.StaticPageResponse{}
-	resp := openapi.StaticPageListResponse{Items: &items}
-	return openapi.ListContentPages200JSONResponse(resp), nil
+	return openapi.ListContentPages200JSONResponse{Items: &items}, nil
 }
 
 // CreateContentPage handles POST /admin/content/pages
@@ -94,9 +93,7 @@ func (h *Handler) CreateContentPage(ctx context.Context, request openapi.CreateC
 	if request.Body != nil {
 		page.Title = request.Body.Title
 		page.Body = request.Body.Body
-		if request.Body.Slug != nil {
-			page.Slug = *request.Body.Slug
-		}
+		page.Slug = request.Body.Slug
 	}
 
 	created, err := h.contentUC.CreatePage(ctx, page)

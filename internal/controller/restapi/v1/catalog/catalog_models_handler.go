@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 // ListCatalogProductModels handles GET /catalog/product-models
@@ -25,7 +27,14 @@ func (h *Handler) ListCatalogProductModels(ctx context.Context, request openapi.
 	_ = minPrice
 	_ = maxPrice
 
-	products, total, err := h.catalogUC.ListProducts(ctx, limit, 0, "", "")
+	filter := catalogmodule.ProductFilter{
+		Pagination: pagination.Pagination{
+			Limit:  limit,
+			Offset: 0,
+		},
+	}
+
+	products, total, err := h.catalogUC.ListProducts(ctx, filter)
 	if err != nil {
 		return openapi.ListCatalogProductModels500JSONResponse{}, nil
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
@@ -21,7 +22,7 @@ type adminStore interface {
 	GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error)
 	GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error)
 	ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
-	ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, interface{ Pending() int }, int, error)
+	ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
 	UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
 	BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
 	DeleteReview(ctx context.Context, reviewID int64) error

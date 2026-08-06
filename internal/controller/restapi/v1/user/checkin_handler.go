@@ -19,8 +19,7 @@ func (h *Handler) DoCheckin(ctx context.Context, _ openapi.DoCheckinRequestObjec
 	if actor.UserID == "" {
 		return openapi.DoCheckin401JSONResponse{}, nil
 	}
-	resp := checkinStatusForActor(true)
-	return openapi.DoCheckin200JSONResponse(resp), nil
+	return openapi.DoCheckin200Response{}, nil
 }
 
 // GetCheckinStatus handles GET /checkin/status

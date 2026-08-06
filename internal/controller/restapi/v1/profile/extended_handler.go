@@ -33,8 +33,6 @@ func (h *Handler) GetUserProfile(ctx context.Context, _ openapi.GetUserProfileRe
 		switch status {
 		case 401:
 			return openapi.GetUserProfile401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
-		case 404:
-			return openapi.GetUserProfile404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
 		default:
 			return openapi.GetUserProfile500JSONResponse{}, nil
 		}
@@ -67,8 +65,6 @@ func (h *Handler) UpdateProfile(ctx context.Context, request openapi.UpdateProfi
 	if err != nil {
 		status, errResp := mapProfileError(err)
 		switch status {
-		case 400:
-			return openapi.UpdateProfile400JSONResponse{}, nil
 		case 401:
 			return openapi.UpdateProfile401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
 		default:
@@ -89,12 +85,12 @@ func (h *Handler) UpdateProfileEmail(ctx context.Context, request openapi.Update
 		email = request.Body.Email
 	}
 
-	user, err := h.profileUC.Update(ctx, actor, email, "", false)
+	_, err := h.profileUC.Update(ctx, actor, email, "", false)
 	if err != nil {
 		status, errResp := mapProfileError(err)
 		switch status {
 		case 400:
-			return openapi.UpdateProfileEmail400JSONResponse{}, nil
+			return openapi.UpdateProfileEmail400JSONResponse{BadRequestResponseJSONResponse: openapi.BadRequestResponseJSONResponse(errResp)}, nil
 		case 401:
 			return openapi.UpdateProfileEmail401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
 		default:
@@ -102,8 +98,7 @@ func (h *Handler) UpdateProfileEmail(ctx context.Context, request openapi.Update
 		}
 	}
 
-	dto := toAccountProfileResponse(user)
-	return openapi.UpdateProfileEmail200JSONResponse(dto), nil
+	return openapi.UpdateProfileEmail200Response{}, nil
 }
 
 // GetProfileSecurity handles GET /profile/security
@@ -152,12 +147,10 @@ func (h *Handler) UpdateProfileNotifications(ctx context.Context, request openap
 		}
 	}
 
-	user, err := h.profileUC.Update(ctx, actor, "", "", desktopEnabled)
+	_, err := h.profileUC.Update(ctx, actor, "", "", desktopEnabled)
 	if err != nil {
 		status, errResp := mapProfileError(err)
 		switch status {
-		case 400:
-			return openapi.UpdateProfileNotifications400JSONResponse{}, nil
 		case 401:
 			return openapi.UpdateProfileNotifications401JSONResponse{UnauthorizedResponseJSONResponse: openapi.UnauthorizedResponseJSONResponse(errResp)}, nil
 		default:
@@ -165,6 +158,5 @@ func (h *Handler) UpdateProfileNotifications(ctx context.Context, request openap
 		}
 	}
 
-	dto := toAccountProfileResponse(user)
-	return openapi.UpdateProfileNotifications200JSONResponse(dto), nil
+	return openapi.UpdateProfileNotifications200Response{}, nil
 }

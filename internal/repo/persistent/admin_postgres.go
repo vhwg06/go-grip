@@ -612,7 +612,7 @@ func (r *AdminRepo) RebuildProductAggregates(ctx context.Context) error {
 	return nil
 }
 
-func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([]catalogmodule.Product, int, error) {
+func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.Product{})
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -623,9 +623,9 @@ func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([
 	if err := query.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("AdminRepo.ListProducts(find): %w", err)
 	}
-	items := make([]catalogmodule.Product, 0, len(rows))
+	items := make([]entity.Product, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, models.ProductToModule(row))
+		items = append(items, models.ProductToEntity(row))
 	}
 	return items, int(total), nil
 }
