@@ -52,7 +52,7 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 
 	pag := pagination.Pagination{Limit: limit, Offset: offset}
 
-	items, total, err := h.notificationUC.Inbox(ctx, actor, pag)
+	items, total, err := h.notificationUC.Inbox(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, pag)
 	if err != nil {
 		status, errResp := mapNotificationError(err)
 		switch status {
@@ -65,7 +65,7 @@ func (h *Handler) ListNotifications(ctx context.Context, request openapi.ListNot
 		}
 	}
 
-	unread, _ := h.notificationUC.UnreadCount(ctx, actor)
+	unread, _ := h.notificationUC.UnreadCount(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin})
 	listDTO := toNotificationListResponse(items, total, unread)
 	return openapi.ListNotifications200JSONResponse(listDTO), nil
 }
@@ -77,7 +77,7 @@ func (h *Handler) MarkAllNotificationsRead(ctx context.Context, request openapi.
 		return openapi.MarkAllNotificationsRead401JSONResponse{}, nil
 	}
 
-	err := h.notificationUC.MarkAllRead(ctx, actor)
+	err := h.notificationUC.MarkAllRead(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin})
 	if err != nil {
 		status, errResp := mapNotificationError(err)
 		switch status {
@@ -100,7 +100,7 @@ func (h *Handler) GetUnreadNotificationCount(ctx context.Context, request openap
 		return openapi.GetUnreadNotificationCount401JSONResponse{}, nil
 	}
 
-	count, err := h.notificationUC.UnreadCount(ctx, actor)
+	count, err := h.notificationUC.UnreadCount(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin})
 	if err != nil {
 		return openapi.GetUnreadNotificationCount500JSONResponse{}, nil
 	}
@@ -122,7 +122,7 @@ func (h *Handler) MarkNotificationRead(ctx context.Context, request openapi.Mark
 		return openapi.MarkNotificationRead400JSONResponse{}, nil
 	}
 
-	err = h.notificationUC.MarkRead(ctx, actor, notifID)
+	err = h.notificationUC.MarkRead(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, notifID)
 	if err != nil {
 		status, errResp := mapNotificationError(err)
 		switch status {
@@ -150,7 +150,7 @@ func (h *Handler) ClearNotificationInbox(ctx context.Context, _ openapi.ClearNot
 		return openapi.ClearNotificationInbox401Response{}, nil
 	}
 
-	err := h.notificationUC.Clear(ctx, actor)
+	err := h.notificationUC.Clear(ctx, notificationmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin})
 	if err != nil {
 		return openapi.ClearNotificationInbox500Response{}, nil
 	}

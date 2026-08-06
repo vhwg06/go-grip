@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
@@ -13,7 +14,7 @@ func (h *Handler) CancelCheckoutOrder(ctx context.Context, request openapi.Cance
 		return openapi.CancelCheckoutOrder401JSONResponse{}, nil
 	}
 
-	if err := h.checkoutUC.Cancel(ctx, actor, request.OrderId); err != nil {
+	if err := h.checkoutUC.Cancel(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.OrderId); err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
 		case 400:

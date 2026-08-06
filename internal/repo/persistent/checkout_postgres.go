@@ -7,7 +7,6 @@ import (
 	"time"
 
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -23,7 +22,7 @@ func NewCheckoutRepo(pg *postgres.Postgres) *CheckoutRepo {
 
 var _ ordermodule.CheckoutRepo = (*CheckoutRepo)(nil)
 
-func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor usermodule.Actor, order ordermodule.Order) (ordermodule.Order, error) {
+func (r *CheckoutRepo) CreateOrderWithReservation(ctx context.Context, actor ordermodule.Actor, order ordermodule.Order) (ordermodule.Order, error) {
 	orderModel := models.Order{
 		OrderID:     order.ID,
 		ProductID:   order.ProductID,

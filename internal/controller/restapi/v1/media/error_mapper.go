@@ -1,11 +1,12 @@
 package media
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	mediamodule "github.com/evrone/go-clean-template/internal/module/media"
 )
 
@@ -16,7 +17,7 @@ func mapMediaError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, mediamodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, mediamodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "MEDIA_NOT_FOUND",
@@ -25,7 +26,7 @@ func mapMediaError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, mediamodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, mediamodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

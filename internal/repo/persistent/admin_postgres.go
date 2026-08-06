@@ -7,10 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
+	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -39,7 +43,7 @@ func buildDetailRows(product catalogmodule.Product) []models.ProductDetail {
 
 	rows := make([]models.ProductDetail, 0, len(details))
 	for i, detail := range details {
-		row := models.EntityToDetail(product.ID, entity.ProductSpecItem{Key: detail.Key, Value: detail.Value})
+		row := models.ModuleToDetail(product.ID, catalogmodule.ProductSpecItem{Key: detail.Key, Value: detail.Value})
 		row.SortOrder = i
 		rows = append(rows, row)
 	}
@@ -57,7 +61,7 @@ func NewAdminRepo(pg *postgres.Postgres) *AdminRepo {
 
 var _ repo.AdminRepository = (*AdminRepo)(nil)
 
-func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error) {
+func (r *AdminRepo) ListUsers(ctx context.Context, page pagination.Pagination) ([]usermodule.User, int, error) {
 	var q string
 	if val := ctx.Value("query"); val != nil {
 		if s, ok := val.(string); ok {
@@ -94,9 +98,9 @@ func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]en
 		return nil, 0, fmt.Errorf("AdminRepo.ListUsers(find): %w", err)
 	}
 
-	users := make([]entity.User, 0, len(rows))
+	users := make([]usermodule.User, 0, len(rows))
 	for _, row := range rows {
-		u := models.UserToEntity(row)
+		u := models.UserToModule(row)
 		u.CustomerID = &u.ID
 		if role == "customer" || (role != "user" && q != "" && !strings.Contains(strings.ToLower(q), "admin")) {
 			var oCount int64
@@ -120,7 +124,7 @@ func (r *AdminRepo) ListUsers(ctx context.Context, page entity.Pagination) ([]en
 	return users, int(total), nil
 }
 
-func (r *AdminRepo) UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error {
+func (r *AdminRepo) UpdateUserStatus(ctx context.Context, userID string, status usermodule.UserStatus) error {
 	if err := r.Gorm.WithContext(ctx).Model(&models.User{}).
 		Where("id = ?", userID).
 		Updates(map[string]any{"status": string(status), "updated_at": time.Now().UTC()}).Error; err != nil {
@@ -129,7 +133,7 @@ func (r *AdminRepo) UpdateUserStatus(ctx context.Context, userID string, status 
 	return nil
 }
 
-func (r *AdminRepo) ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error) {
+func (r *AdminRepo) ListOrders(ctx context.Context, page pagination.Pagination, query, status string) ([]ordermodule.Order, int, error) {
 	db := r.Gorm.WithContext(ctx).Model(&models.Order{})
 
 	if trimmed := strings.TrimSpace(query); trimmed != "" {
@@ -154,14 +158,14 @@ func (r *AdminRepo) ListOrders(ctx context.Context, page entity.Pagination, quer
 		return nil, 0, fmt.Errorf("AdminRepo.ListOrders(find): %w", err)
 	}
 
-	orders := make([]entity.Order, 0, len(rows))
+	orders := make([]ordermodule.Order, 0, len(rows))
 	for _, row := range rows {
-		orders = append(orders, models.OrderToEntity(row))
+		orders = append(orders, models.OrderToModule(row))
 	}
 	return orders, int(total), nil
 }
 
-func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error) {
+func (r *AdminRepo) ListReviews(ctx context.Context, page pagination.Pagination, query, status string) ([]wishlistmodule.Review, wishlistmodule.ReviewModerationStats, int, error) {
 	db := r.Gorm.WithContext(ctx).Table("reviews r").
 		Select("r.*, COALESCE(p.title, '') AS product_name").
 		Joins("LEFT JOIN products p ON p.id::text = r.product_id")
@@ -176,7 +180,7 @@ func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, que
 
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
-		return nil, repo.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(count): %w", err)
+		return nil, wishlistmodule.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(count): %w", err)
 	}
 
 	type reviewRow struct {
@@ -186,7 +190,7 @@ func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, que
 	var rows []reviewRow
 	normalized := page.Normalize()
 	if err := db.Order("r.created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
-		return nil, repo.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(find): %w", err)
+		return nil, wishlistmodule.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(find): %w", err)
 	}
 
 	var statsRows []struct {
@@ -197,24 +201,24 @@ func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, que
 		Select("UPPER(status) AS status, COUNT(*) AS count").
 		Group("UPPER(status)").
 		Scan(&statsRows).Error; err != nil {
-		return nil, repo.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(stats): %w", err)
+		return nil, wishlistmodule.ReviewModerationStats{}, 0, fmt.Errorf("AdminRepo.ListReviews(stats): %w", err)
 	}
 
-	stats := repo.ReviewModerationStats{}
+	stats := wishlistmodule.ReviewModerationStats{}
 	for _, row := range statsRows {
 		switch row.Status {
-		case string(entity.ReviewStatusPending):
+		case string(wishlistmodule.ReviewStatusPending):
 			stats.Pending = row.Count
-		case string(entity.ReviewStatusFeatured):
+		case string(wishlistmodule.ReviewStatusFeatured):
 			stats.Featured = row.Count
-		case string(entity.ReviewStatusHidden):
+		case string(wishlistmodule.ReviewStatusHidden):
 			stats.Hidden = row.Count
 		}
 	}
 
-	items := make([]entity.Review, 0, len(rows))
+	items := make([]wishlistmodule.Review, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, entity.Review{
+		items = append(items, wishlistmodule.Review{
 			ID:                 row.ID,
 			ProductID:          row.ProductID,
 			ProductName:        row.ProductName,
@@ -223,7 +227,7 @@ func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, que
 			Username:           row.Username,
 			Rating:             row.Rating,
 			Comment:            row.Comment,
-			Status:             entity.ReviewStatus(strings.ToUpper(row.Status)),
+			Status:             wishlistmodule.ReviewStatus(strings.ToUpper(row.Status)),
 			Attachments:        []string{},
 			IsVerifiedPurchase: row.OrderID != "" && !strings.HasPrefix(row.OrderID, "no_order_"),
 			CreatedAt:          row.CreatedAt,
@@ -234,18 +238,18 @@ func (r *AdminRepo) ListReviews(ctx context.Context, page entity.Pagination, que
 	return items, stats, int(total), nil
 }
 
-func (r *AdminRepo) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
+func (r *AdminRepo) GetOrderByID(ctx context.Context, orderID string) (ordermodule.Order, error) {
 	var row models.Order
 	if err := r.Gorm.WithContext(ctx).Where("order_id = ?", orderID).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Order{}, entity.ErrOrderNotFound
+			return ordermodule.Order{}, ordermodule.ErrNotFound
 		}
-		return entity.Order{}, fmt.Errorf("AdminRepo.GetOrderByID: %w", err)
+		return ordermodule.Order{}, fmt.Errorf("AdminRepo.GetOrderByID: %w", err)
 	}
-	return models.OrderToEntity(row), nil
+	return models.OrderToModule(row), nil
 }
 
-func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error) {
+func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]ordermodule.RefundRequest, error) {
 	db := r.Gorm.WithContext(ctx).Table("refund_requests")
 	if trimmed := strings.TrimSpace(strings.ToLower(status)); trimmed != "" && trimmed != "all" {
 		db = db.Where("LOWER(refund_requests.status) = ?", trimmed)
@@ -267,19 +271,19 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 		return nil, fmt.Errorf("AdminRepo.ListRefundRequests: %w", err)
 	}
 
-	items := make([]entity.RefundRequest, 0, len(rows))
+	items := make([]ordermodule.RefundRequest, 0, len(rows))
 	for _, row := range rows {
-		item := entity.RefundRequest{
+		item := ordermodule.RefundRequest{
 			ID:            row.ID,
 			OrderID:       row.OrderID,
 			UserID:        row.UserID,
 			Username:      row.Username,
 			Reason:        row.Reason,
-			Status:        entity.RefundStatus(row.Status),
+			Status:        ordermodule.RefundStatus(row.Status),
 			AdminUsername: row.AdminUsername,
 			AdminNote:     row.AdminNote,
 			ProductName:   row.ProductName,
-			Amount:        entity.Amount(row.Amount),
+			Amount:        ordermodule.Amount(row.Amount),
 			TradeNo:       row.TradeNo,
 			OrderStatus:   row.OrderStatus,
 			CreatedAt:     row.CreatedAt,
@@ -294,7 +298,7 @@ func (r *AdminRepo) ListRefundRequests(ctx context.Context, status string) ([]en
 	return items, nil
 }
 
-func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error) {
+func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (ordermodule.RefundRequest, error) {
 	type refundRow struct {
 		models.RefundRequest
 		ProductName string `gorm:"column:product_name"`
@@ -310,22 +314,22 @@ func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entit
 		Where("refund_requests.id = ?", refundID).
 		First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.RefundRequest{}, entity.ErrNotFound
+			return ordermodule.RefundRequest{}, usermodule.ErrNotFound
 		}
-		return entity.RefundRequest{}, fmt.Errorf("AdminRepo.GetRefundRequest: %w", err)
+		return ordermodule.RefundRequest{}, fmt.Errorf("AdminRepo.GetRefundRequest: %w", err)
 	}
 
-	item := entity.RefundRequest{
+	item := ordermodule.RefundRequest{
 		ID:            row.ID,
 		OrderID:       row.OrderID,
 		UserID:        row.UserID,
 		Username:      row.Username,
 		Reason:        row.Reason,
-		Status:        entity.RefundStatus(row.Status),
+		Status:        ordermodule.RefundStatus(row.Status),
 		AdminUsername: row.AdminUsername,
 		AdminNote:     row.AdminNote,
 		ProductName:   row.ProductName,
-		Amount:        entity.Amount(row.Amount),
+		Amount:        ordermodule.Amount(row.Amount),
 		TradeNo:       row.TradeNo,
 		OrderStatus:   row.OrderStatus,
 		CreatedAt:     row.CreatedAt,
@@ -338,53 +342,53 @@ func (r *AdminRepo) GetRefundRequest(ctx context.Context, refundID int64) (entit
 	return item, nil
 }
 
-func (r *AdminRepo) GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error) {
+func (r *AdminRepo) GetOrderRefundStatus(ctx context.Context, orderID string) (ordermodule.RefundRequest, error) {
 	var row models.RefundRequest
 	if err := r.Gorm.WithContext(ctx).Model(&models.RefundRequest{}).
 		Where("order_id = ? AND status = ?", orderID, "pending").
 		First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.RefundRequest{}, entity.ErrNotFound
+			return ordermodule.RefundRequest{}, usermodule.ErrNotFound
 		}
-		return entity.RefundRequest{}, fmt.Errorf("AdminRepo.GetOrderRefundStatus: %w", err)
+		return ordermodule.RefundRequest{}, fmt.Errorf("AdminRepo.GetOrderRefundStatus: %w", err)
 	}
 
-	return entity.RefundRequest{
+	return ordermodule.RefundRequest{
 		ID:      row.ID,
 		OrderID: row.OrderID,
-		Status:  entity.RefundStatus(row.Status),
+		Status:  ordermodule.RefundStatus(row.Status),
 	}, nil
 }
 
-func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error) {
-	var result entity.RefundRequest
+func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (ordermodule.RefundRequest, error) {
+	var result ordermodule.RefundRequest
 
 	err := withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		var refund models.RefundRequest
 		if err := forUpdate(tx).Where("id = ?", refundID).First(&refund).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return entity.ErrNotFound
+				return usermodule.ErrNotFound
 			}
 			return fmt.Errorf("AdminRepo.ProcessRefund(find refund): %w", err)
 		}
-		if strings.ToLower(refund.Status) != string(entity.RefundStatusPending) {
-			return entity.ErrOrderStateConflict
+		if strings.ToLower(refund.Status) != string(ordermodule.RefundStatusPending) {
+			return ordermodule.ErrInvalidInput
 		}
 
 		var order models.Order
 		if err := forUpdate(tx).Where("order_id = ?", refund.OrderID).First(&order).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return entity.ErrOrderNotFound
+				return ordermodule.ErrNotFound
 			}
 			return fmt.Errorf("AdminRepo.ProcessRefund(find order): %w", err)
 		}
 
 		now := time.Now().UTC()
-		nextRefundStatus := entity.RefundStatusRejected
-		nextOrderStatus := entity.OrderStatusDelivered
+		nextRefundStatus := ordermodule.RefundStatusRejected
+		nextOrderStatus := ordermodule.OrderStatusDelivered
 		if approve {
-			nextRefundStatus = entity.RefundStatusApproved
-			nextOrderStatus = entity.OrderStatusRefunded
+			nextRefundStatus = ordermodule.RefundStatusApproved
+			nextOrderStatus = ordermodule.OrderStatusRefunded
 		}
 
 		if err := tx.Model(&models.RefundRequest{}).
@@ -421,7 +425,7 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 
 		}
 
-		result = entity.RefundRequest{
+		result = ordermodule.RefundRequest{
 			ID:            refund.ID,
 			OrderID:       refund.OrderID,
 			UserID:        refund.UserID,
@@ -431,7 +435,7 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 			AdminUsername: adminUsername,
 			AdminNote:     note,
 			ProductName:   order.ProductName,
-			Amount:        entity.Amount(order.Amount),
+			Amount:        ordermodule.Amount(order.Amount),
 			TradeNo:       order.TradeNo,
 			OrderStatus:   string(nextOrderStatus),
 			ProcessedAt:   &now,
@@ -441,28 +445,28 @@ func (r *AdminRepo) ProcessRefund(ctx context.Context, refundID int64, approve b
 		return nil
 	})
 	if err != nil {
-		return entity.RefundRequest{}, err
+		return ordermodule.RefundRequest{}, err
 	}
 
 	return result, nil
 }
 
-func (r *AdminRepo) UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error) {
+func (r *AdminRepo) UpdateReviewStatus(ctx context.Context, reviewID int64, status wishlistmodule.ReviewStatus) (wishlistmodule.Review, error) {
 	var row models.Review
 	if err := r.Gorm.WithContext(ctx).Where("id = ?", reviewID).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Review{}, entity.ErrNotFound
+			return wishlistmodule.Review{}, usermodule.ErrNotFound
 		}
-		return entity.Review{}, fmt.Errorf("AdminRepo.UpdateReviewStatus(find): %w", err)
+		return wishlistmodule.Review{}, fmt.Errorf("AdminRepo.UpdateReviewStatus(find): %w", err)
 	}
 
 	row.Status = string(status)
 	row.UpdatedAt = time.Now().UTC()
 	if err := r.Gorm.WithContext(ctx).Save(&row).Error; err != nil {
-		return entity.Review{}, fmt.Errorf("AdminRepo.UpdateReviewStatus(save): %w", err)
+		return wishlistmodule.Review{}, fmt.Errorf("AdminRepo.UpdateReviewStatus(save): %w", err)
 	}
 
-	return entity.Review{
+	return wishlistmodule.Review{
 		ID:        row.ID,
 		ProductID: row.ProductID,
 		OrderID:   row.OrderID,
@@ -470,13 +474,13 @@ func (r *AdminRepo) UpdateReviewStatus(ctx context.Context, reviewID int64, stat
 		Username:  row.Username,
 		Rating:    row.Rating,
 		Comment:   row.Comment,
-		Status:    entity.ReviewStatus(row.Status),
+		Status:    wishlistmodule.ReviewStatus(row.Status),
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}, nil
 }
 
-func (r *AdminRepo) BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error) {
+func (r *AdminRepo) BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status wishlistmodule.ReviewStatus) (int, error) {
 	result := r.Gorm.WithContext(ctx).Model(&models.Review{}).
 		Where("id IN ?", reviewIDs).
 		Updates(map[string]any{"status": string(status), "updated_at": time.Now().UTC()})
@@ -492,22 +496,22 @@ func (r *AdminRepo) DeleteReview(ctx context.Context, reviewID int64) error {
 		return fmt.Errorf("AdminRepo.DeleteReview: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return entity.ErrNotFound
+		return usermodule.ErrNotFound
 	}
 	return nil
 }
 
-func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error {
+func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, status ordermodule.OrderStatus) error {
 	return withTransaction(ctx, r.Gorm, func(tx *gorm.DB) error {
 		var order models.Order
 		if err := forUpdate(tx).Where("order_id = ?", orderID).First(&order).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return entity.ErrOrderNotFound
+				return ordermodule.ErrNotFound
 			}
 			return fmt.Errorf("AdminRepo.UpdateOrderStatus(find): %w", err)
 		}
 
-		current := entity.OrderStatus(order.Status)
+		current := ordermodule.OrderStatus(order.Status)
 		now := time.Now().UTC()
 		updates := map[string]any{
 			"status":     string(status),
@@ -515,36 +519,36 @@ func (r *AdminRepo) UpdateOrderStatus(ctx context.Context, orderID string, statu
 		}
 
 		switch status {
-		case entity.OrderStatusPaid:
-			if current != entity.OrderStatusPending {
-				return entity.ErrOrderStateConflict
+		case ordermodule.OrderStatusPaid:
+			if current != ordermodule.OrderStatusPending {
+				return ordermodule.ErrInvalidInput
 			}
 			updates["paid_at"] = now
-		case entity.OrderStatusDelivered:
-			if current != entity.OrderStatusPaid {
-				return entity.ErrOrderStateConflict
+		case ordermodule.OrderStatusDelivered:
+			if current != ordermodule.OrderStatusPaid {
+				return ordermodule.ErrInvalidInput
 			}
 			updates["delivered_at"] = now
-		case entity.OrderStatusCancelled:
-			if current != entity.OrderStatusPending && current != entity.OrderStatusPaid {
-				return entity.ErrOrderStateConflict
+		case ordermodule.OrderStatusCancelled:
+			if current != ordermodule.OrderStatusPending && current != ordermodule.OrderStatusPaid {
+				return ordermodule.ErrInvalidInput
 			}
 		default:
-			return entity.ErrInvalidInput
+			return usermodule.ErrInvalidInput
 		}
 
 		if err := tx.Model(&models.Order{}).Where("order_id = ?", orderID).Updates(updates).Error; err != nil {
 			return fmt.Errorf("AdminRepo.UpdateOrderStatus(update): %w", err)
 		}
 
-		if status == entity.OrderStatusCancelled {
-			if current == entity.OrderStatusPending {
+		if status == ordermodule.OrderStatusCancelled {
+			if current == ordermodule.OrderStatusPending {
 				if err := tx.Model(&models.Product{}).
 					Where("id = ?", order.ProductID).
 					UpdateColumn("locked_count", gorm.Expr("locked_count - ?", order.Quantity)).Error; err != nil {
 					return fmt.Errorf("AdminRepo.UpdateOrderStatus(release locked count): %w", err)
 				}
-			} else if current == entity.OrderStatusPaid {
+			} else if current == ordermodule.OrderStatusPaid {
 				if err := tx.Model(&models.Product{}).
 					Where("id = ?", order.ProductID).
 					Updates(map[string]any{
@@ -572,8 +576,8 @@ func (r *AdminRepo) DeleteOrder(ctx context.Context, orderID string) error {
 	})
 }
 
-func (r *AdminRepo) StoreSetting(ctx context.Context, setting entity.Setting) error {
-	model := models.EntityToSetting(setting)
+func (r *AdminRepo) StoreSetting(ctx context.Context, setting catalogmodule.Setting) error {
+	model := models.ModuleToSetting(setting)
 	if model.UpdatedAt.IsZero() {
 		model.UpdatedAt = time.Now().UTC()
 	}
@@ -588,15 +592,15 @@ func (r *AdminRepo) StoreSetting(ctx context.Context, setting entity.Setting) er
 	return nil
 }
 
-func (r *AdminRepo) ListSettings(ctx context.Context) ([]entity.Setting, error) {
+func (r *AdminRepo) ListSettings(ctx context.Context) ([]catalogmodule.Setting, error) {
 	var rows []models.Setting
 	if err := r.Gorm.WithContext(ctx).Order("\"key\" ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("AdminRepo.ListSettings: %w", err)
 	}
 
-	settings := make([]entity.Setting, 0, len(rows))
+	settings := make([]catalogmodule.Setting, 0, len(rows))
 	for _, row := range rows {
-		settings = append(settings, models.SettingToEntity(row))
+		settings = append(settings, models.SettingToModule(row))
 	}
 	return settings, nil
 }
@@ -612,7 +616,7 @@ func (r *AdminRepo) RebuildProductAggregates(ctx context.Context) error {
 	return nil
 }
 
-func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error) {
+func (r *AdminRepo) ListProducts(ctx context.Context, page pagination.Pagination) ([]catalogmodule.Product, int, error) {
 	query := r.Gorm.WithContext(ctx).Model(&models.Product{})
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -623,9 +627,9 @@ func (r *AdminRepo) ListProducts(ctx context.Context, page entity.Pagination) ([
 	if err := query.Order("created_at DESC").Limit(normalized.Limit).Offset(normalized.Offset).Find(&rows).Error; err != nil {
 		return nil, 0, fmt.Errorf("AdminRepo.ListProducts(find): %w", err)
 	}
-	items := make([]entity.Product, 0, len(rows))
+	items := make([]catalogmodule.Product, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, models.ProductToEntity(row))
+		items = append(items, models.ProductToModule(row))
 	}
 	return items, int(total), nil
 }
@@ -658,7 +662,7 @@ func (r *AdminRepo) GetProduct(ctx context.Context, productID string) (catalogmo
 		case "brand":
 			result.Brand = detail.Value
 		default:
-			d := models.DetailToEntity(detail)
+			d := models.DetailToModule(detail)
 			result.Specs = append(result.Specs, catalogmodule.ProductSpecItem{Key: d.Key, Value: d.Value})
 		}
 	}
@@ -715,7 +719,7 @@ func (r *AdminRepo) UpsertProduct(ctx context.Context, product catalogmodule.Pro
 		if detail.Key == "sku" || detail.Key == "brand" {
 			continue
 		}
-		d := models.DetailToEntity(detail)
+		d := models.DetailToModule(detail)
 		result.Specs = append(result.Specs, catalogmodule.ProductSpecItem{Key: d.Key, Value: d.Value})
 	}
 
@@ -729,23 +733,23 @@ func (r *AdminRepo) DeleteProduct(ctx context.Context, productID string) error {
 	return nil
 }
 
-func (r *AdminRepo) ListCategories(ctx context.Context) ([]entity.Category, error) {
+func (r *AdminRepo) ListCategories(ctx context.Context) ([]catalogmodule.Category, error) {
 	var rows []models.Category
 	if err := r.Gorm.WithContext(ctx).Order("sort_order ASC, name ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("AdminRepo.ListCategories: %w", err)
 	}
-	items := make([]entity.Category, 0, len(rows))
+	items := make([]catalogmodule.Category, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, models.CategoryToEntity(row))
+		items = append(items, models.CategoryToModule(row))
 	}
 	return items, nil
 }
 
-func (r *AdminRepo) UpsertCategory(ctx context.Context, category entity.Category) (entity.Category, error) {
+func (r *AdminRepo) UpsertCategory(ctx context.Context, category catalogmodule.Category) (catalogmodule.Category, error) {
 	if category.ID == "" {
 		category.ID = uuid.NewString()
 	}
-	model := models.EntityToCategory(category)
+	model := models.ModuleToCategory(category)
 	now := time.Now().UTC()
 	if model.CreatedAt.IsZero() {
 		model.CreatedAt = now
@@ -757,9 +761,9 @@ func (r *AdminRepo) UpsertCategory(ctx context.Context, category entity.Category
 			DoUpdates: clause.AssignmentColumns([]string{"name", "parent_id", "sort_order", "is_active", "updated_at"}),
 		}).
 		Create(&model).Error; err != nil {
-		return entity.Category{}, fmt.Errorf("AdminRepo.UpsertCategory: %w", err)
+		return catalogmodule.Category{}, fmt.Errorf("AdminRepo.UpsertCategory: %w", err)
 	}
-	return models.CategoryToEntity(model), nil
+	return models.CategoryToModule(model), nil
 }
 
 func (r *AdminRepo) DeleteCategory(ctx context.Context, categoryID string) error {
@@ -769,26 +773,26 @@ func (r *AdminRepo) DeleteCategory(ctx context.Context, categoryID string) error
 	return nil
 }
 
-func (r *AdminRepo) StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error) {
-	model := models.EntityToAdminMessage(msg)
+func (r *AdminRepo) StoreAdminMessage(ctx context.Context, msg notificationmodule.AdminMessage) (notificationmodule.AdminMessage, error) {
+	model := models.ModuleToAdminMessage(msg)
 	if model.CreatedAt.IsZero() {
 		model.CreatedAt = time.Now().UTC()
 	}
 	if err := r.Gorm.WithContext(ctx).Create(&model).Error; err != nil {
-		return entity.AdminMessage{}, fmt.Errorf("AdminRepo.StoreAdminMessage: %w", err)
+		return notificationmodule.AdminMessage{}, fmt.Errorf("AdminRepo.StoreAdminMessage: %w", err)
 	}
-	return models.AdminMessageToEntity(model), nil
+	return models.AdminMessageToModule(model), nil
 }
 
-func (r *AdminRepo) ListAdminMessages(ctx context.Context) ([]entity.AdminMessage, error) {
+func (r *AdminRepo) ListAdminMessages(ctx context.Context) ([]notificationmodule.AdminMessage, error) {
 	var rows []models.AdminMessage
 	if err := r.Gorm.WithContext(ctx).Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("AdminRepo.ListAdminMessages: %w", err)
 	}
 
-	msgs := make([]entity.AdminMessage, 0, len(rows))
+	msgs := make([]notificationmodule.AdminMessage, 0, len(rows))
 	for _, row := range rows {
-		msgs = append(msgs, models.AdminMessageToEntity(row))
+		msgs = append(msgs, models.AdminMessageToModule(row))
 	}
 	return msgs, nil
 }

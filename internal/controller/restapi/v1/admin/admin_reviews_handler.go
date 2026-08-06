@@ -1,10 +1,11 @@
 package admin
 
 import (
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist"
+
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
@@ -106,7 +107,7 @@ func (h *Handler) AdminDeleteReview(ctx context.Context, request openapi.AdminDe
 func (h *Handler) AdminApproveReview(ctx context.Context, request openapi.AdminApproveReviewRequestObject) (openapi.AdminApproveReviewResponseObject, error) {
 	actor := getActor(ctx)
 
-	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, entity.ReviewStatusApproved); err != nil {
+	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, wishlistmodule.ReviewStatusApproved); err != nil {
 		statusCode, errResp := mapAdminError(err)
 		switch statusCode {
 		case 401:
@@ -126,7 +127,7 @@ func (h *Handler) AdminApproveReview(ctx context.Context, request openapi.AdminA
 func (h *Handler) AdminHideReview(ctx context.Context, request openapi.AdminHideReviewRequestObject) (openapi.AdminHideReviewResponseObject, error) {
 	actor := getActor(ctx)
 
-	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, entity.ReviewStatusHidden); err != nil {
+	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, wishlistmodule.ReviewStatusHidden); err != nil {
 		statusCode, errResp := mapAdminError(err)
 		switch statusCode {
 		case 401:
@@ -146,7 +147,7 @@ func (h *Handler) AdminHideReview(ctx context.Context, request openapi.AdminHide
 func (h *Handler) AdminFeatureReview(ctx context.Context, request openapi.AdminFeatureReviewRequestObject) (openapi.AdminFeatureReviewResponseObject, error) {
 	actor := getActor(ctx)
 
-	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, entity.ReviewStatusFeatured); err != nil {
+	if err := h.adminUC.UpdateReviewStatus(ctx, actor, request.ReviewId, wishlistmodule.ReviewStatusFeatured); err != nil {
 		statusCode, errResp := mapAdminError(err)
 		switch statusCode {
 		case 401:
@@ -162,8 +163,8 @@ func (h *Handler) AdminFeatureReview(ctx context.Context, request openapi.AdminF
 	return openapi.AdminFeatureReview200Response{}, nil
 }
 
-// toAdminReviewResponse maps entity.Review to openapi.AdminReviewResponse.
-func toAdminReviewResponse(r entity.Review) openapi.AdminReviewResponse {
+// toAdminReviewResponse maps wishlistmodule.Review to openapi.AdminReviewResponse.
+func toAdminReviewResponse(r wishlistmodule.Review) openapi.AdminReviewResponse {
 	id := r.ID
 	productID := r.ProductID
 	productName := r.ProductName

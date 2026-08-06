@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
@@ -27,7 +27,7 @@ func (r *MaintenanceRepo) CancelExpiredPendingOrders(ctx context.Context, olderT
 		var expiredOrders []string
 		if err := tx.WithContext(ctx).
 			Model(&models.Order{}).
-			Where("status = ?", string(entity.OrderStatusPending)).
+			Where("status = ?", string(ordermodule.OrderStatusPending)).
 			Where("created_at < ?", olderThan).
 			Pluck("order_id", &expiredOrders).Error; err != nil {
 			return fmt.Errorf("MaintenanceRepo.CancelExpiredPendingOrders(pluck): %w", err)
@@ -41,7 +41,7 @@ func (r *MaintenanceRepo) CancelExpiredPendingOrders(ctx context.Context, olderT
 			Model(&models.Order{}).
 			Where("order_id IN ?", expiredOrders).
 			Updates(map[string]any{
-				"status":     string(entity.OrderStatusCancelled),
+				"status":     string(ordermodule.OrderStatusCancelled),
 				"updated_at": time.Now().UTC(),
 			}).Error; err != nil {
 			return fmt.Errorf("MaintenanceRepo.CancelExpiredPendingOrders(update orders): %w", err)

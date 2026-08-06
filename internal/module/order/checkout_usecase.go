@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/google/uuid"
 )
 
@@ -28,12 +27,12 @@ type PaymentVerifier interface {
 
 // CheckoutUseCase defines application services for order checkout and payment processing.
 type CheckoutUseCase interface {
-	Preview(ctx context.Context, actor usermodule.Actor, productID string, quantity int) (AmountBreakdown, error)
-	CreateOrder(ctx context.Context, actor usermodule.Actor, productID string, quantity int, email string) (Order, error)
-	PaymentParams(ctx context.Context, actor usermodule.Actor, orderID string) (PaymentParams, error)
+	Preview(ctx context.Context, actor Actor, productID string, quantity int) (AmountBreakdown, error)
+	CreateOrder(ctx context.Context, actor Actor, productID string, quantity int, email string) (Order, error)
+	PaymentParams(ctx context.Context, actor Actor, orderID string) (PaymentParams, error)
 	PaymentNotify(ctx context.Context, payload map[string]string) error
 	PaymentStatus(ctx context.Context, orderID string) (Order, error)
-	Cancel(ctx context.Context, actor usermodule.Actor, orderID string) error
+	Cancel(ctx context.Context, actor Actor, orderID string) error
 	SetPaymentVerifier(verifier PaymentVerifier)
 }
 
@@ -52,7 +51,7 @@ func (uc *checkoutUseCase) SetPaymentVerifier(verifier PaymentVerifier) {
 	uc.verifier = verifier
 }
 
-func (uc *checkoutUseCase) Preview(_ context.Context, _ usermodule.Actor, _ string, quantity int) (AmountBreakdown, error) {
+func (uc *checkoutUseCase) Preview(_ context.Context, _ Actor, _ string, quantity int) (AmountBreakdown, error) {
 	subtotal := Amount(quantity * 10000)
 	return AmountBreakdown{
 		Subtotal:   subtotal,
@@ -60,7 +59,7 @@ func (uc *checkoutUseCase) Preview(_ context.Context, _ usermodule.Actor, _ stri
 	}, nil
 }
 
-func (uc *checkoutUseCase) CreateOrder(ctx context.Context, actor usermodule.Actor, productID string, quantity int, email string) (Order, error) {
+func (uc *checkoutUseCase) CreateOrder(ctx context.Context, actor Actor, productID string, quantity int, email string) (Order, error) {
 	preview, err := uc.Preview(ctx, actor, productID, quantity)
 	if err != nil {
 		return Order{}, err
@@ -86,7 +85,7 @@ func (uc *checkoutUseCase) CreateOrder(ctx context.Context, actor usermodule.Act
 	return created, nil
 }
 
-func (uc *checkoutUseCase) PaymentParams(_ context.Context, _ usermodule.Actor, orderID string) (PaymentParams, error) {
+func (uc *checkoutUseCase) PaymentParams(_ context.Context, _ Actor, orderID string) (PaymentParams, error) {
 	return PaymentParams{
 		URL: "https://payment.example/checkout",
 		Fields: map[string]string{
@@ -152,7 +151,7 @@ func (uc *checkoutUseCase) PaymentStatus(ctx context.Context, orderID string) (O
 	return o, nil
 }
 
-func (uc *checkoutUseCase) Cancel(ctx context.Context, actor usermodule.Actor, orderID string) error {
+func (uc *checkoutUseCase) Cancel(ctx context.Context, actor Actor, orderID string) error {
 	if err := uc.orderRepo.CancelPendingOrder(ctx, actor, orderID); err != nil {
 		return fmt.Errorf("CheckoutUseCase - Cancel - orderRepo.CancelPendingOrder: %w", err)
 	}

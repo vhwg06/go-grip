@@ -3,7 +3,7 @@ package persistent
 import (
 	"context"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
 
@@ -15,23 +15,23 @@ func NewRoleRepo(pg *postgres.Postgres) *RoleRepo {
 	return &RoleRepo{Postgres: pg}
 }
 
-func (r *RoleRepo) List(ctx context.Context) ([]entity.Role, error) {
+func (r *RoleRepo) List(ctx context.Context) ([]usermodule.Role, error) {
 	_ = ctx
-	return []entity.Role{
-		{ID: "administrator", Name: entity.RoleAdministrator},
-		{ID: "editor", Name: entity.RoleEditor},
-		{ID: "author", Name: entity.RoleAuthor},
-		{ID: "contributor", Name: entity.RoleContributor},
-		{ID: "subscriber", Name: entity.RoleSubscriber},
+	return []usermodule.Role{
+		{ID: "administrator", Name: usermodule.RoleAdministrator},
+		{ID: "editor", Name: usermodule.RoleEditor},
+		{ID: "author", Name: usermodule.RoleAuthor},
+		{ID: "contributor", Name: usermodule.RoleContributor},
+		{ID: "subscriber", Name: usermodule.RoleSubscriber},
 	}, nil
 }
 
-func (r *RoleRepo) GetByName(ctx context.Context, name entity.RoleName) (entity.Role, error) {
+func (r *RoleRepo) GetByName(ctx context.Context, name usermodule.RoleName) (usermodule.Role, error) {
 	roles, _ := r.List(ctx)
 	for _, role := range roles {
 		if role.Name == name {
 			return role, nil
 		}
 	}
-	return entity.Role{}, entity.ErrNotFound
+	return usermodule.Role{}, usermodule.ErrNotFound
 }

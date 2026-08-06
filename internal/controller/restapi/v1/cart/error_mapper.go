@@ -1,11 +1,14 @@
 package cart
 
 import (
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 )
 
@@ -16,7 +19,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, cartmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, cartmodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "ITEM_NOT_FOUND",
@@ -25,7 +28,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, cartmodule.ErrCartBlocked) || errors.Is(err, entity.ErrCartBlocked) {
+	if errors.Is(err, cartmodule.ErrCartBlocked) || errors.Is(err, cartmodule.ErrCartBlocked) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "CART_BLOCKED",
@@ -34,7 +37,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, entity.ErrOutOfStock) || errors.Is(err, entity.ErrProductUnavailable) {
+	if errors.Is(err, ordermodule.ErrOutOfStock) || errors.Is(err, catalogmodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "OUT_OF_STOCK",
@@ -43,7 +46,7 @@ func mapCartError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, cartmodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, cartmodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

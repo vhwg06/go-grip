@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/evrone/go-clean-template/internal/entity"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"github.com/jackc/pgx/v5"
@@ -50,7 +49,7 @@ func (r *UserRepo) Store(ctx context.Context, u *usermodule.User) error {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return entity.ErrUserAlreadyExists
+			return usermodule.ErrInvalidInput
 		}
 
 		return fmt.Errorf("UserRepo - Store - r.Pool.Exec: %w", err)

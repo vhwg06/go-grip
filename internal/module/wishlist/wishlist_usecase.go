@@ -6,18 +6,17 @@ import (
 	"time"
 
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 // WishlistUseCase defines business operations for Wishlist & Reviews.
 type WishlistUseCase interface {
 	List(ctx context.Context, page pagination.Pagination) ([]WishlistItem, int, error)
-	Create(ctx context.Context, actor usermodule.Actor, title, description string) (WishlistItem, error)
-	Update(ctx context.Context, actor usermodule.Actor, item WishlistItem) (WishlistItem, error)
-	Delete(ctx context.Context, actor usermodule.Actor, itemID int64) error
-	ToggleVote(ctx context.Context, actor usermodule.Actor, itemID int64) error
-	CreateReview(ctx context.Context, actor usermodule.Actor, review Review) (Review, error)
+	Create(ctx context.Context, actor Actor, title, description string) (WishlistItem, error)
+	Update(ctx context.Context, actor Actor, item WishlistItem) (WishlistItem, error)
+	Delete(ctx context.Context, actor Actor, itemID int64) error
+	ToggleVote(ctx context.Context, actor Actor, itemID int64) error
+	CreateReview(ctx context.Context, actor Actor, review Review) (Review, error)
 	ListReviews(ctx context.Context, productID string) ([]Review, error)
 }
 
@@ -39,7 +38,7 @@ func (uc *wishlistUseCase) List(ctx context.Context, page pagination.Pagination)
 	return items, total, nil
 }
 
-func (uc *wishlistUseCase) Create(ctx context.Context, actor usermodule.Actor, title, description string) (WishlistItem, error) {
+func (uc *wishlistUseCase) Create(ctx context.Context, actor Actor, title, description string) (WishlistItem, error) {
 	if actor.UserID == "" {
 		return WishlistItem{}, ErrUnauthorized
 	}
@@ -62,7 +61,7 @@ func (uc *wishlistUseCase) Create(ctx context.Context, actor usermodule.Actor, t
 	return stored, nil
 }
 
-func (uc *wishlistUseCase) Update(ctx context.Context, actor usermodule.Actor, item WishlistItem) (WishlistItem, error) {
+func (uc *wishlistUseCase) Update(ctx context.Context, actor Actor, item WishlistItem) (WishlistItem, error) {
 	if actor.UserID == "" {
 		return WishlistItem{}, ErrUnauthorized
 	}
@@ -74,7 +73,7 @@ func (uc *wishlistUseCase) Update(ctx context.Context, actor usermodule.Actor, i
 	return updated, nil
 }
 
-func (uc *wishlistUseCase) Delete(ctx context.Context, actor usermodule.Actor, itemID int64) error {
+func (uc *wishlistUseCase) Delete(ctx context.Context, actor Actor, itemID int64) error {
 	if actor.UserID == "" {
 		return ErrUnauthorized
 	}
@@ -84,7 +83,7 @@ func (uc *wishlistUseCase) Delete(ctx context.Context, actor usermodule.Actor, i
 	return nil
 }
 
-func (uc *wishlistUseCase) ToggleVote(ctx context.Context, actor usermodule.Actor, itemID int64) error {
+func (uc *wishlistUseCase) ToggleVote(ctx context.Context, actor Actor, itemID int64) error {
 	if actor.UserID == "" {
 		return ErrUnauthorized
 	}
@@ -94,7 +93,7 @@ func (uc *wishlistUseCase) ToggleVote(ctx context.Context, actor usermodule.Acto
 	return nil
 }
 
-func (uc *wishlistUseCase) CreateReview(ctx context.Context, actor usermodule.Actor, review Review) (Review, error) {
+func (uc *wishlistUseCase) CreateReview(ctx context.Context, actor Actor, review Review) (Review, error) {
 	if actor.UserID == "" {
 		return Review{}, ErrUnauthorized
 	}

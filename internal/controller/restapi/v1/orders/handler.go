@@ -51,7 +51,7 @@ func (h *Handler) ListOrders(ctx context.Context, request openapi.ListOrdersRequ
 	}
 	email := ""
 
-	orderList, total, err := h.ordersUC.List(ctx, actor, email, page)
+	orderList, total, err := h.ordersUC.List(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, email, page)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {
@@ -71,7 +71,7 @@ func (h *Handler) ListOrders(ctx context.Context, request openapi.ListOrdersRequ
 // GetOrderByID handles GET /orders/{id}
 func (h *Handler) GetOrderByID(ctx context.Context, request openapi.GetOrderByIDRequestObject) (openapi.GetOrderByIDResponseObject, error) {
 	actor := getActor(ctx)
-	orderEntity, err := h.ordersUC.Get(ctx, actor, request.Id)
+	orderEntity, err := h.ordersUC.Get(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.Id)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {
@@ -100,7 +100,7 @@ func (h *Handler) RequestOrderRefund(ctx context.Context, request openapi.Reques
 		reason = request.Body.Reason
 	}
 
-	refundEntity, err := h.ordersUC.RequestRefund(ctx, actor, request.Id, reason)
+	refundEntity, err := h.ordersUC.RequestRefund(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.Id, reason)
 	if err != nil {
 		status, errResp := mapOrdersError(err)
 		switch status {

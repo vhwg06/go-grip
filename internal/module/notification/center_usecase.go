@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 // NotificationCenterUseCase defines user inbox and notification management operations.
 type NotificationCenterUseCase interface {
-	Inbox(ctx context.Context, actor usermodule.Actor, page pagination.Pagination) ([]UserNotification, int, error)
-	UnreadCount(ctx context.Context, actor usermodule.Actor) (int, error)
-	MarkRead(ctx context.Context, actor usermodule.Actor, notificationID int64) error
-	MarkAllRead(ctx context.Context, actor usermodule.Actor) error
-	Clear(ctx context.Context, actor usermodule.Actor) error
+	Inbox(ctx context.Context, actor Actor, page pagination.Pagination) ([]UserNotification, int, error)
+	UnreadCount(ctx context.Context, actor Actor) (int, error)
+	MarkRead(ctx context.Context, actor Actor, notificationID int64) error
+	MarkAllRead(ctx context.Context, actor Actor) error
+	Clear(ctx context.Context, actor Actor) error
 }
 
 type centerUseCase struct {
@@ -26,7 +25,7 @@ func NewNotificationCenterUseCase(repo NotificationRepo) NotificationCenterUseCa
 	return &centerUseCase{repo: repo}
 }
 
-func (uc *centerUseCase) Inbox(ctx context.Context, actor usermodule.Actor, page pagination.Pagination) ([]UserNotification, int, error) {
+func (uc *centerUseCase) Inbox(ctx context.Context, actor Actor, page pagination.Pagination) ([]UserNotification, int, error) {
 	if actor.UserID == "" {
 		return nil, 0, ErrUnauthorized
 	}
@@ -59,7 +58,7 @@ func (uc *centerUseCase) Inbox(ctx context.Context, actor usermodule.Actor, page
 	return out, personalTotal + len(broadcasts), nil
 }
 
-func (uc *centerUseCase) UnreadCount(ctx context.Context, actor usermodule.Actor) (int, error) {
+func (uc *centerUseCase) UnreadCount(ctx context.Context, actor Actor) (int, error) {
 	if actor.UserID == "" {
 		return 0, ErrUnauthorized
 	}
@@ -82,7 +81,7 @@ func (uc *centerUseCase) UnreadCount(ctx context.Context, actor usermodule.Actor
 	return count + len(broadcasts), nil
 }
 
-func (uc *centerUseCase) MarkRead(ctx context.Context, actor usermodule.Actor, notificationID int64) error {
+func (uc *centerUseCase) MarkRead(ctx context.Context, actor Actor, notificationID int64) error {
 	if actor.UserID == "" {
 		return ErrUnauthorized
 	}
@@ -92,7 +91,7 @@ func (uc *centerUseCase) MarkRead(ctx context.Context, actor usermodule.Actor, n
 	return nil
 }
 
-func (uc *centerUseCase) MarkAllRead(ctx context.Context, actor usermodule.Actor) error {
+func (uc *centerUseCase) MarkAllRead(ctx context.Context, actor Actor) error {
 	if actor.UserID == "" {
 		return ErrUnauthorized
 	}
@@ -102,7 +101,7 @@ func (uc *centerUseCase) MarkAllRead(ctx context.Context, actor usermodule.Actor
 	return nil
 }
 
-func (uc *centerUseCase) Clear(ctx context.Context, actor usermodule.Actor) error {
+func (uc *centerUseCase) Clear(ctx context.Context, actor Actor) error {
 	if actor.UserID == "" {
 		return ErrUnauthorized
 	}

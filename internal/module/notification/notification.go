@@ -45,3 +45,10 @@ type AdminMessage struct {
 	Sender      string    `json:"sender"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+// Actor represents an authenticated user context.
+type Actor struct {
+	UserID   string
+	Username string
+	IsAdmin  bool
+}

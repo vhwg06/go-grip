@@ -1,10 +1,11 @@
 package cart
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
@@ -23,13 +24,13 @@ func NewHandler(cartUC cartmodule.CartUseCase, l logger.Interface) *Handler {
 	}
 }
 
-func getActor(ctx context.Context) entity.Actor {
+func getActor(ctx context.Context) usermodule.Actor {
 	if val := ctx.Value("actor"); val != nil {
-		if a, ok := val.(entity.Actor); ok {
+		if a, ok := val.(usermodule.Actor); ok {
 			return a
 		}
 	}
-	return entity.Actor{}
+	return usermodule.Actor{}
 }
 
 // GetMyCart handles GET /cart

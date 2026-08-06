@@ -1,10 +1,11 @@
 package admin
 
 import (
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
@@ -90,9 +91,9 @@ func (h *Handler) AdminGetOrder(ctx context.Context, request openapi.AdminGetOrd
 func (h *Handler) AdminUpdateOrder(ctx context.Context, request openapi.AdminUpdateOrderRequestObject) (openapi.AdminUpdateOrderResponseObject, error) {
 	actor := getActor(ctx)
 
-	var orderStatus entity.OrderStatus
+	var orderStatus ordermodule.OrderStatus
 	if request.Body != nil && request.Body.Status != nil {
-		orderStatus = entity.OrderStatus(*request.Body.Status)
+		orderStatus = ordermodule.OrderStatus(*request.Body.Status)
 	}
 
 	if err := h.adminUC.UpdateOrderStatus(ctx, actor, request.OrderId, orderStatus); err != nil {
@@ -147,8 +148,8 @@ func (h *Handler) AdminGetCollect(ctx context.Context, _ openapi.AdminGetCollect
 }
 
 
-// toAdminOrderDetail maps entity.Order to openapi.AdminOrderDetailResponse.
-func toAdminOrderDetail(o entity.Order) openapi.AdminOrderDetailResponse {
+// toAdminOrderDetail maps ordermodule.Order to openapi.AdminOrderDetailResponse.
+func toAdminOrderDetail(o ordermodule.Order) openapi.AdminOrderDetailResponse {
 	orderID := o.ID
 	userID := o.UserID
 	username := o.Username

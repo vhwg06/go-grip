@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
@@ -23,7 +22,7 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 	}
 
 	// Unauthenticated: no valid actor identity → 401.
-	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, ordermodule.ErrUnauthorized) {
+	if errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, ordermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",
@@ -33,7 +32,7 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 	}
 
 	// Authenticated but not an admin → 403.
-	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, ordermodule.ErrForbidden) {
+	if errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, ordermodule.ErrForbidden) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",
@@ -42,7 +41,7 @@ func mapAdminError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusForbidden, resp
 	}
 
-	if errors.Is(err, entity.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) || errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, ordermodule.ErrNotFound) {
+	if errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, ordermodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, ordermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "NOT_FOUND",

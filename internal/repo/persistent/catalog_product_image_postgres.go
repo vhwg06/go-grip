@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -29,10 +28,10 @@ func newCatalogProductImageRepo(db *gorm.DB) *CatalogProductImageRepo {
 	return &CatalogProductImageRepo{db: db}
 }
 
-var _ repo.CatalogProductImageRepository = (*CatalogProductImageRepo)(nil)
+var _ catalogbase.CatalogProductImageRepository = (*CatalogProductImageRepo)(nil)
 
 // ListByModelID returns images for one ProductModel in display order.
-func (r *CatalogProductImageRepo) ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogProductImage, error) {
+func (r *CatalogProductImageRepo) ListByModelID(ctx context.Context, modelID string) ([]catalogbase.CatalogProductImage, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -41,15 +40,15 @@ func (r *CatalogProductImageRepo) ListByModelID(ctx context.Context, modelID str
 	if err := db.WithContext(ctx).Where("model_id = ?", modelID).Order("ordering ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog product image repo: list %s: %w", modelID, err)
 	}
-	result := make([]entity.CatalogProductImage, 0, len(rows))
+	result := make([]catalogbase.CatalogProductImage, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, entity.CatalogProductImage{ID: row.ID, URL: row.URL, Ordering: row.Ordering, PrimaryImage: row.PrimaryImage, CreatedAt: row.CreatedAt})
+		result = append(result, catalogbase.CatalogProductImage{ID: row.ID, URL: row.URL, Ordering: row.Ordering, PrimaryImage: row.PrimaryImage, CreatedAt: row.CreatedAt})
 	}
 	return result, nil
 }
 
 // Store creates one image for a ProductModel.
-func (r *CatalogProductImageRepo) Store(ctx context.Context, modelID string, image entity.CatalogProductImage) error {
+func (r *CatalogProductImageRepo) Store(ctx context.Context, modelID string, image catalogbase.CatalogProductImage) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
@@ -62,7 +61,7 @@ func (r *CatalogProductImageRepo) Store(ctx context.Context, modelID string, ima
 }
 
 // Update replaces one image for a ProductModel.
-func (r *CatalogProductImageRepo) Update(ctx context.Context, modelID string, image entity.CatalogProductImage) error {
+func (r *CatalogProductImageRepo) Update(ctx context.Context, modelID string, image catalogbase.CatalogProductImage) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err

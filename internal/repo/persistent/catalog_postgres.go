@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
@@ -18,7 +17,7 @@ func NewGripCatalogRepo(pg *postgres.Postgres) *GripCatalogRepo {
 	return &GripCatalogRepo{Postgres: pg}
 }
 
-func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor usermodule.Actor, filter catalogmodule.ProductRepoFilter) ([]catalogmodule.Product, int, error) {
+func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor catalogmodule.Actor, filter catalogmodule.ProductRepoFilter) ([]catalogmodule.Product, int, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		return nil, 0, nil
 	}
@@ -85,7 +84,7 @@ func (r *GripCatalogRepo) ListVisibleProducts(ctx context.Context, actor usermod
 	return products, int(total), nil
 }
 
-func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor usermodule.Actor, productID string) (catalogmodule.Product, error) {
+func (r *GripCatalogRepo) GetVisibleProduct(ctx context.Context, actor catalogmodule.Actor, productID string) (catalogmodule.Product, error) {
 	if r.Postgres == nil || r.Gorm == nil {
 		return catalogmodule.Product{}, catalogmodule.ErrNotFound
 	}

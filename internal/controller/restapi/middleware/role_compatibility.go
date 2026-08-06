@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
 // RoleCompatibilityAdapter translates legacy User roles/claims into OpenAPI capability scopes.
@@ -27,7 +27,7 @@ func NewRoleCompatibilityAdapter(adminUsersCSV string) *RoleCompatibilityAdapter
 }
 
 // IsAdminUser checks whether the given actor is an administrator.
-func (a *RoleCompatibilityAdapter) IsAdminUser(actor entity.Actor) bool {
+func (a *RoleCompatibilityAdapter) IsAdminUser(actor usermodule.Actor) bool {
 	if actor.IsAdmin {
 		return true
 	}
@@ -45,7 +45,7 @@ func (a *RoleCompatibilityAdapter) IsAdminUser(actor entity.Actor) bool {
 }
 
 // DeriveActorScopes computes the active capability scopes granted to an authenticated or anonymous actor.
-func (a *RoleCompatibilityAdapter) DeriveActorScopes(actor entity.Actor) map[string]struct{} {
+func (a *RoleCompatibilityAdapter) DeriveActorScopes(actor usermodule.Actor) map[string]struct{} {
 	scopes := make(map[string]struct{})
 
 	// Blocked actors or anonymous actors get no scopes
@@ -98,7 +98,7 @@ func (a *RoleCompatibilityAdapter) DeriveActorScopes(actor entity.Actor) map[str
 }
 
 // HasCapability checks if an actor possesses all required capability scopes.
-func (a *RoleCompatibilityAdapter) HasCapability(actor entity.Actor, requiredScopes []string) bool {
+func (a *RoleCompatibilityAdapter) HasCapability(actor usermodule.Actor, requiredScopes []string) bool {
 	if len(requiredScopes) == 0 {
 		return true
 	}

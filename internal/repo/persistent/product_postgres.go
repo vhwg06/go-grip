@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/evrone/go-clean-template/internal/entity"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 )
@@ -32,7 +31,7 @@ func (r *CatalogRepo) StoreProduct(ctx context.Context, product *catalogmodule.P
 	defer r.mu.Unlock()
 	for _, existing := range r.products {
 		if existing.SKU == product.SKU && existing.ID != product.ID {
-			return entity.ErrDuplicateSKU
+			return catalogmodule.ErrInvalidInput
 		}
 	}
 	r.products[product.ID] = *product

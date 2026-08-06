@@ -1,10 +1,11 @@
 package admin
 
 import (
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
+
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
@@ -338,8 +339,8 @@ func (h *Handler) AdminListCategories(ctx context.Context, _ openapi.AdminListCa
 	return resp, nil
 }
 
-// toAdminMessageResponse maps entity.AdminMessage to openapi.AdminMessageResponse.
-func toAdminMessageResponse(m entity.AdminMessage) openapi.AdminMessageResponse {
+// toAdminMessageResponse maps notificationmodule.AdminMessage to openapi.AdminMessageResponse.
+func toAdminMessageResponse(m notificationmodule.AdminMessage) openapi.AdminMessageResponse {
 	id := m.ID
 	msgType := m.TargetType
 	title := m.Title

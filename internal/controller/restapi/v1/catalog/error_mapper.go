@@ -1,11 +1,12 @@
 package catalog
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
 )
 
@@ -16,7 +17,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, catalogmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, catalogmodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "PRODUCT_NOT_FOUND",
@@ -25,7 +26,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrDuplicateSKU) {
+	if errors.Is(err, catalogmodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "DUPLICATE_SKU",
@@ -34,7 +35,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusConflict, resp
 	}
 
-	if errors.Is(err, catalogmodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, catalogmodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",
@@ -43,7 +44,7 @@ func mapCatalogError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, entity.ErrForbidden) {
+	if errors.Is(err, usermodule.ErrForbidden) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",

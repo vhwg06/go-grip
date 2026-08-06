@@ -1,11 +1,12 @@
 package orders
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 )
 
@@ -16,7 +17,7 @@ func mapOrdersError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, ordermodule.ErrNotFound) || errors.Is(err, entity.ErrOrderNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, ordermodule.ErrNotFound) || errors.Is(err, ordermodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "ORDER_NOT_FOUND",
@@ -25,7 +26,7 @@ func mapOrdersError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, ordermodule.ErrRefundNotAllowed) || errors.Is(err, entity.ErrRefundNotAllowed) || errors.Is(err, entity.ErrOrderStateConflict) {
+	if errors.Is(err, ordermodule.ErrRefundNotAllowed) || errors.Is(err, ordermodule.ErrRefundNotAllowed) || errors.Is(err, ordermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "REFUND_NOT_ALLOWED",
@@ -34,7 +35,7 @@ func mapOrdersError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusUnprocessableEntity, resp
 	}
 
-	if errors.Is(err, ordermodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, ordermodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

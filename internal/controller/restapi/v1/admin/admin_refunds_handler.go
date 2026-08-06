@@ -1,11 +1,13 @@
 package admin
 
 import (
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"context"
 	"strconv"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 )
 
 // AdminListRefunds handles GET /admin/refunds
@@ -109,8 +111,8 @@ func (h *Handler) AdminRejectRefund(ctx context.Context, request openapi.AdminRe
 	return openapi.AdminRejectRefund200JSONResponse(resp), nil
 }
 
-// toAdminRefundResponse maps entity.RefundRequest to openapi.AdminRefundResponse.
-func toAdminRefundResponse(r entity.RefundRequest) openapi.AdminRefundResponse {
+// toAdminRefundResponse maps ordermodule.RefundRequest to openapi.AdminRefundResponse.
+func toAdminRefundResponse(r ordermodule.RefundRequest) openapi.AdminRefundResponse {
 	id := r.ID
 	orderID := r.OrderID
 	userID := r.UserID
@@ -149,7 +151,7 @@ func (h *Handler) AdminGetRefund(ctx context.Context, request openapi.AdminGetRe
 
 	refundID, err := strconv.ParseInt(request.RefundId, 10, 64)
 	if err != nil {
-		_, errResp := mapAdminError(entity.ErrNotFound)
+		_, errResp := mapAdminError(usermodule.ErrNotFound)
 		return openapi.AdminGetRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
 	}
 
@@ -173,6 +175,6 @@ func (h *Handler) AdminGetRefund(ctx context.Context, request openapi.AdminGetRe
 		}
 	}
 
-	_, errResp := mapAdminError(entity.ErrNotFound)
+	_, errResp := mapAdminError(usermodule.ErrNotFound)
 	return openapi.AdminGetRefund404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
 }

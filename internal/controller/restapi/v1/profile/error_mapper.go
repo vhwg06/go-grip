@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
@@ -20,7 +19,7 @@ func mapProfileError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrNotFound) ||
+	if errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) ||
 		errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
@@ -30,7 +29,7 @@ func mapProfileError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
+	if errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",
@@ -39,7 +38,7 @@ func mapProfileError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusUnauthorized, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
+	if errors.Is(err, usermodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

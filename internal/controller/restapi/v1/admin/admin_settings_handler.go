@@ -1,12 +1,14 @@
 package admin
 
 import (
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"context"
 	"strconv"
 	"time"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 )
 
 // AdminGetSetting handles GET /admin/settings/{key}
@@ -32,7 +34,7 @@ func (h *Handler) AdminGetSetting(ctx context.Context, request openapi.AdminGetS
 		}
 	}
 
-	_, errResp := mapAdminError(entity.ErrNotFound)
+	_, errResp := mapAdminError(usermodule.ErrNotFound)
 	return openapi.AdminGetSetting404JSONResponse{NotFoundResponseJSONResponse: openapi.NotFoundResponseJSONResponse(errResp)}, nil
 }
 
@@ -142,8 +144,8 @@ func (h *Handler) AdminUpdateStoreSettingsFloatingSupport(ctx context.Context, r
 	return openapi.AdminUpdateStoreSettingsFloatingSupport200Response{}, nil
 }
 
-// toAdminSettingResponse maps entity.Setting to openapi.AdminSettingResponse.
-func toAdminSettingResponse(s entity.Setting) openapi.AdminSettingResponse {
+// toAdminSettingResponse maps catalogmodule.Setting to openapi.AdminSettingResponse.
+func toAdminSettingResponse(s catalogmodule.Setting) openapi.AdminSettingResponse {
 	key := s.Key
 	value := s.Value
 	now := time.Now()

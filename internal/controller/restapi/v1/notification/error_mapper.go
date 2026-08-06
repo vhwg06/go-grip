@@ -1,11 +1,12 @@
 package notification
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
 )
 
@@ -16,7 +17,7 @@ func mapNotificationError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, notificationmodule.ErrUnauthorized) || errors.Is(err, entity.ErrUnauthorized) {
+	if errors.Is(err, notificationmodule.ErrUnauthorized) || errors.Is(err, usermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "UNAUTHORIZED",

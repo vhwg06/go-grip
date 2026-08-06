@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/google/uuid"
 )
 
@@ -20,8 +19,8 @@ type CatalogUseCase interface {
 	ListCategories(ctx context.Context) ([]Category, error)
 	CreateTag(ctx context.Context, tag Tag) (Tag, error)
 	ListTags(ctx context.Context) ([]Tag, error)
-	ListVisibleProducts(ctx context.Context, actor usermodule.Actor, filter ProductFilter) ([]Product, int, error)
-	GetVisibleProduct(ctx context.Context, actor usermodule.Actor, productID string) (Product, error)
+	ListVisibleProducts(ctx context.Context, actor Actor, filter ProductFilter) ([]Product, int, error)
+	GetVisibleProduct(ctx context.Context, actor Actor, productID string) (Product, error)
 	ListPublicSettings(ctx context.Context) ([]Setting, error)
 	GetPublicSetting(ctx context.Context, key string) (Setting, error)
 }
@@ -54,7 +53,7 @@ func (uc *catalogUseCase) CreateProduct(ctx context.Context, product Product) (P
 func (uc *catalogUseCase) ListProducts(ctx context.Context, filter ProductFilter) ([]Product, int, error) {
 	page := filter.Pagination.Normalize()
 	if uc.gripRepo != nil {
-		items, total, err := uc.gripRepo.ListVisibleProducts(ctx, usermodule.Actor{IsAdmin: true}, ProductRepoFilter{
+		items, total, err := uc.gripRepo.ListVisibleProducts(ctx, Actor{IsAdmin: true}, ProductRepoFilter{
 			Keyword: filter.Keyword, Category: filter.CategoryID, Brand: filter.Brand, MinPrice: filter.MinPrice, MaxPrice: filter.MaxPrice,
 			Sort: filter.Sort, Limit: uint64(page.Limit), Offset: uint64(page.Offset),
 		})
@@ -75,7 +74,7 @@ func (uc *catalogUseCase) ListProducts(ctx context.Context, filter ProductFilter
 
 func (uc *catalogUseCase) GetProduct(ctx context.Context, id string) (Product, error) {
 	if uc.gripRepo != nil {
-		p, err := uc.gripRepo.GetVisibleProduct(ctx, usermodule.Actor{IsAdmin: true}, id)
+		p, err := uc.gripRepo.GetVisibleProduct(ctx, Actor{IsAdmin: true}, id)
 		if err == nil {
 			return p, nil
 		}
@@ -123,7 +122,7 @@ func (uc *catalogUseCase) ListTags(ctx context.Context) ([]Tag, error) {
 	return uc.repo.ListTags(ctx)
 }
 
-func (uc *catalogUseCase) ListVisibleProducts(ctx context.Context, actor usermodule.Actor, filter ProductFilter) ([]Product, int, error) {
+func (uc *catalogUseCase) ListVisibleProducts(ctx context.Context, actor Actor, filter ProductFilter) ([]Product, int, error) {
 	if uc.gripRepo == nil {
 		return nil, 0, ErrNotFound
 	}
@@ -150,7 +149,7 @@ func (uc *catalogUseCase) ListVisibleProducts(ctx context.Context, actor usermod
 	return items, total, nil
 }
 
-func (uc *catalogUseCase) GetVisibleProduct(ctx context.Context, actor usermodule.Actor, productID string) (Product, error) {
+func (uc *catalogUseCase) GetVisibleProduct(ctx context.Context, actor Actor, productID string) (Product, error) {
 	if uc.gripRepo == nil {
 		return Product{}, ErrNotFound
 	}

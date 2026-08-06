@@ -1,11 +1,12 @@
 package lead
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	leadmodule "github.com/evrone/go-clean-template/internal/module/lead"
 )
 
@@ -16,7 +17,7 @@ func mapLeadError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, leadmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, leadmodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "LEAD_NOT_FOUND",
@@ -25,7 +26,7 @@ func mapLeadError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",
@@ -34,7 +35,7 @@ func mapLeadError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusBadRequest, resp
 	}
 
-	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, entity.ErrUnauthorized) {
+	if errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, usermodule.ErrUnauthorized) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",

@@ -48,7 +48,7 @@ func (h *Handler) GetCheckoutPreview(ctx context.Context, request openapi.GetChe
 		quantity = *request.Params.Quantity
 	}
 
-	breakdown, err := h.checkoutUC.Preview(ctx, actor, productID, quantity)
+	breakdown, err := h.checkoutUC.Preview(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, productID, quantity)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
@@ -81,7 +81,7 @@ func (h *Handler) PreviewCheckout(ctx context.Context, request openapi.PreviewCh
 		quantity = request.Body.Quantity
 	}
 
-	breakdown, err := h.checkoutUC.Preview(ctx, actor, productID, quantity)
+	breakdown, err := h.checkoutUC.Preview(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, productID, quantity)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
@@ -115,7 +115,7 @@ func (h *Handler) CreateCheckoutOrder(ctx context.Context, request openapi.Creat
 	}
 	email := request.Body.Email
 
-	orderEntity, err := h.checkoutUC.CreateOrder(ctx, actor, productID, quantity, email)
+	orderEntity, err := h.checkoutUC.CreateOrder(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, productID, quantity, email)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
@@ -141,7 +141,7 @@ func (h *Handler) GetPaymentParams(ctx context.Context, request openapi.GetPayme
 		return openapi.GetPaymentParams401JSONResponse{}, nil
 	}
 
-	params, err := h.checkoutUC.PaymentParams(ctx, actor, request.OrderId)
+	params, err := h.checkoutUC.PaymentParams(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.OrderId)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {
@@ -169,7 +169,7 @@ func (h *Handler) PostPaymentParams(ctx context.Context, request openapi.PostPay
 		return openapi.PostPaymentParams401JSONResponse{}, nil
 	}
 
-	params, err := h.checkoutUC.PaymentParams(ctx, actor, request.OrderId)
+	params, err := h.checkoutUC.PaymentParams(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.OrderId)
 	if err != nil {
 		status, errResp := mapCheckoutError(err)
 		switch status {

@@ -4,7 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	cartmodule "github.com/evrone/go-clean-template/internal/module/cart"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user" 
 )
 
 // SharedErrorResponse represents the standard HTTP error DTO response.
@@ -20,23 +21,23 @@ func MapSharedError(err error) (int, SharedErrorResponse) {
 		return http.StatusOK, SharedErrorResponse{}
 	}
 
-	if errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, usermodule.ErrInvalidInput) {
 		return http.StatusBadRequest, SharedErrorResponse{Error: "invalid request body"}
 	}
 
-	if errors.Is(err, entity.ErrUnauthorized) || errors.Is(err, entity.ErrInvalidCredentials) {
+	if errors.Is(err, usermodule.ErrUnauthorized) || errors.Is(err, usermodule.ErrInvalidCredentials) {
 		return http.StatusUnauthorized, SharedErrorResponse{Error: "unauthorized"}
 	}
 
-	if errors.Is(err, entity.ErrForbidden) || errors.Is(err, entity.ErrCartBlocked) {
+	if errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, cartmodule.ErrCartBlocked) {
 		return http.StatusForbidden, SharedErrorResponse{Error: "forbidden"}
 	}
 
-	if errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, usermodule.ErrNotFound) {
 		return http.StatusNotFound, SharedErrorResponse{Error: "not found"}
 	}
 
-	if errors.Is(err, entity.ErrRateLimited) {
+	if errors.Is(err, usermodule.ErrForbidden) {
 		return http.StatusTooManyRequests, SharedErrorResponse{Error: "rate limit exceeded"}
 	}
 

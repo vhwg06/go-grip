@@ -18,8 +18,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
 	"github.com/google/uuid"
 )
 
@@ -59,14 +57,14 @@ func ErrorStatus(err error) (int, map[string]any) {
 }
 
 type Service struct {
-	repositories repo.CatalogRepositories
-	unitOfWork   repo.UnitOfWork
+	repositories CatalogRepositories
+	unitOfWork   UnitOfWork
 }
 
 // New creates the Catalog Base application service from explicit CRUD
 // repositories and a transaction coordinator. The service composes the
 // repositories for aggregate reads and coordinates multi-repository writes.
-func New(repositories repo.CatalogRepositories, unitOfWork repo.UnitOfWork) *Service {
+func New(repositories CatalogRepositories, unitOfWork UnitOfWork) *Service {
 	return &Service{repositories: repositories, unitOfWork: unitOfWork}
 }
 
@@ -115,47 +113,47 @@ func (s *Service) validateRepositories() error {
 	return nil
 }
 
-func (s *Service) load(ctx context.Context) (entity.CatalogSnapshot, error) {
+func (s *Service) load(ctx context.Context) (CatalogSnapshot, error) {
 	if err := s.validateRepositories(); err != nil {
-		return entity.CatalogSnapshot{}, err
+		return CatalogSnapshot{}, err
 	}
 	categories, err := s.repositories.Categories.List(ctx)
 	if err != nil {
-		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load categories: %w", err)
+		return CatalogSnapshot{}, fmt.Errorf("catalog base: load categories: %w", err)
 	}
 	definitions, err := s.repositories.Definitions.List(ctx)
 	if err != nil {
-		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load definitions: %w", err)
+		return CatalogSnapshot{}, fmt.Errorf("catalog base: load definitions: %w", err)
 	}
 	masters, err := s.repositories.Masters.List(ctx, "")
 	if err != nil {
-		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load masters: %w", err)
+		return CatalogSnapshot{}, fmt.Errorf("catalog base: load masters: %w", err)
 	}
 	models, err := s.repositories.ProductModels.List(ctx)
 	if err != nil {
-		return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModels: %w", err)
+		return CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModels: %w", err)
 	}
 	for index := range models {
 		images, imageErr := s.repositories.ProductImages.ListByModelID(ctx, models[index].ID)
 		if imageErr != nil {
-			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModel images: %w", imageErr)
+			return CatalogSnapshot{}, fmt.Errorf("catalog base: load ProductModel images: %w", imageErr)
 		}
 		dimensions, dimensionErr := s.repositories.VariantDimensions.ListByModelID(ctx, models[index].ID)
 		if dimensionErr != nil {
-			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load VariantDimensions: %w", dimensionErr)
+			return CatalogSnapshot{}, fmt.Errorf("catalog base: load VariantDimensions: %w", dimensionErr)
 		}
 		variants, variantErr := s.repositories.Variants.ListByModelID(ctx, models[index].ID)
 		if variantErr != nil {
-			return entity.CatalogSnapshot{}, fmt.Errorf("catalog base: load Variants: %w", variantErr)
+			return CatalogSnapshot{}, fmt.Errorf("catalog base: load Variants: %w", variantErr)
 		}
 		models[index].Images = images
 		models[index].Dimensions = dimensions
 		models[index].Variants = variants
 	}
-	return entity.CatalogSnapshot{Categories: categories, Definitions: definitions, Masters: masters, Models: models}, nil
+	return CatalogSnapshot{Categories: categories, Definitions: definitions, Masters: masters, Models: models}, nil
 }
 
-func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) error {
+func (s *Service) save(ctx context.Context, snapshot CatalogSnapshot) error {
 	if err := s.validateRepositories(); err != nil {
 		return err
 	}
@@ -167,7 +165,7 @@ func (s *Service) save(ctx context.Context, snapshot entity.CatalogSnapshot) err
 	})
 }
 
-func persistSnapshot(ctx context.Context, repositories repo.CatalogRepositories, snapshot entity.CatalogSnapshot) error {
+func persistSnapshot(ctx context.Context, repositories CatalogRepositories, snapshot CatalogSnapshot) error {
 	if err := clearSnapshot(ctx, repositories); err != nil {
 		return err
 	}
@@ -207,7 +205,7 @@ func persistSnapshot(ctx context.Context, repositories repo.CatalogRepositories,
 	return nil
 }
 
-func clearSnapshot(ctx context.Context, repositories repo.CatalogRepositories) error {
+func clearSnapshot(ctx context.Context, repositories CatalogRepositories) error {
 	models, err := repositories.ProductModels.List(ctx)
 	if err != nil {
 		return fmt.Errorf("catalog base: list ProductModels for replacement: %w", err)
@@ -254,11 +252,11 @@ func clearSnapshot(ctx context.Context, repositories repo.CatalogRepositories) e
 	return nil
 }
 
-func storeCategories(ctx context.Context, repository repo.CatalogCategoryRepository, categories []entity.CatalogCategory) error {
-	remaining := append([]entity.CatalogCategory(nil), categories...)
+func storeCategories(ctx context.Context, repository CatalogCategoryRepository, categories []CatalogCategory) error {
+	remaining := append([]CatalogCategory(nil), categories...)
 	for len(remaining) > 0 {
 		progress := false
-		next := make([]entity.CatalogCategory, 0, len(remaining))
+		next := make([]CatalogCategory, 0, len(remaining))
 		for _, category := range remaining {
 			if category.ParentID != nil && containsCategory(remaining, *category.ParentID) {
 				next = append(next, category)
@@ -277,11 +275,11 @@ func storeCategories(ctx context.Context, repository repo.CatalogCategoryReposit
 	return nil
 }
 
-func deleteCategories(ctx context.Context, repository repo.CatalogCategoryRepository, categories []entity.CatalogCategory) error {
-	remaining := append([]entity.CatalogCategory(nil), categories...)
+func deleteCategories(ctx context.Context, repository CatalogCategoryRepository, categories []CatalogCategory) error {
+	remaining := append([]CatalogCategory(nil), categories...)
 	for len(remaining) > 0 {
 		progress := false
-		next := make([]entity.CatalogCategory, 0, len(remaining))
+		next := make([]CatalogCategory, 0, len(remaining))
 		for _, category := range remaining {
 			hasChild := false
 			for _, candidate := range remaining {
@@ -307,7 +305,7 @@ func deleteCategories(ctx context.Context, repository repo.CatalogCategoryReposi
 	return nil
 }
 
-func containsCategory(categories []entity.CatalogCategory, id string) bool {
+func containsCategory(categories []CatalogCategory, id string) bool {
 	for _, category := range categories {
 		if category.ID == id {
 			return true
@@ -316,7 +314,7 @@ func containsCategory(categories []entity.CatalogCategory, id string) bool {
 	return false
 }
 
-func findCategory(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogCategory, error) {
+func findCategory(snapshot *CatalogSnapshot, id string) (*CatalogCategory, error) {
 	for index := range snapshot.Categories {
 		if snapshot.Categories[index].ID == id {
 			return &snapshot.Categories[index], nil
@@ -325,7 +323,7 @@ func findCategory(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogC
 	return nil, notFound("category not found")
 }
 
-func findDefinition(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogAttributeDefinition, error) {
+func findDefinition(snapshot *CatalogSnapshot, id string) (*CatalogAttributeDefinition, error) {
 	for index := range snapshot.Definitions {
 		if snapshot.Definitions[index].ID == id {
 			return &snapshot.Definitions[index], nil
@@ -334,7 +332,7 @@ func findDefinition(snapshot *entity.CatalogSnapshot, id string) (*entity.Catalo
 	return nil, notFound("attribute definition not found")
 }
 
-func findMaster(snapshot *entity.CatalogSnapshot, kind, id string) (*entity.CatalogMaster, error) {
+func findMaster(snapshot *CatalogSnapshot, kind, id string) (*CatalogMaster, error) {
 	for index := range snapshot.Masters {
 		if snapshot.Masters[index].Kind == kind && snapshot.Masters[index].ID == id {
 			return &snapshot.Masters[index], nil
@@ -343,7 +341,7 @@ func findMaster(snapshot *entity.CatalogSnapshot, kind, id string) (*entity.Cata
 	return nil, notFound("catalog master not found")
 }
 
-func findModel(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogProductModel, error) {
+func findModel(snapshot *CatalogSnapshot, id string) (*CatalogProductModel, error) {
 	for index := range snapshot.Models {
 		if snapshot.Models[index].ID == id {
 			return &snapshot.Models[index], nil
@@ -352,7 +350,7 @@ func findModel(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogProd
 	return nil, notFound("ProductModel not found")
 }
 
-func findVariant(snapshot *entity.CatalogSnapshot, id string) (*entity.CatalogVariant, *entity.CatalogProductModel, error) {
+func findVariant(snapshot *CatalogSnapshot, id string) (*CatalogVariant, *CatalogProductModel, error) {
 	for modelIndex := range snapshot.Models {
 		for variantIndex := range snapshot.Models[modelIndex].Variants {
 			if snapshot.Models[modelIndex].Variants[variantIndex].ID == id {
@@ -599,11 +597,11 @@ func canonicalMeasurement(number float64, unit string) (float64, string, string,
 	return value, family, baseUnit, true
 }
 
-func categoryOutput(value entity.CatalogCategory) map[string]any {
+func categoryOutput(value CatalogCategory) map[string]any {
 	return map[string]any{"id": value.ID, "name": value.Name, "slug": value.Slug, "parentId": value.ParentID, "position": value.Position, "active": value.Active}
 }
 
-func definitionOutput(value entity.CatalogAttributeDefinition) map[string]any {
+func definitionOutput(value CatalogAttributeDefinition) map[string]any {
 	result := map[string]any{"id": value.ID, "key": value.Key, "displayName": value.DisplayName, "description": value.Description, "ordering": value.Ordering, "valueKind": value.ValueKind, "active": value.Active, "enumValues": value.EnumValues}
 	if value.DataType != "" {
 		result["dataType"] = value.DataType
@@ -620,7 +618,7 @@ func definitionOutput(value entity.CatalogAttributeDefinition) map[string]any {
 	return result
 }
 
-func masterOutput(value entity.CatalogMaster) map[string]any {
+func masterOutput(value CatalogMaster) map[string]any {
 	result := map[string]any{"id": value.ID, "kind": value.Kind, "name": value.Name, "description": value.Description, "swatchMedia": value.SwatchMedia, "sellingUnit": value.SellingUnit, "baseUnit": value.BaseUnit, "active": value.Active}
 	if value.Quantity != nil {
 		result["quantity"] = *value.Quantity
@@ -628,7 +626,7 @@ func masterOutput(value entity.CatalogMaster) map[string]any {
 	return result
 }
 
-func dimensionOutput(snapshot *entity.CatalogSnapshot, modelID string, dimension entity.CatalogVariantDimension) (map[string]any, error) {
+func dimensionOutput(snapshot *CatalogSnapshot, modelID string, dimension CatalogVariantDimension) (map[string]any, error) {
 	definition, err := findDefinition(snapshot, dimension.DefinitionID)
 	if err != nil {
 		return nil, err
@@ -636,7 +634,7 @@ func dimensionOutput(snapshot *entity.CatalogSnapshot, modelID string, dimension
 	return map[string]any{"id": dimension.ID, "definitionId": dimension.DefinitionID, "key": definition.DisplayName, "allowedValues": dimension.AllowedValues, "modelId": modelID}, nil
 }
 
-func variantOutput(value entity.CatalogVariant) map[string]any {
+func variantOutput(value CatalogVariant) map[string]any {
 	selectedOptions := make(map[string]any, len(value.SelectedOptions))
 	for key, option := range value.SelectedOptions {
 		selectedOptions[key] = option
@@ -661,7 +659,7 @@ type catalogSpecification struct {
 // the display projection consumed by product detail. Stored attribute maps
 // remain canonical and unchanged; inactive referenced vocabulary stays
 // readable because deactivation is explicitly non-destructive.
-func specificationOutput(snapshot *entity.CatalogSnapshot, model entity.CatalogProductModel) ([]map[string]any, error) {
+func specificationOutput(snapshot *CatalogSnapshot, model CatalogProductModel) ([]map[string]any, error) {
 	items := make([]catalogSpecification, 0, len(model.FixedAttributes)+len(model.Measurements))
 	for key, rawValue := range model.FixedAttributes {
 		item, err := fixedSpecification(snapshot, key, rawValue)
@@ -702,7 +700,7 @@ func specificationOutput(snapshot *entity.CatalogSnapshot, model entity.CatalogP
 	return result, nil
 }
 
-func fixedSpecification(snapshot *entity.CatalogSnapshot, key string, rawValue any) (catalogSpecification, error) {
+func fixedSpecification(snapshot *CatalogSnapshot, key string, rawValue any) (catalogSpecification, error) {
 	definition, err := fixedAttributeDefinition(snapshot, key)
 	if err != nil {
 		kind := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(key)), "id")
@@ -731,7 +729,7 @@ func fixedSpecification(snapshot *entity.CatalogSnapshot, key string, rawValue a
 	}, nil
 }
 
-func definitionValueText(snapshot *entity.CatalogSnapshot, definition *entity.CatalogAttributeDefinition, rawValue any) (string, error) {
+func definitionValueText(snapshot *CatalogSnapshot, definition *CatalogAttributeDefinition, rawValue any) (string, error) {
 	raw := strings.TrimSpace(fmt.Sprint(rawValue))
 	switch definition.ValueKind {
 	case "Reference":
@@ -772,7 +770,7 @@ func catalogValueText(rawValue any, fallbackUnit string) string {
 	return value
 }
 
-func definitionByKey(snapshot *entity.CatalogSnapshot, key string) *entity.CatalogAttributeDefinition {
+func definitionByKey(snapshot *CatalogSnapshot, key string) *CatalogAttributeDefinition {
 	for index := range snapshot.Definitions {
 		definition := &snapshot.Definitions[index]
 		if strings.EqualFold(definition.Key, key) || strings.EqualFold(definition.DisplayName, key) {
@@ -804,7 +802,7 @@ func humanizeCatalogKey(key string) string {
 	return string(runes)
 }
 
-func modelOutput(snapshot *entity.CatalogSnapshot, value entity.CatalogProductModel, public bool) (map[string]any, error) {
+func modelOutput(snapshot *CatalogSnapshot, value CatalogProductModel, public bool) (map[string]any, error) {
 	result := map[string]any{"id": value.ID, "name": value.Name, "categoryId": value.CategoryID, "description": value.Description, "fixedAttributes": jsonMap(value.FixedAttributes), "measurements": jsonMap(value.Measurements), "status": value.Status, "images": []map[string]any{}, "variants": []map[string]any{}, "variantDimensions": []map[string]any{}, "warrantySummary": value.WarrantySummary}
 	specs, err := specificationOutput(snapshot, value)
 	if err != nil {
@@ -838,7 +836,7 @@ func modelOutput(snapshot *entity.CatalogSnapshot, value entity.CatalogProductMo
 	return result, nil
 }
 
-func (s *Service) activeMaster(snapshot *entity.CatalogSnapshot, kind, id string) error {
+func (s *Service) activeMaster(snapshot *CatalogSnapshot, kind, id string) error {
 	master, err := findMaster(snapshot, kind, id)
 	if err != nil {
 		return err
@@ -849,7 +847,7 @@ func (s *Service) activeMaster(snapshot *entity.CatalogSnapshot, kind, id string
 	return nil
 }
 
-func (s *Service) validateFixedAttributes(snapshot *entity.CatalogSnapshot, input map[string]any) error {
+func (s *Service) validateFixedAttributes(snapshot *CatalogSnapshot, input map[string]any) error {
 	fixed := recordMapValue(input, "fixedAttributes", "fixed_attributes")
 	for key, rawValue := range fixed {
 		definition, definitionErr := fixedAttributeDefinition(snapshot, key)
@@ -894,7 +892,7 @@ func (s *Service) validateFixedAttributes(snapshot *entity.CatalogSnapshot, inpu
 	return nil
 }
 
-func fixedAttributeDefinition(snapshot *entity.CatalogSnapshot, key string) (*entity.CatalogAttributeDefinition, error) {
+func fixedAttributeDefinition(snapshot *CatalogSnapshot, key string) (*CatalogAttributeDefinition, error) {
 	if uuidPattern.MatchString(key) {
 		return findDefinition(snapshot, key)
 	}
@@ -907,7 +905,7 @@ func fixedAttributeDefinition(snapshot *entity.CatalogSnapshot, key string) (*en
 	return nil, notFound("attribute definition not found")
 }
 
-func enumValueMatches(values []entity.CatalogEnumValue, raw string) bool {
+func enumValueMatches(values []CatalogEnumValue, raw string) bool {
 	for _, value := range values {
 		if value.Active && (value.ID == raw || strings.EqualFold(value.Key, raw) || strings.EqualFold(normalizeText(value.Label), normalizeText(raw))) {
 			return true
@@ -916,7 +914,7 @@ func enumValueMatches(values []entity.CatalogEnumValue, raw string) bool {
 	return false
 }
 
-func validateScalarValue(definition *entity.CatalogAttributeDefinition, raw any) error {
+func validateScalarValue(definition *CatalogAttributeDefinition, raw any) error {
 	switch definition.DataType {
 	case "Text":
 		if strings.TrimSpace(fmt.Sprint(raw)) == "" {
@@ -947,7 +945,7 @@ func validateScalarValue(definition *entity.CatalogAttributeDefinition, raw any)
 	return nil
 }
 
-func (s *Service) findActiveMasterByValue(snapshot *entity.CatalogSnapshot, kind, value string) (*entity.CatalogMaster, error) {
+func (s *Service) findActiveMasterByValue(snapshot *CatalogSnapshot, kind, value string) (*CatalogMaster, error) {
 	for index := range snapshot.Masters {
 		master := &snapshot.Masters[index]
 		if master.Kind != kind {
@@ -968,7 +966,7 @@ func recordMapValue(input map[string]any, names ...string) map[string]any {
 	return recordMap(value)
 }
 
-func (s *Service) validateModelInput(snapshot *entity.CatalogSnapshot, input map[string]any, existing *entity.CatalogProductModel) error {
+func (s *Service) validateModelInput(snapshot *CatalogSnapshot, input map[string]any, existing *CatalogProductModel) error {
 	categoryID := stringValue(input, "categoryId", "category_id")
 	if categoryID != "" {
 		category, err := findCategory(snapshot, categoryID)
@@ -1001,7 +999,7 @@ func (s *Service) validateModelInput(snapshot *entity.CatalogSnapshot, input map
 	return err
 }
 
-func fixedDimensionScopeConflict(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, fixed map[string]any) error {
+func fixedDimensionScopeConflict(snapshot *CatalogSnapshot, model *CatalogProductModel, fixed map[string]any) error {
 	if len(fixed) == 0 || len(model.Dimensions) == 0 {
 		return nil
 	}
@@ -1061,7 +1059,7 @@ func (s *Service) CreateCategory(ctx context.Context, input map[string]any) (map
 		}
 		parentID = &value
 	}
-	value := entity.CatalogCategory{ID: uuid.NewString(), Name: name, Slug: slug, ParentID: parentID, Position: intValue(input, 0, "position"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
+	value := CatalogCategory{ID: uuid.NewString(), Name: name, Slug: slug, ParentID: parentID, Position: intValue(input, 0, "position"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
 	snapshot.Categories = append(snapshot.Categories, value)
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1169,7 +1167,7 @@ func (s *Service) CreateDefinition(ctx context.Context, input map[string]any) (m
 			return nil, conflict("attribute key already exists")
 		}
 	}
-	value := entity.CatalogAttributeDefinition{ID: uuid.NewString(), Key: key, DisplayName: stringValue(input, "displayName", "display_name"), Description: stringValue(input, "description"), Ordering: intValue(input, 0, "ordering"), ValueKind: valueKind, DataType: dataType, ReferenceTarget: referenceTarget, UnitFamily: unitFamily, Unit: unit, Active: boolValue(input, true, "active"), EnumValues: []entity.CatalogEnumValue{}, CreatedAt: now(), UpdatedAt: now()}
+	value := CatalogAttributeDefinition{ID: uuid.NewString(), Key: key, DisplayName: stringValue(input, "displayName", "display_name"), Description: stringValue(input, "description"), Ordering: intValue(input, 0, "ordering"), ValueKind: valueKind, DataType: dataType, ReferenceTarget: referenceTarget, UnitFamily: unitFamily, Unit: unit, Active: boolValue(input, true, "active"), EnumValues: []CatalogEnumValue{}, CreatedAt: now(), UpdatedAt: now()}
 	if value.DisplayName == "" {
 		value.DisplayName = key
 	}
@@ -1180,7 +1178,7 @@ func (s *Service) CreateDefinition(ctx context.Context, input map[string]any) (m
 	return definitionOutput(value), nil
 }
 
-func definitionUsed(snapshot entity.CatalogSnapshot, id string) bool {
+func definitionUsed(snapshot CatalogSnapshot, id string) bool {
 	for _, model := range snapshot.Models {
 		if _, ok := model.FixedAttributes[id]; ok {
 			return true
@@ -1280,7 +1278,7 @@ func (s *Service) AddEnumValue(ctx context.Context, definitionID string, input m
 			return nil, conflict("enum key already exists")
 		}
 	}
-	item := entity.CatalogEnumValue{ID: uuid.NewString(), Key: key, Label: label, Active: boolValue(input, true, "active")}
+	item := CatalogEnumValue{ID: uuid.NewString(), Key: key, Label: label, Active: boolValue(input, true, "active")}
 	definition.EnumValues = append(definition.EnumValues, item)
 	definition.UpdatedAt = now()
 	if err := s.save(ctx, snapshot); err != nil {
@@ -1379,7 +1377,7 @@ func (s *Service) CreateMaster(ctx context.Context, kind string, input map[strin
 			media = append(media, fmt.Sprint(item))
 		}
 	}
-	value := entity.CatalogMaster{ID: uuid.NewString(), Kind: kind, Name: name, Description: stringValue(input, "description"), SwatchMedia: media, SellingUnit: stringValue(input, "sellingUnit", "selling_unit"), Quantity: quantity, BaseUnit: stringValue(input, "baseUnit", "base_unit"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
+	value := CatalogMaster{ID: uuid.NewString(), Kind: kind, Name: name, Description: stringValue(input, "description"), SwatchMedia: media, SellingUnit: stringValue(input, "sellingUnit", "selling_unit"), Quantity: quantity, BaseUnit: stringValue(input, "baseUnit", "base_unit"), Active: boolValue(input, true, "active"), CreatedAt: now(), UpdatedAt: now()}
 	snapshot.Masters = append(snapshot.Masters, value)
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1471,7 +1469,7 @@ func (s *Service) CreateModel(ctx context.Context, input map[string]any) (map[st
 		return nil, err
 	}
 	fixedPackID := optionalString(input, "fixedPackId", "fixed_pack_id")
-	value := entity.CatalogProductModel{ID: uuid.NewString(), Name: name, CategoryID: categoryID, Description: stringValue(input, "description"), WarrantySummary: warranty, FixedAttributes: recordMapValue(input, "fixedAttributes", "fixed_attributes"), FixedPackID: fixedPackID, Measurements: recordMapValue(input, "measurements"), Status: entity.CatalogDraft, Images: []entity.CatalogProductImage{}, Dimensions: []entity.CatalogVariantDimension{}, Variants: []entity.CatalogVariant{}, CreatedAt: now(), UpdatedAt: now()}
+	value := CatalogProductModel{ID: uuid.NewString(), Name: name, CategoryID: categoryID, Description: stringValue(input, "description"), WarrantySummary: warranty, FixedAttributes: recordMapValue(input, "fixedAttributes", "fixed_attributes"), FixedPackID: fixedPackID, Measurements: recordMapValue(input, "measurements"), Status: CatalogDraft, Images: []CatalogProductImage{}, Dimensions: []CatalogVariantDimension{}, Variants: []CatalogVariant{}, CreatedAt: now(), UpdatedAt: now()}
 	snapshot.Models = append(snapshot.Models, value)
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1528,7 +1526,7 @@ func (s *Service) UpdateModel(ctx context.Context, id string, input map[string]a
 	if err != nil {
 		return nil, err
 	}
-	if value.Status == entity.CatalogDiscontinued && (stringValue(input, "status") != entity.CatalogDiscontinued || boolValue(input, false, "is_active")) {
+	if value.Status == CatalogDiscontinued && (stringValue(input, "status") != CatalogDiscontinued || boolValue(input, false, "is_active")) {
 		return nil, conflict("Discontinued ProductModel is terminal")
 	}
 	if err := s.validateModelInput(&snapshot, input, value); err != nil {
@@ -1565,15 +1563,15 @@ func (s *Service) UpdateModel(ctx context.Context, id string, input map[string]a
 		value.WarrantySummary = warranty
 	}
 	if status := stringValue(input, "status"); status != "" {
-		if status != entity.CatalogDraft && status != entity.CatalogActive && status != entity.CatalogInactive && status != entity.CatalogDiscontinued {
+		if status != CatalogDraft && status != CatalogActive && status != CatalogInactive && status != CatalogDiscontinued {
 			return nil, bad("unsupported ProductModel status")
 		}
-		if value.Status == entity.CatalogDiscontinued && status != entity.CatalogDiscontinued {
+		if value.Status == CatalogDiscontinued && status != CatalogDiscontinued {
 			return nil, conflict("Discontinued ProductModel is terminal")
 		}
 		value.Status = status
 	}
-	if value.Status == entity.CatalogActive {
+	if value.Status == CatalogActive {
 		if !value.HasPrimaryImage() {
 			return nil, conflict("Active ProductModel requires exactly one primary model image")
 		}
@@ -1602,7 +1600,7 @@ func (s *Service) PublishModel(ctx context.Context, id string) (map[string]any, 
 	if err != nil {
 		return nil, err
 	}
-	if value.Status == entity.CatalogDiscontinued {
+	if value.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot be published")
 	}
 	if !value.HasPrimaryImage() {
@@ -1611,7 +1609,7 @@ func (s *Service) PublishModel(ctx context.Context, id string) (map[string]any, 
 	if value.SaleReadyVariantCount() == 0 {
 		return nil, conflict("ProductModel requires a sale-ready Variant")
 	}
-	value.Status, value.UpdatedAt = entity.CatalogActive, now()
+	value.Status, value.UpdatedAt = CatalogActive, now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
@@ -1627,10 +1625,10 @@ func (s *Service) UnpublishModel(ctx context.Context, id string) (map[string]any
 	if err != nil {
 		return nil, err
 	}
-	if value.Status == entity.CatalogDiscontinued {
+	if value.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel is terminal")
 	}
-	value.Status, value.UpdatedAt = entity.CatalogInactive, now()
+	value.Status, value.UpdatedAt = CatalogInactive, now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
@@ -1646,10 +1644,10 @@ func (s *Service) DiscontinueModel(ctx context.Context, id string) (map[string]a
 	if err != nil {
 		return nil, err
 	}
-	if value.Status == entity.CatalogDiscontinued {
+	if value.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel is terminal")
 	}
-	value.Status, value.UpdatedAt = entity.CatalogDiscontinued, now()
+	value.Status, value.UpdatedAt = CatalogDiscontinued, now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
@@ -1677,7 +1675,7 @@ func (s *Service) ReplaceMedia(ctx context.Context, modelID string, input map[st
 	if items == nil {
 		return nil, bad("images must be an array")
 	}
-	images := make([]entity.CatalogProductImage, 0, len(items))
+	images := make([]CatalogProductImage, 0, len(items))
 	primaryCount := 0
 	for _, item := range items {
 		image := recordMap(item)
@@ -1689,9 +1687,9 @@ func (s *Service) ReplaceMedia(ctx context.Context, modelID string, input map[st
 		if primary {
 			primaryCount++
 		}
-		images = append(images, entity.CatalogProductImage{ID: uuid.NewString(), URL: url, Ordering: intValue(image, 0, "ordering"), PrimaryImage: primary, CreatedAt: now()})
+		images = append(images, CatalogProductImage{ID: uuid.NewString(), URL: url, Ordering: intValue(image, 0, "ordering"), PrimaryImage: primary, CreatedAt: now()})
 	}
-	if primaryCount > 1 || (value.Status == entity.CatalogActive && primaryCount != 1) {
+	if primaryCount > 1 || (value.Status == CatalogActive && primaryCount != 1) {
 		return nil, conflict("ProductModel requires exactly one primary model image")
 	}
 	value.Images = images
@@ -1704,12 +1702,12 @@ func (s *Service) ReplaceMedia(ctx context.Context, modelID string, input map[st
 
 // Variant dimensions ---------------------------------------------------------
 
-func decodeDimensionValues(value any) ([]entity.CatalogDimensionValue, error) {
+func decodeDimensionValues(value any) ([]CatalogDimensionValue, error) {
 	items := recordSlice(value)
 	if items == nil {
 		return nil, bad("allowedValues must be an array")
 	}
-	values := make([]entity.CatalogDimensionValue, 0, len(items))
+	values := make([]CatalogDimensionValue, 0, len(items))
 	seen := map[string]struct{}{}
 	for _, item := range items {
 		object := recordMap(item)
@@ -1721,12 +1719,12 @@ func decodeDimensionValues(value any) ([]entity.CatalogDimensionValue, error) {
 			return nil, conflict("duplicate dimension value")
 		}
 		seen[id] = struct{}{}
-		values = append(values, entity.CatalogDimensionValue{ID: id, Label: label, Active: boolValue(object, true, "active")})
+		values = append(values, CatalogDimensionValue{ID: id, Label: label, Active: boolValue(object, true, "active")})
 	}
 	return values, nil
 }
 
-func findDimension(model *entity.CatalogProductModel, id string) (*entity.CatalogVariantDimension, error) {
+func findDimension(model *CatalogProductModel, id string) (*CatalogVariantDimension, error) {
 	for index := range model.Dimensions {
 		if model.Dimensions[index].ID == id {
 			return &model.Dimensions[index], nil
@@ -1763,7 +1761,7 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 	if _, exists := model.FixedAttributes[definitionID]; exists {
 		return nil, conflict("a fixed attribute cannot also be a VariantDimension")
 	}
-	values := []entity.CatalogDimensionValue{}
+	values := []CatalogDimensionValue{}
 	if raw, ok := mapValue(input, "allowedValues", "allowed_values"); ok {
 		values, err = decodeDimensionValues(raw)
 		if err != nil {
@@ -1771,7 +1769,7 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 		}
 	} else {
 		for _, value := range definition.EnumValues {
-			values = append(values, entity.CatalogDimensionValue{ID: value.ID, Label: value.Label, Active: value.Active})
+			values = append(values, CatalogDimensionValue{ID: value.ID, Label: value.Label, Active: value.Active})
 		}
 	}
 	if len(values) == 0 {
@@ -1784,7 +1782,7 @@ func (s *Service) CreateDimension(ctx context.Context, modelID string, input map
 			}
 		}
 	}
-	dimension := entity.CatalogVariantDimension{ID: uuid.NewString(), DefinitionID: definitionID, AllowedValues: values, CreatedAt: now(), UpdatedAt: now()}
+	dimension := CatalogVariantDimension{ID: uuid.NewString(), DefinitionID: definitionID, AllowedValues: values, CreatedAt: now(), UpdatedAt: now()}
 	model.Dimensions = append(model.Dimensions, dimension)
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1901,7 +1899,7 @@ func (s *Service) AddDimensionValue(ctx context.Context, modelID, dimensionID st
 			return nil, err
 		}
 	}
-	dimension.AllowedValues = append(dimension.AllowedValues, entity.CatalogDimensionValue{ID: id, Label: label, Active: boolValue(input, true, "active")})
+	dimension.AllowedValues = append(dimension.AllowedValues, CatalogDimensionValue{ID: id, Label: label, Active: boolValue(input, true, "active")})
 	dimension.UpdatedAt = now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
@@ -1937,7 +1935,7 @@ func (s *Service) DeactivateDimensionValue(ctx context.Context, modelID, dimensi
 
 // Variants -------------------------------------------------------------------
 
-func (s *Service) normalizeSelection(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, input map[string]string) (map[string]string, string, error) {
+func (s *Service) normalizeSelection(snapshot *CatalogSnapshot, model *CatalogProductModel, input map[string]string) (map[string]string, string, error) {
 	if len(model.Dimensions) == 0 {
 		return nil, "", bad("ProductModel has no VariantDimensions")
 	}
@@ -2013,7 +2011,7 @@ func (s *Service) normalizeSelection(snapshot *entity.CatalogSnapshot, model *en
 	return selected, strings.Join(parts, "|"), nil
 }
 
-func parsePrice(input map[string]any, names ...string) (*entity.CatalogMoney, bool, error) {
+func parsePrice(input map[string]any, names ...string) (*CatalogMoney, bool, error) {
 	value, ok := mapValue(input, names...)
 	if !ok {
 		return nil, false, nil
@@ -2028,15 +2026,15 @@ func parsePrice(input map[string]any, names ...string) (*entity.CatalogMoney, bo
 		return nil, true, bad("sellingPrice must be a positive VND amount")
 	}
 	integer := int64(amount)
-	return &entity.CatalogMoney{Amount: integer, Currency: currency}, true, nil
+	return &CatalogMoney{Amount: integer, Currency: currency}, true, nil
 }
 
-func appendHistory(history []entity.CatalogHistoryEntry, action string) []entity.CatalogHistoryEntry {
-	result := append([]entity.CatalogHistoryEntry{}, history...)
-	return append(result, entity.CatalogHistoryEntry{Action: action, At: now()})
+func appendHistory(history []CatalogHistoryEntry, action string) []CatalogHistoryEntry {
+	result := append([]CatalogHistoryEntry{}, history...)
+	return append(result, CatalogHistoryEntry{Action: action, At: now()})
 }
 
-func (s *Service) validatePackAssignment(snapshot *entity.CatalogSnapshot, model *entity.CatalogProductModel, selected map[string]string, requested *string) (*string, error) {
+func (s *Service) validatePackAssignment(snapshot *CatalogSnapshot, model *CatalogProductModel, selected map[string]string, requested *string) (*string, error) {
 	packID := requested
 	if packID == nil && model.FixedPackID != nil {
 		packID = model.FixedPackID
@@ -2063,7 +2061,7 @@ func (s *Service) validatePackAssignment(snapshot *entity.CatalogSnapshot, model
 	return packID, nil
 }
 
-func normalizeSKU(snapshot entity.CatalogSnapshot, value, currentID string) (string, error) {
+func normalizeSKU(snapshot CatalogSnapshot, value, currentID string) (string, error) {
 	sku := strings.ToLower(strings.TrimSpace(value))
 	if sku == "" {
 		return "", nil
@@ -2087,7 +2085,7 @@ func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[s
 	if err != nil {
 		return nil, err
 	}
-	if model.Status == entity.CatalogDiscontinued {
+	if model.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot receive new Variants")
 	}
 	raw, ok := mapValue(input, "selectedOptions", "selected_options")
@@ -2121,7 +2119,7 @@ func (s *Service) CreateVariant(ctx context.Context, modelID string, input map[s
 		return nil, err
 	}
 	technicalValues := recordMapValue(input, "technicalValues", "technical_values", "variantAttributes", "variant_attributes")
-	variant := entity.CatalogVariant{ID: uuid.NewString(), SelectedOptions: selected, TechnicalValues: technicalValues, SKU: sku, SellingPrice: price, PackID: packID, Status: entity.CatalogVariantActive, CanonicalCombination: canonical, History: appendHistory(nil, "created"), CreatedAt: now(), UpdatedAt: now()}
+	variant := CatalogVariant{ID: uuid.NewString(), SelectedOptions: selected, TechnicalValues: technicalValues, SKU: sku, SellingPrice: price, PackID: packID, Status: CatalogVariantActive, CanonicalCombination: canonical, History: appendHistory(nil, "created"), CreatedAt: now(), UpdatedAt: now()}
 	if !hasPrice {
 		variant.SellingPrice = nil
 	}
@@ -2210,10 +2208,10 @@ func (s *Service) UpdateVariant(ctx context.Context, id string, input map[string
 			variant.PackID = &pack
 		}
 	}
-	if model.Status == entity.CatalogDiscontinued {
+	if model.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot be mutated")
 	}
-	if model.Status == entity.CatalogActive && wasSaleReady && !variant.SaleReady() {
+	if model.Status == CatalogActive && wasSaleReady && !variant.SaleReady() {
 		remainingSaleReady := 0
 		for index := range model.Variants {
 			if model.Variants[index].ID != variant.ID && model.Variants[index].SaleReady() {
@@ -2240,10 +2238,10 @@ func (s *Service) ActivateVariant(ctx context.Context, id string) (map[string]an
 	if err != nil {
 		return nil, err
 	}
-	if model.Status == entity.CatalogDiscontinued {
+	if model.Status == CatalogDiscontinued {
 		return nil, conflict("Discontinued ProductModel cannot receive activated Variants")
 	}
-	variant.Status, variant.History, variant.UpdatedAt = entity.CatalogVariantActive, appendHistory(variant.History, "activated"), now()
+	variant.Status, variant.History, variant.UpdatedAt = CatalogVariantActive, appendHistory(variant.History, "activated"), now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
@@ -2259,10 +2257,10 @@ func (s *Service) InactivateVariant(ctx context.Context, id string) (map[string]
 	if err != nil {
 		return nil, err
 	}
-	if model.Status == entity.CatalogActive && variant.SaleReady() && model.SaleReadyVariantCount() == 1 {
+	if model.Status == CatalogActive && variant.SaleReady() && model.SaleReadyVariantCount() == 1 {
 		return nil, conflict("Active ProductModel must keep one sale-ready Variant")
 	}
-	variant.Status, variant.History, variant.UpdatedAt = entity.CatalogVariantInactive, appendHistory(variant.History, "inactivated"), now()
+	variant.Status, variant.History, variant.UpdatedAt = CatalogVariantInactive, appendHistory(variant.History, "inactivated"), now()
 	if err := s.save(ctx, snapshot); err != nil {
 		return nil, err
 	}
@@ -2293,7 +2291,7 @@ func (s *Service) BulkSetPrice(ctx context.Context, input map[string]any) ([]map
 	for _, item := range items {
 		ids = append(ids, strings.TrimSpace(fmt.Sprint(item)))
 	}
-	variants := make([]*entity.CatalogVariant, 0, len(ids))
+	variants := make([]*CatalogVariant, 0, len(ids))
 	for _, id := range ids {
 		variant, _, findErr := findVariant(&snapshot, id)
 		if findErr != nil {
@@ -2328,8 +2326,8 @@ type PublicFilter struct {
 	Sort       string
 }
 
-func publicVariants(model entity.CatalogProductModel) []entity.CatalogVariant {
-	result := make([]entity.CatalogVariant, 0)
+func publicVariants(model CatalogProductModel) []CatalogVariant {
+	result := make([]CatalogVariant, 0)
 	for _, variant := range model.Variants {
 		if variant.SaleReady() {
 			result = append(result, variant)
@@ -2338,7 +2336,7 @@ func publicVariants(model entity.CatalogProductModel) []entity.CatalogVariant {
 	return result
 }
 
-func priceInRange(variants []entity.CatalogVariant, minPrice, maxPrice *int64) bool {
+func priceInRange(variants []CatalogVariant, minPrice, maxPrice *int64) bool {
 	for _, variant := range variants {
 		if variant.SellingPrice == nil {
 			continue
@@ -2366,7 +2364,7 @@ func mapMatches(value map[string]any, key, expected string) bool {
 	return false
 }
 
-func (s *Service) referenceMatches(snapshot *entity.CatalogSnapshot, fixed map[string]any, key, expected string) (bool, error) {
+func (s *Service) referenceMatches(snapshot *CatalogSnapshot, fixed map[string]any, key, expected string) (bool, error) {
 	if expected == "" || mapMatches(fixed, key, expected) {
 		return true, nil
 	}
@@ -2401,12 +2399,12 @@ func (s *Service) ListPublicModels(ctx context.Context, filter PublicFilter) (ma
 		return nil, err
 	}
 	type candidate struct {
-		model    entity.CatalogProductModel
-		variants []entity.CatalogVariant
+		model    CatalogProductModel
+		variants []CatalogVariant
 	}
 	candidates := make([]candidate, 0)
 	for _, model := range snapshot.Models {
-		if model.Status != entity.CatalogActive || (filter.CategoryID != "" && model.CategoryID != filter.CategoryID) {
+		if model.Status != CatalogActive || (filter.CategoryID != "" && model.CategoryID != filter.CategoryID) {
 			continue
 		}
 		variants := publicVariants(model)
@@ -2485,13 +2483,13 @@ func (s *Service) GetPublicModel(ctx context.Context, id string) (map[string]any
 	if err != nil {
 		return nil, err
 	}
-	if model.Status != entity.CatalogActive || len(publicVariants(*model)) == 0 {
+	if model.Status != CatalogActive || len(publicVariants(*model)) == 0 {
 		return nil, notFound("public ProductModel not found")
 	}
 	return modelOutput(&snapshot, *model, true)
 }
 
-func selectedCompatible(variant entity.CatalogVariant, selected map[string]string) bool {
+func selectedCompatible(variant CatalogVariant, selected map[string]string) bool {
 	for key, value := range selected {
 		found := false
 		for optionKey, optionValue := range variant.SelectedOptions {
@@ -2516,11 +2514,11 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 	if err != nil {
 		return nil, err
 	}
-	if model.Status != entity.CatalogActive {
+	if model.Status != CatalogActive {
 		return nil, notFound("public ProductModel not found")
 	}
 	variants := publicVariants(*model)
-	compatible := make([]entity.CatalogVariant, 0)
+	compatible := make([]CatalogVariant, 0)
 	for _, variant := range variants {
 		if selectedCompatible(variant, selected) {
 			compatible = append(compatible, variant)
@@ -2535,7 +2533,7 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 		if definitionErr != nil {
 			return nil, definitionErr
 		}
-		valueSet := map[string]entity.CatalogDimensionValue{}
+		valueSet := map[string]CatalogDimensionValue{}
 		for _, variant := range compatible {
 			for key, value := range variant.SelectedOptions {
 				if strings.EqualFold(key, definition.DisplayName) {
@@ -2550,7 +2548,7 @@ func (s *Service) AvailableOptions(ctx context.Context, modelID string, selected
 				}
 			}
 		}
-		values := make([]entity.CatalogDimensionValue, 0, len(valueSet))
+		values := make([]CatalogDimensionValue, 0, len(valueSet))
 		for _, value := range valueSet {
 			values = append(values, value)
 		}
@@ -2575,7 +2573,7 @@ func (s *Service) ResolvePublicVariant(ctx context.Context, modelID string, sele
 	if err != nil {
 		return nil, err
 	}
-	if model.Status != entity.CatalogActive {
+	if model.Status != CatalogActive {
 		return nil, notFound("public Variant not found")
 	}
 	variants := publicVariants(*model)

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/pkg/logger"
 )
@@ -114,7 +113,7 @@ func (h *Handler) RefreshToken(ctx context.Context, request openapi.RefreshToken
 
 func getActor(ctx context.Context) usermodule.Actor {
 	if val := ctx.Value("actor"); val != nil {
-		if a, ok := val.(entity.Actor); ok {
+		if a, ok := val.(usermodule.Actor); ok {
 			return usermodule.Actor{UserID: a.UserID, Username: a.Username, IsAdmin: a.IsAdmin}
 		}
 		if a, ok := val.(usermodule.Actor); ok {

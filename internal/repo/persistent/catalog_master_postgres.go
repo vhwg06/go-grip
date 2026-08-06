@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -29,10 +28,10 @@ func newCatalogMasterRepo(db *gorm.DB) *CatalogMasterRepo {
 	return &CatalogMasterRepo{db: db}
 }
 
-var _ repo.CatalogMasterRepository = (*CatalogMasterRepo)(nil)
+var _ catalogbase.CatalogMasterRepository = (*CatalogMasterRepo)(nil)
 
 // List returns masters for a kind. An empty kind returns all supported rows.
-func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]entity.CatalogMaster, error) {
+func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]catalogbase.CatalogMaster, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -45,7 +44,7 @@ func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]entity.Cat
 	if err := query.Order("kind ASC, name ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog master repo: list %s: %w", kind, err)
 	}
-	result := make([]entity.CatalogMaster, 0, len(rows))
+	result := make([]catalogbase.CatalogMaster, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, models.MasterToCatalogEntity(row))
 	}
@@ -53,20 +52,20 @@ func (r *CatalogMasterRepo) List(ctx context.Context, kind string) ([]entity.Cat
 }
 
 // GetByID returns one master by kind and identity.
-func (r *CatalogMasterRepo) GetByID(ctx context.Context, kind, id string) (entity.CatalogMaster, error) {
+func (r *CatalogMasterRepo) GetByID(ctx context.Context, kind, id string) (catalogbase.CatalogMaster, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
-		return entity.CatalogMaster{}, err
+		return catalogbase.CatalogMaster{}, err
 	}
 	var row models.CatalogBaseMaster
 	if err := db.WithContext(ctx).Where("kind = ? AND id = ?", kind, id).First(&row).Error; err != nil {
-		return entity.CatalogMaster{}, fmt.Errorf("catalog master repo: get %s/%s: %w", kind, id, err)
+		return catalogbase.CatalogMaster{}, fmt.Errorf("catalog master repo: get %s/%s: %w", kind, id, err)
 	}
 	return models.MasterToCatalogEntity(row), nil
 }
 
 // Store creates one master.
-func (r *CatalogMasterRepo) Store(ctx context.Context, master entity.CatalogMaster) error {
+func (r *CatalogMasterRepo) Store(ctx context.Context, master catalogbase.CatalogMaster) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
@@ -79,7 +78,7 @@ func (r *CatalogMasterRepo) Store(ctx context.Context, master entity.CatalogMast
 }
 
 // Update replaces one master.
-func (r *CatalogMasterRepo) Update(ctx context.Context, master entity.CatalogMaster) error {
+func (r *CatalogMasterRepo) Update(ctx context.Context, master catalogbase.CatalogMaster) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err

@@ -36,3 +36,10 @@ func (o Order) IsTerminal() bool {
 		o.Status == OrderStatusFailed ||
 		o.Status == OrderStatusRefunded
 }
+
+// Actor represents an authenticated user context.
+type Actor struct {
+	UserID   string
+	Username string
+	IsAdmin  bool
+}

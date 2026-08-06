@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
@@ -16,7 +15,7 @@ func mapUserError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "USER_NOT_FOUND",
@@ -25,7 +24,7 @@ func mapUserError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusNotFound, resp
 	}
 
-	if errors.Is(err, entity.ErrUserAlreadyExists) {
+	if errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "USER_ALREADY_EXISTS",
@@ -34,7 +33,7 @@ func mapUserError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusConflict, resp
 	}
 
-	if errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, entity.ErrForbidden) {
+	if errors.Is(err, usermodule.ErrForbidden) || errors.Is(err, usermodule.ErrForbidden) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "FORBIDDEN",
@@ -43,7 +42,7 @@ func mapUserError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusForbidden, resp
 	}
 
-	if errors.Is(err, usermodule.ErrInvalidInput) || errors.Is(err, entity.ErrInvalidInput) {
+	if errors.Is(err, usermodule.ErrInvalidInput) || errors.Is(err, usermodule.ErrInvalidInput) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "INVALID_INPUT",

@@ -47,7 +47,14 @@ type WishlistVote struct {
 }
 
 type ReviewModerationStats struct {
-	PendingCount  int `json:"pending_count"`
-	ApprovedCount int `json:"approved_count"`
-	FlaggedCount  int `json:"flagged_count"`
+	Pending  int `json:"pending"`
+	Featured int `json:"featured"`
+	Hidden   int `json:"hidden"`
+}
+
+// Actor represents an authenticated user context.
+type Actor struct {
+	UserID   string
+	Username string
+	IsAdmin  bool
 }

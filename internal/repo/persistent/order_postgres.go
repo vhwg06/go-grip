@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evrone/go-clean-template/internal/entity"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/evrone/go-clean-template/pkg/postgres"
@@ -68,7 +66,7 @@ func (r *GripOrderRepo) GetOrderByID(ctx context.Context, orderID string) (order
 	return models.OrderToModule(row), nil
 }
 
-func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor usermodule.Actor, orderID string) error {
+func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor ordermodule.Actor, orderID string) error {
 	if r.Postgres == nil || r.Gorm == nil {
 		return nil
 	}
@@ -91,7 +89,7 @@ func (r *GripOrderRepo) CancelPendingOrder(ctx context.Context, actor usermodule
 		return fmt.Errorf("GripOrderRepo.CancelPendingOrder: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return entity.ErrOrderStateConflict
+		return ordermodule.ErrInvalidInput
 	}
 	return nil
 }
@@ -137,7 +135,7 @@ func NewLegacyOrderRepoAdapter(r *GripOrderRepo) *LegacyOrderRepoAdapter {
 	return &LegacyOrderRepoAdapter{Repo: r}
 }
 
-func (a *LegacyOrderRepoAdapter) ListOrdersByOwner(ctx context.Context, userID, email string, page entity.Pagination) ([]entity.Order, int, error) {
+func (a *LegacyOrderRepoAdapter) ListOrdersByOwner(ctx context.Context, userID, email string, page pagination.Pagination) ([]ordermodule.Order, int, error) {
 	if a.Repo == nil {
 		return nil, 0, nil
 	}
@@ -145,45 +143,45 @@ func (a *LegacyOrderRepoAdapter) ListOrdersByOwner(ctx context.Context, userID, 
 	if err != nil {
 		return nil, 0, err
 	}
-	res := make([]entity.Order, len(orders))
+	res := make([]ordermodule.Order, len(orders))
 	for i, o := range orders {
-		res[i] = entity.Order{
+		res[i] = ordermodule.Order{
 			ID:          o.ID,
 			ProductID:   o.ProductID,
 			ProductName: o.ProductName,
-			Amount:      entity.Amount(o.Amount),
-			Status:      entity.OrderStatus(o.Status),
+			Amount:      ordermodule.Amount(o.Amount),
+			Status:      ordermodule.OrderStatus(o.Status),
 		}
 	}
 	return res, total, nil
 }
 
-func (a *LegacyOrderRepoAdapter) GetOrderByID(ctx context.Context, orderID string) (entity.Order, error) {
+func (a *LegacyOrderRepoAdapter) GetOrderByID(ctx context.Context, orderID string) (ordermodule.Order, error) {
 	if a.Repo == nil {
-		return entity.Order{}, entity.ErrOrderNotFound
+		return ordermodule.Order{}, ordermodule.ErrNotFound
 	}
 	o, err := a.Repo.GetOrderByID(ctx, orderID)
 	if err != nil {
-		return entity.Order{}, err
+		return ordermodule.Order{}, err
 	}
-	return entity.Order{
+	return ordermodule.Order{
 		ID:          o.ID,
 		ProductID:   o.ProductID,
 		ProductName: o.ProductName,
-		Amount:      entity.Amount(o.Amount),
-		Status:      entity.OrderStatus(o.Status),
+		Amount:      ordermodule.Amount(o.Amount),
+		Status:      ordermodule.OrderStatus(o.Status),
 		UserID:      o.UserID,
 	}, nil
 }
 
-func (a *LegacyOrderRepoAdapter) CancelPendingOrder(ctx context.Context, actor entity.Actor, orderID string) error {
+func (a *LegacyOrderRepoAdapter) CancelPendingOrder(ctx context.Context, actor ordermodule.Actor, orderID string) error {
 	if a.Repo == nil {
 		return nil
 	}
-	return a.Repo.CancelPendingOrder(ctx, usermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, orderID)
+	return a.Repo.CancelPendingOrder(ctx, ordermodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, orderID)
 }
 
-func (a *LegacyOrderRepoAdapter) SubmitRefundRequest(ctx context.Context, refund *entity.RefundRequest) error {
+func (a *LegacyOrderRepoAdapter) SubmitRefundRequest(ctx context.Context, refund *ordermodule.RefundRequest) error {
 	if a.Repo == nil {
 		return nil
 	}

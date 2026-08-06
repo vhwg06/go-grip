@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/stretchr/testify/require"
 )
@@ -84,12 +83,12 @@ func TestWishlistUseCase_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	actor := usermodule.Actor{UserID: "u1", Username: "alice"}
+	actor := Actor{UserID: "u1", Username: "alice"}
 
 	t.Run("create requires auth and title", func(t *testing.T) {
 		uc := NewWishlistUseCase(&wishlistRepoStub{}, nil)
 
-		_, err := uc.Create(ctx, usermodule.Actor{}, "wish", "desc")
+		_, err := uc.Create(ctx, Actor{}, "wish", "desc")
 		require.ErrorIs(t, err, ErrUnauthorized)
 
 		_, err = uc.Create(ctx, actor, "", "desc")
@@ -125,7 +124,7 @@ func TestWishlistUseCase_Lifecycle(t *testing.T) {
 			},
 		}, nil)
 
-		err := uc.ToggleVote(ctx, usermodule.Actor{}, 1)
+		err := uc.ToggleVote(ctx, Actor{}, 1)
 		require.ErrorIs(t, err, ErrUnauthorized)
 
 		require.NoError(t, uc.ToggleVote(ctx, actor, 7))
@@ -141,7 +140,7 @@ func TestWishlistUseCase_Lifecycle(t *testing.T) {
 			},
 		})
 
-		_, err := uc.CreateReview(ctx, usermodule.Actor{}, Review{ProductID: "p1", Rating: 5})
+		_, err := uc.CreateReview(ctx, Actor{}, Review{ProductID: "p1", Rating: 5})
 		require.ErrorIs(t, err, ErrUnauthorized)
 
 		_, err = uc.CreateReview(ctx, actor, Review{ProductID: "", Rating: 5})

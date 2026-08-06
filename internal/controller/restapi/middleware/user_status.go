@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,7 +15,7 @@ func RejectBlockedMutations() fiber.Handler {
 			return ctx.Next()
 		}
 
-		actor, ok := ctx.Locals("actor").(entity.Actor)
+		actor, ok := ctx.Locals("actor").(usermodule.Actor)
 		if !ok {
 			return ctx.Next()
 		}

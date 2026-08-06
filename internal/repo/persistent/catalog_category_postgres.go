@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -28,10 +27,10 @@ func newCatalogCategoryRepo(db *gorm.DB) *CatalogCategoryRepo {
 	return &CatalogCategoryRepo{db: db}
 }
 
-var _ repo.CatalogCategoryRepository = (*CatalogCategoryRepo)(nil)
+var _ catalogbase.CatalogCategoryRepository = (*CatalogCategoryRepo)(nil)
 
 // List returns categories in their stable display order.
-func (r *CatalogCategoryRepo) List(ctx context.Context) ([]entity.CatalogCategory, error) {
+func (r *CatalogCategoryRepo) List(ctx context.Context) ([]catalogbase.CatalogCategory, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func (r *CatalogCategoryRepo) List(ctx context.Context) ([]entity.CatalogCategor
 	if err := db.WithContext(ctx).Order("position ASC, name ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog category repo: list: %w", err)
 	}
-	result := make([]entity.CatalogCategory, 0, len(rows))
+	result := make([]catalogbase.CatalogCategory, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, models.CategoryToCatalogEntity(row))
 	}
@@ -48,20 +47,20 @@ func (r *CatalogCategoryRepo) List(ctx context.Context) ([]entity.CatalogCategor
 }
 
 // GetByID returns one category by identity.
-func (r *CatalogCategoryRepo) GetByID(ctx context.Context, id string) (entity.CatalogCategory, error) {
+func (r *CatalogCategoryRepo) GetByID(ctx context.Context, id string) (catalogbase.CatalogCategory, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
-		return entity.CatalogCategory{}, err
+		return catalogbase.CatalogCategory{}, err
 	}
 	var row models.CatalogBaseCategory
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return entity.CatalogCategory{}, fmt.Errorf("catalog category repo: get %s: %w", id, err)
+		return catalogbase.CatalogCategory{}, fmt.Errorf("catalog category repo: get %s: %w", id, err)
 	}
 	return models.CategoryToCatalogEntity(row), nil
 }
 
 // Store creates one category.
-func (r *CatalogCategoryRepo) Store(ctx context.Context, category entity.CatalogCategory) error {
+func (r *CatalogCategoryRepo) Store(ctx context.Context, category catalogbase.CatalogCategory) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
@@ -74,7 +73,7 @@ func (r *CatalogCategoryRepo) Store(ctx context.Context, category entity.Catalog
 }
 
 // Update replaces the persisted fields of one category.
-func (r *CatalogCategoryRepo) Update(ctx context.Context, category entity.CatalogCategory) error {
+func (r *CatalogCategoryRepo) Update(ctx context.Context, category catalogbase.CatalogCategory) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err

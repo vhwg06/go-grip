@@ -65,7 +65,7 @@ func (h *Handler) AddToWishlistDirect(ctx context.Context, request openapi.AddTo
 		return openapi.AddToWishlistDirect404JSONResponse{}, nil
 	}
 
-	_, err := h.wishlistUC.Create(ctx, actor, request.Body.ProductId, "")
+	_, err := h.wishlistUC.Create(ctx, wishlistmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.Body.ProductId, "")
 	if err != nil {
 		status, _ := mapWishlistError(err)
 		switch status {
@@ -111,7 +111,7 @@ func (h *Handler) AddToWishlist(ctx context.Context, request openapi.AddToWishli
 		return openapi.AddToWishlist400JSONResponse{}, nil
 	}
 
-	item, err := h.wishlistUC.Create(ctx, actor, request.Body.ProductId, "")
+	item, err := h.wishlistUC.Create(ctx, wishlistmodule.Actor{UserID: actor.UserID, Username: actor.Username, IsAdmin: actor.IsAdmin}, request.Body.ProductId, "")
 	if err != nil {
 		status, errResp := mapWishlistError(err)
 		switch status {

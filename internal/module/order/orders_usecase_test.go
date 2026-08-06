@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/evrone/go-clean-template/internal/module/order"
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +29,7 @@ func (s *orderRepoStub) GetOrderByID(ctx context.Context, orderID string) (order
 	return order.Order{}, nil
 }
 
-func (s *orderRepoStub) CancelPendingOrder(context.Context, usermodule.Actor, string) error {
+func (s *orderRepoStub) CancelPendingOrder(context.Context, order.Actor, string) error {
 	return nil
 }
 
@@ -45,9 +44,9 @@ func TestOrdersUseCase_Lifecycle(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	owner := usermodule.Actor{UserID: "u1", Username: "alice"}
-	admin := usermodule.Actor{UserID: "admin", Username: "root", IsAdmin: true}
-	other := usermodule.Actor{UserID: "u2", Username: "bob"}
+	owner := order.Actor{UserID: "u1", Username: "alice"}
+	admin := order.Actor{UserID: "admin", Username: "root", IsAdmin: true}
+	other := order.Actor{UserID: "u2", Username: "bob"}
 
 	t.Run("list decorates statuses", func(t *testing.T) {
 		uc := order.NewOrdersUseCase(&orderRepoStub{
@@ -90,7 +89,7 @@ func TestOrdersUseCase_Lifecycle(t *testing.T) {
 			},
 		})
 
-		_, err := uc.RequestRefund(ctx, usermodule.Actor{}, "o1", "late")
+		_, err := uc.RequestRefund(ctx, order.Actor{}, "o1", "late")
 		require.ErrorIs(t, err, order.ErrUnauthorized)
 
 		_, err = uc.RequestRefund(ctx, other, "o1", "late")

@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/evrone/go-clean-template/internal/entity"
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,7 +21,7 @@ func RequireAdminUsernames(adminUsersCSV string) fiber.Handler {
 	}
 
 	return func(ctx *fiber.Ctx) error {
-		actor, ok := ctx.Locals("actor").(entity.Actor)
+		actor, ok := ctx.Locals("actor").(usermodule.Actor)
 		if !ok {
 			return ctx.Status(http.StatusUnauthorized).JSON(errorResponse{Error: "missing actor context"})
 		}

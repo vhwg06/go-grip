@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/evrone/go-clean-template/internal/entity"
 	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
 	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
@@ -30,19 +29,19 @@ func TestMapAdminError(t *testing.T) {
 		},
 		{
 			name:         "ErrOrderNotFound returns 404",
-			err:          entity.ErrOrderNotFound,
+			err:          ordermodule.ErrNotFound,
 			expectedCode: http.StatusNotFound,
 			expectedMsg:  "Admin resource not found",
 		},
 		{
 			name:         "wrapped ErrOrderNotFound returns 404",
-			err:          fmt.Errorf("repository query failed: %w", entity.ErrOrderNotFound),
+			err:          fmt.Errorf("repository query failed: %w", ordermodule.ErrNotFound),
 			expectedCode: http.StatusNotFound,
 			expectedMsg:  "Admin resource not found",
 		},
 		{
 			name:         "ErrNotFound returns 404",
-			err:          entity.ErrNotFound,
+			err:          usermodule.ErrNotFound,
 			expectedCode: http.StatusNotFound,
 			expectedMsg:  "Admin resource not found",
 		},
@@ -60,7 +59,7 @@ func TestMapAdminError(t *testing.T) {
 		},
 		{
 			name:         "ErrUnauthorized returns 401",
-			err:          entity.ErrUnauthorized,
+			err:          usermodule.ErrUnauthorized,
 			expectedCode: http.StatusUnauthorized,
 			expectedMsg:  "Authentication required",
 		},
@@ -78,7 +77,7 @@ func TestMapAdminError(t *testing.T) {
 		},
 		{
 			name:         "ErrForbidden returns 403",
-			err:          entity.ErrForbidden,
+			err:          usermodule.ErrForbidden,
 			expectedCode: http.StatusForbidden,
 			expectedMsg:  "Administrative access denied",
 		},

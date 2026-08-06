@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -30,10 +29,10 @@ func newCatalogAttributeDefinitionRepo(db *gorm.DB) *CatalogAttributeDefinitionR
 	return &CatalogAttributeDefinitionRepo{db: db}
 }
 
-var _ repo.CatalogAttributeDefinitionRepository = (*CatalogAttributeDefinitionRepo)(nil)
+var _ catalogbase.CatalogAttributeDefinitionRepository = (*CatalogAttributeDefinitionRepo)(nil)
 
 // List returns definitions in their configured ordering.
-func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]entity.CatalogAttributeDefinition, error) {
+func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]catalogbase.CatalogAttributeDefinition, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -42,7 +41,7 @@ func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]entity.Cat
 	if err := db.WithContext(ctx).Order("ordering ASC, display_name ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog definition repo: list: %w", err)
 	}
-	result := make([]entity.CatalogAttributeDefinition, 0, len(rows))
+	result := make([]catalogbase.CatalogAttributeDefinition, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, models.DefinitionToCatalogEntity(row))
 	}
@@ -50,20 +49,20 @@ func (r *CatalogAttributeDefinitionRepo) List(ctx context.Context) ([]entity.Cat
 }
 
 // GetByID returns one definition by identity.
-func (r *CatalogAttributeDefinitionRepo) GetByID(ctx context.Context, id string) (entity.CatalogAttributeDefinition, error) {
+func (r *CatalogAttributeDefinitionRepo) GetByID(ctx context.Context, id string) (catalogbase.CatalogAttributeDefinition, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
-		return entity.CatalogAttributeDefinition{}, err
+		return catalogbase.CatalogAttributeDefinition{}, err
 	}
 	var row models.CatalogBaseDefinition
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return entity.CatalogAttributeDefinition{}, fmt.Errorf("catalog definition repo: get %s: %w", id, err)
+		return catalogbase.CatalogAttributeDefinition{}, fmt.Errorf("catalog definition repo: get %s: %w", id, err)
 	}
 	return models.DefinitionToCatalogEntity(row), nil
 }
 
 // Store creates one definition.
-func (r *CatalogAttributeDefinitionRepo) Store(ctx context.Context, definition entity.CatalogAttributeDefinition) error {
+func (r *CatalogAttributeDefinitionRepo) Store(ctx context.Context, definition catalogbase.CatalogAttributeDefinition) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
@@ -76,7 +75,7 @@ func (r *CatalogAttributeDefinitionRepo) Store(ctx context.Context, definition e
 }
 
 // Update replaces one definition and its embedded enum values.
-func (r *CatalogAttributeDefinitionRepo) Update(ctx context.Context, definition entity.CatalogAttributeDefinition) error {
+func (r *CatalogAttributeDefinitionRepo) Update(ctx context.Context, definition catalogbase.CatalogAttributeDefinition) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err

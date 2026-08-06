@@ -1,11 +1,12 @@
 package content
 
 import (
+	usermodule "github.com/evrone/go-clean-template/internal/module/user"
+
 	"errors"
 	"net/http"
 
 	"github.com/evrone/go-clean-template/api/gen/go/openapi"
-	"github.com/evrone/go-clean-template/internal/entity"
 	contentmodule "github.com/evrone/go-clean-template/internal/module/content"
 )
 
@@ -16,7 +17,7 @@ func mapContentError(err error) (int, openapi.ErrorResponse) {
 		return http.StatusOK, openapi.ErrorResponse{}
 	}
 
-	if errors.Is(err, contentmodule.ErrNotFound) || errors.Is(err, entity.ErrNotFound) {
+	if errors.Is(err, contentmodule.ErrNotFound) || errors.Is(err, usermodule.ErrNotFound) {
 		resp := openapi.ErrorResponse{}
 		resp.Error.FromErrorPayload(openapi.ErrorPayload{
 			Code:    "PAGE_NOT_FOUND",

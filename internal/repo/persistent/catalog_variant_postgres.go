@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -28,10 +27,10 @@ func newCatalogVariantRepo(db *gorm.DB) *CatalogVariantRepo {
 	return &CatalogVariantRepo{db: db}
 }
 
-var _ repo.CatalogVariantRepository = (*CatalogVariantRepo)(nil)
+var _ catalogbase.CatalogVariantRepository = (*CatalogVariantRepo)(nil)
 
 // List returns variants across ProductModels in stable creation order.
-func (r *CatalogVariantRepo) List(ctx context.Context) ([]entity.CatalogVariant, error) {
+func (r *CatalogVariantRepo) List(ctx context.Context) ([]catalogbase.CatalogVariant, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func (r *CatalogVariantRepo) List(ctx context.Context) ([]entity.CatalogVariant,
 	if err := db.WithContext(ctx).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog variant repo: list: %w", err)
 	}
-	result := make([]entity.CatalogVariant, 0, len(rows))
+	result := make([]catalogbase.CatalogVariant, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, variantToEntity(row))
 	}
@@ -48,7 +47,7 @@ func (r *CatalogVariantRepo) List(ctx context.Context) ([]entity.CatalogVariant,
 }
 
 // ListByModelID returns variants for one ProductModel.
-func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) ([]entity.CatalogVariant, error) {
+func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) ([]catalogbase.CatalogVariant, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -57,7 +56,7 @@ func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) 
 	if err := db.WithContext(ctx).Where("model_id = ?", modelID).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog variant repo: list %s: %w", modelID, err)
 	}
-	result := make([]entity.CatalogVariant, 0, len(rows))
+	result := make([]catalogbase.CatalogVariant, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, variantToEntity(row))
 	}
@@ -65,30 +64,30 @@ func (r *CatalogVariantRepo) ListByModelID(ctx context.Context, modelID string) 
 }
 
 // GetByID returns one variant for its owning ProductModel.
-func (r *CatalogVariantRepo) GetByID(ctx context.Context, modelID, id string) (entity.CatalogVariant, error) {
+func (r *CatalogVariantRepo) GetByID(ctx context.Context, modelID, id string) (catalogbase.CatalogVariant, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
-		return entity.CatalogVariant{}, err
+		return catalogbase.CatalogVariant{}, err
 	}
 	var row models.CatalogBaseVariant
 	if err := db.WithContext(ctx).Where("model_id = ? AND id = ?", modelID, id).First(&row).Error; err != nil {
-		return entity.CatalogVariant{}, fmt.Errorf("catalog variant repo: get %s/%s: %w", modelID, id, err)
+		return catalogbase.CatalogVariant{}, fmt.Errorf("catalog variant repo: get %s/%s: %w", modelID, id, err)
 	}
 	return variantToEntity(row), nil
 }
 
-func variantToEntity(row models.CatalogBaseVariant) entity.CatalogVariant {
+func variantToEntity(row models.CatalogBaseVariant) catalogbase.CatalogVariant {
 	model := models.ProductModelToCatalogEntity(models.CatalogBaseProductModel{}, nil, nil, []models.CatalogBaseVariant{row})
 	return model.Variants[0]
 }
 
 // Store creates one variant for a ProductModel.
-func (r *CatalogVariantRepo) Store(ctx context.Context, modelID string, variant entity.CatalogVariant) error {
+func (r *CatalogVariantRepo) Store(ctx context.Context, modelID string, variant catalogbase.CatalogVariant) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
-	row := models.CatalogEntityToVariants(modelID, []entity.CatalogVariant{variant})[0]
+	row := models.CatalogEntityToVariants(modelID, []catalogbase.CatalogVariant{variant})[0]
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
 		return fmt.Errorf("catalog variant repo: store %s/%s: %w", modelID, variant.ID, err)
 	}
@@ -96,12 +95,12 @@ func (r *CatalogVariantRepo) Store(ctx context.Context, modelID string, variant 
 }
 
 // Update replaces one variant for a ProductModel.
-func (r *CatalogVariantRepo) Update(ctx context.Context, modelID string, variant entity.CatalogVariant) error {
+func (r *CatalogVariantRepo) Update(ctx context.Context, modelID string, variant catalogbase.CatalogVariant) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
 	}
-	row := models.CatalogEntityToVariants(modelID, []entity.CatalogVariant{variant})[0]
+	row := models.CatalogEntityToVariants(modelID, []catalogbase.CatalogVariant{variant})[0]
 	if err := db.WithContext(ctx).Where("model_id = ?", modelID).Save(&row).Error; err != nil {
 		return fmt.Errorf("catalog variant repo: update %s/%s: %w", modelID, variant.ID, err)
 	}

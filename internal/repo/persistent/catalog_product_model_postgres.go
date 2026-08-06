@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogbase "github.com/evrone/go-clean-template/internal/module/catalog/catalogbase"
 	"github.com/evrone/go-clean-template/internal/repo/persistent/models"
 	"github.com/evrone/go-clean-template/pkg/postgres"
 	"gorm.io/gorm"
@@ -31,10 +30,10 @@ func newCatalogProductModelRepo(db *gorm.DB) *CatalogProductModelRepo {
 	return &CatalogProductModelRepo{db: db}
 }
 
-var _ repo.CatalogProductModelRepository = (*CatalogProductModelRepo)(nil)
+var _ catalogbase.CatalogProductModelRepository = (*CatalogProductModelRepo)(nil)
 
 // List returns ProductModel roots in creation order.
-func (r *CatalogProductModelRepo) List(ctx context.Context) ([]entity.CatalogProductModel, error) {
+func (r *CatalogProductModelRepo) List(ctx context.Context) ([]catalogbase.CatalogProductModel, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -43,7 +42,7 @@ func (r *CatalogProductModelRepo) List(ctx context.Context) ([]entity.CatalogPro
 	if err := db.WithContext(ctx).Order("created_at ASC, id ASC").Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("catalog product model repo: list: %w", err)
 	}
-	result := make([]entity.CatalogProductModel, 0, len(rows))
+	result := make([]catalogbase.CatalogProductModel, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, models.ProductModelToCatalogEntity(row, nil, nil, nil))
 	}
@@ -51,20 +50,20 @@ func (r *CatalogProductModelRepo) List(ctx context.Context) ([]entity.CatalogPro
 }
 
 // GetByID returns one ProductModel root by identity.
-func (r *CatalogProductModelRepo) GetByID(ctx context.Context, id string) (entity.CatalogProductModel, error) {
+func (r *CatalogProductModelRepo) GetByID(ctx context.Context, id string) (catalogbase.CatalogProductModel, error) {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
-		return entity.CatalogProductModel{}, err
+		return catalogbase.CatalogProductModel{}, err
 	}
 	var row models.CatalogBaseProductModel
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return entity.CatalogProductModel{}, fmt.Errorf("catalog product model repo: get %s: %w", id, err)
+		return catalogbase.CatalogProductModel{}, fmt.Errorf("catalog product model repo: get %s: %w", id, err)
 	}
 	return models.ProductModelToCatalogEntity(row, nil, nil, nil), nil
 }
 
 // Store creates one ProductModel root.
-func (r *CatalogProductModelRepo) Store(ctx context.Context, model entity.CatalogProductModel) error {
+func (r *CatalogProductModelRepo) Store(ctx context.Context, model catalogbase.CatalogProductModel) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err
@@ -77,7 +76,7 @@ func (r *CatalogProductModelRepo) Store(ctx context.Context, model entity.Catalo
 }
 
 // Update replaces one ProductModel root.
-func (r *CatalogProductModelRepo) Update(ctx context.Context, model entity.CatalogProductModel) error {
+func (r *CatalogProductModelRepo) Update(ctx context.Context, model catalogbase.CatalogProductModel) error {
 	db, err := catalogDBForContext(ctx, r.db)
 	if err != nil {
 		return err

@@ -47,7 +47,10 @@ type RefreshSession struct {
 
 // Actor represents an authenticated user context passed across application boundaries.
 type Actor struct {
-	UserID   string
-	Username string
-	IsAdmin  bool
+	UserID     string `json:"user_id"`
+	Username   string `json:"username"`
+	Email      string `json:"email,omitempty"`
+	IsAdmin    bool   `json:"is_admin"`
+	IsBlocked  bool   `json:"is_blocked"`
+	TrustLevel int    `json:"trust_level"`
 }

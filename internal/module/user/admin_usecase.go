@@ -5,34 +5,36 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/evrone/go-clean-template/internal/entity"
-	"github.com/evrone/go-clean-template/internal/repo"
+	catalogmodule "github.com/evrone/go-clean-template/internal/module/catalog"
+	notificationmodule "github.com/evrone/go-clean-template/internal/module/notification"
+	ordermodule "github.com/evrone/go-clean-template/internal/module/order"
+	wishlistmodule "github.com/evrone/go-clean-template/internal/module/wishlist" 
 	"github.com/evrone/go-clean-template/internal/repo/webapi"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 type adminStore interface {
-	ListUsers(ctx context.Context, page entity.Pagination) ([]entity.User, int, error)
-	UpdateUserStatus(ctx context.Context, userID string, status entity.UserStatus) error
-	ListOrders(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Order, int, error)
-	GetOrderByID(ctx context.Context, orderID string) (entity.Order, error)
-	UpdateOrderStatus(ctx context.Context, orderID string, status entity.OrderStatus) error
+	ListUsers(ctx context.Context, page pagination.Pagination) ([]User, int, error)
+	UpdateUserStatus(ctx context.Context, userID string, status UserStatus) error
+	ListOrders(ctx context.Context, page pagination.Pagination, query, status string) ([]ordermodule.Order, int, error)
+	GetOrderByID(ctx context.Context, orderID string) (ordermodule.Order, error)
+	UpdateOrderStatus(ctx context.Context, orderID string, status ordermodule.OrderStatus) error
 	DeleteOrder(ctx context.Context, orderID string) error
-	ListRefundRequests(ctx context.Context, status string) ([]entity.RefundRequest, error)
-	GetRefundRequest(ctx context.Context, refundID int64) (entity.RefundRequest, error)
-	GetOrderRefundStatus(ctx context.Context, orderID string) (entity.RefundRequest, error)
-	ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (entity.RefundRequest, error)
-	ListReviews(ctx context.Context, page entity.Pagination, query, status string) ([]entity.Review, repo.ReviewModerationStats, int, error)
-	UpdateReviewStatus(ctx context.Context, reviewID int64, status entity.ReviewStatus) (entity.Review, error)
-	BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status entity.ReviewStatus) (int, error)
+	ListRefundRequests(ctx context.Context, status string) ([]ordermodule.RefundRequest, error)
+	GetRefundRequest(ctx context.Context, refundID int64) (ordermodule.RefundRequest, error)
+	GetOrderRefundStatus(ctx context.Context, orderID string) (ordermodule.RefundRequest, error)
+	ProcessRefund(ctx context.Context, refundID int64, approve bool, adminUsername, note string) (ordermodule.RefundRequest, error)
+	ListReviews(ctx context.Context, page pagination.Pagination, query, status string) ([]wishlistmodule.Review, wishlistmodule.ReviewModerationStats, int, error)
+	UpdateReviewStatus(ctx context.Context, reviewID int64, status wishlistmodule.ReviewStatus) (wishlistmodule.Review, error)
+	BulkUpdateReviewStatus(ctx context.Context, reviewIDs []int64, status wishlistmodule.ReviewStatus) (int, error)
 	DeleteReview(ctx context.Context, reviewID int64) error
-	ListSettings(ctx context.Context) ([]entity.Setting, error)
-	StoreSetting(ctx context.Context, setting entity.Setting) error
+	ListSettings(ctx context.Context) ([]catalogmodule.Setting, error)
+	StoreSetting(ctx context.Context, setting catalogmodule.Setting) error
 	DeleteSetting(ctx context.Context, key string) error
-	StoreAdminMessage(ctx context.Context, msg entity.AdminMessage) (entity.AdminMessage, error)
-	ListAdminMessages(ctx context.Context) ([]entity.AdminMessage, error)
-	ListProducts(ctx context.Context, page entity.Pagination) ([]entity.Product, int, error)
-	ListCategories(ctx context.Context) ([]entity.Category, error)
+	StoreAdminMessage(ctx context.Context, msg notificationmodule.AdminMessage) (notificationmodule.AdminMessage, error)
+	ListAdminMessages(ctx context.Context) ([]notificationmodule.AdminMessage, error)
+	ListProducts(ctx context.Context, page pagination.Pagination) ([]catalogmodule.Product, int, error)
+	ListCategories(ctx context.Context) ([]catalogmodule.Category, error)
 	RebuildProductAggregates(ctx context.Context) error
 }
 
@@ -40,24 +42,24 @@ type adminStore interface {
 type AdminUseCase interface {
 	ListUsers(ctx context.Context, actor Actor, page pagination.Pagination) ([]User, int, error)
 	UpdateUserStatus(ctx context.Context, actor Actor, userID string, status UserStatus) error
-	ListOrders(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]entity.Order, int, error)
-	GetOrder(ctx context.Context, actor Actor, orderID string) (entity.Order, error)
-	UpdateOrderStatus(ctx context.Context, actor Actor, orderID string, status entity.OrderStatus) error
+	ListOrders(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]ordermodule.Order, int, error)
+	GetOrder(ctx context.Context, actor Actor, orderID string) (ordermodule.Order, error)
+	UpdateOrderStatus(ctx context.Context, actor Actor, orderID string, status ordermodule.OrderStatus) error
 	DeleteOrder(ctx context.Context, actor Actor, orderID string) error
-	ListRefunds(ctx context.Context, actor Actor, status string) ([]entity.RefundRequest, error)
-	GetRefund(ctx context.Context, actor Actor, refundID int64) (entity.RefundRequest, error)
-	ProcessRefund(ctx context.Context, actor Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error)
-	ListReviews(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]entity.Review, int, error)
-	UpdateReviewStatus(ctx context.Context, actor Actor, reviewID int64, status entity.ReviewStatus) error
+	ListRefunds(ctx context.Context, actor Actor, status string) ([]ordermodule.RefundRequest, error)
+	GetRefund(ctx context.Context, actor Actor, refundID int64) (ordermodule.RefundRequest, error)
+	ProcessRefund(ctx context.Context, actor Actor, refundID int64, approve bool, note string) (ordermodule.RefundRequest, error)
+	ListReviews(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]wishlistmodule.Review, int, error)
+	UpdateReviewStatus(ctx context.Context, actor Actor, reviewID int64, status wishlistmodule.ReviewStatus) error
 	BulkPublishReviews(ctx context.Context, actor Actor, reviewIDs []int64) (int, error)
 	DeleteAdminReview(ctx context.Context, actor Actor, reviewID int64) error
-	ListSettings(ctx context.Context, actor Actor) ([]entity.Setting, error)
+	ListSettings(ctx context.Context, actor Actor) ([]catalogmodule.Setting, error)
 	UpsertSetting(ctx context.Context, actor Actor, key, value string) error
 	DeleteSetting(ctx context.Context, actor Actor, key string) error
-	ListMessages(ctx context.Context, actor Actor) ([]entity.AdminMessage, error)
-	BroadcastMessage(ctx context.Context, actor Actor, title, body, imageURL string) (entity.AdminMessage, error)
-	ListProducts(ctx context.Context, actor Actor, page pagination.Pagination) ([]entity.Product, int, error)
-	ListAdminCategories(ctx context.Context, actor Actor) ([]entity.Category, error)
+	ListMessages(ctx context.Context, actor Actor) ([]notificationmodule.AdminMessage, error)
+	BroadcastMessage(ctx context.Context, actor Actor, title, body, imageURL string) (notificationmodule.AdminMessage, error)
+	ListProducts(ctx context.Context, actor Actor, page pagination.Pagination) ([]catalogmodule.Product, int, error)
+	ListAdminCategories(ctx context.Context, actor Actor) ([]catalogmodule.Category, error)
 	RepairAggregates(ctx context.Context, actor Actor) error
 }
 
@@ -84,7 +86,7 @@ func (uc *adminUseCase) ListUsers(ctx context.Context, actor Actor, page paginat
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, 0, err
 	}
-	users, total, err := uc.repo.ListUsers(ctx, entity.Pagination(page))
+	users, total, err := uc.repo.ListUsers(ctx, page)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -109,26 +111,26 @@ func (uc *adminUseCase) UpdateUserStatus(ctx context.Context, actor Actor, userI
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
-	return uc.repo.UpdateUserStatus(ctx, userID, entity.UserStatus(status))
+	return uc.repo.UpdateUserStatus(ctx, userID, UserStatus(status))
 }
 
-func (uc *adminUseCase) ListOrders(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]entity.Order, int, error) {
+func (uc *adminUseCase) ListOrders(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]ordermodule.Order, int, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, 0, err
 	}
-	return uc.repo.ListOrders(ctx, entity.Pagination(page), query, status)
+	return uc.repo.ListOrders(ctx, page, query, status)
 }
 
-func (uc *adminUseCase) GetOrder(ctx context.Context, actor Actor, orderID string) (entity.Order, error) {
+func (uc *adminUseCase) GetOrder(ctx context.Context, actor Actor, orderID string) (ordermodule.Order, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
-		return entity.Order{}, err
+		return ordermodule.Order{}, err
 	}
 	return uc.repo.GetOrderByID(ctx, orderID)
 }
 
 // UpdateOrderStatus transitions an order to a new status, enforcing admin access and
 // state-machine rules (paid → delivered, pending → cancelled, etc.) in the repository layer.
-func (uc *adminUseCase) UpdateOrderStatus(ctx context.Context, actor Actor, orderID string, status entity.OrderStatus) error {
+func (uc *adminUseCase) UpdateOrderStatus(ctx context.Context, actor Actor, orderID string, status ordermodule.OrderStatus) error {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
@@ -144,7 +146,7 @@ func (uc *adminUseCase) DeleteOrder(ctx context.Context, actor Actor, orderID st
 }
 
 // ListRefunds returns all refund requests optionally filtered by status.
-func (uc *adminUseCase) ListRefunds(ctx context.Context, actor Actor, status string) ([]entity.RefundRequest, error) {
+func (uc *adminUseCase) ListRefunds(ctx context.Context, actor Actor, status string) ([]ordermodule.RefundRequest, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, err
 	}
@@ -152,33 +154,33 @@ func (uc *adminUseCase) ListRefunds(ctx context.Context, actor Actor, status str
 }
 
 // GetRefund returns a single refund request by ID.
-func (uc *adminUseCase) GetRefund(ctx context.Context, actor Actor, refundID int64) (entity.RefundRequest, error) {
+func (uc *adminUseCase) GetRefund(ctx context.Context, actor Actor, refundID int64) (ordermodule.RefundRequest, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
-		return entity.RefundRequest{}, err
+		return ordermodule.RefundRequest{}, err
 	}
 	return uc.repo.GetRefundRequest(ctx, refundID)
 }
 
 // ProcessRefund atomically approves or rejects a pending refund and adjusts the
 // associated order status and product stock in one transaction.
-func (uc *adminUseCase) ProcessRefund(ctx context.Context, actor Actor, refundID int64, approve bool, note string) (entity.RefundRequest, error) {
+func (uc *adminUseCase) ProcessRefund(ctx context.Context, actor Actor, refundID int64, approve bool, note string) (ordermodule.RefundRequest, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
-		return entity.RefundRequest{}, err
+		return ordermodule.RefundRequest{}, err
 	}
 	return uc.repo.ProcessRefund(ctx, refundID, approve, actor.Username, note)
 }
 
 // ListReviews returns paginated reviews for moderation, optionally filtered by query and status.
-func (uc *adminUseCase) ListReviews(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]entity.Review, int, error) {
+func (uc *adminUseCase) ListReviews(ctx context.Context, actor Actor, page pagination.Pagination, query, status string) ([]wishlistmodule.Review, int, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, 0, err
 	}
-	items, _, total, err := uc.repo.ListReviews(ctx, entity.Pagination(page), query, status)
+	items, _, total, err := uc.repo.ListReviews(ctx, page, query, status)
 	return items, total, err
 }
 
 // UpdateReviewStatus changes review visibility status (pending, featured, hidden).
-func (uc *adminUseCase) UpdateReviewStatus(ctx context.Context, actor Actor, reviewID int64, status entity.ReviewStatus) error {
+func (uc *adminUseCase) UpdateReviewStatus(ctx context.Context, actor Actor, reviewID int64, status wishlistmodule.ReviewStatus) error {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
@@ -191,7 +193,7 @@ func (uc *adminUseCase) BulkPublishReviews(ctx context.Context, actor Actor, rev
 	if err := uc.ensureAdmin(actor); err != nil {
 		return 0, err
 	}
-	return uc.repo.BulkUpdateReviewStatus(ctx, reviewIDs, entity.ReviewStatusFeatured)
+	return uc.repo.BulkUpdateReviewStatus(ctx, reviewIDs, wishlistmodule.ReviewStatusFeatured)
 }
 
 // DeleteAdminReview permanently deletes a review by ID.
@@ -203,7 +205,7 @@ func (uc *adminUseCase) DeleteAdminReview(ctx context.Context, actor Actor, revi
 }
 
 // ListSettings returns all key-value store settings.
-func (uc *adminUseCase) ListSettings(ctx context.Context, actor Actor) ([]entity.Setting, error) {
+func (uc *adminUseCase) ListSettings(ctx context.Context, actor Actor) ([]catalogmodule.Setting, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, err
 	}
@@ -215,7 +217,7 @@ func (uc *adminUseCase) UpsertSetting(ctx context.Context, actor Actor, key, val
 	if err := uc.ensureAdmin(actor); err != nil {
 		return err
 	}
-	return uc.repo.StoreSetting(ctx, entity.Setting{Key: key, Value: value})
+	return uc.repo.StoreSetting(ctx, catalogmodule.Setting{Key: key, Value: value})
 }
 
 // DeleteSetting removes a setting by key.
@@ -227,7 +229,7 @@ func (uc *adminUseCase) DeleteSetting(ctx context.Context, actor Actor, key stri
 }
 
 // ListMessages returns all admin broadcast messages ordered by creation time.
-func (uc *adminUseCase) ListMessages(ctx context.Context, actor Actor) ([]entity.AdminMessage, error) {
+func (uc *adminUseCase) ListMessages(ctx context.Context, actor Actor) ([]notificationmodule.AdminMessage, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, err
 	}
@@ -235,11 +237,11 @@ func (uc *adminUseCase) ListMessages(ctx context.Context, actor Actor) ([]entity
 }
 
 // BroadcastMessage persists a broadcast notification and dispatches it via the configured notifier.
-func (uc *adminUseCase) BroadcastMessage(ctx context.Context, actor Actor, title, body, imageURL string) (entity.AdminMessage, error) {
+func (uc *adminUseCase) BroadcastMessage(ctx context.Context, actor Actor, title, body, imageURL string) (notificationmodule.AdminMessage, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
-		return entity.AdminMessage{}, err
+		return notificationmodule.AdminMessage{}, err
 	}
-	msg := entity.AdminMessage{
+	msg := notificationmodule.AdminMessage{
 		TargetType:  "all",
 		TargetValue: "",
 		Title:       title,
@@ -248,7 +250,7 @@ func (uc *adminUseCase) BroadcastMessage(ctx context.Context, actor Actor, title
 	}
 	stored, err := uc.repo.StoreAdminMessage(ctx, msg)
 	if err != nil {
-		return entity.AdminMessage{}, fmt.Errorf("AdminUseCase.BroadcastMessage: %w", err)
+		return notificationmodule.AdminMessage{}, fmt.Errorf("AdminUseCase.BroadcastMessage: %w", err)
 	}
 	if uc.notifier != nil {
 		_ = uc.notifier.SendBroadcast(ctx, stored.Title, stored.Body)
@@ -257,15 +259,15 @@ func (uc *adminUseCase) BroadcastMessage(ctx context.Context, actor Actor, title
 }
 
 // ListProducts returns paginated legacy products for the admin backoffice.
-func (uc *adminUseCase) ListProducts(ctx context.Context, actor Actor, page pagination.Pagination) ([]entity.Product, int, error) {
+func (uc *adminUseCase) ListProducts(ctx context.Context, actor Actor, page pagination.Pagination) ([]catalogmodule.Product, int, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, 0, err
 	}
-	return uc.repo.ListProducts(ctx, entity.Pagination(page))
+	return uc.repo.ListProducts(ctx, page)
 }
 
 // ListAdminCategories returns all categories for admin management.
-func (uc *adminUseCase) ListAdminCategories(ctx context.Context, actor Actor) ([]entity.Category, error) {
+func (uc *adminUseCase) ListAdminCategories(ctx context.Context, actor Actor) ([]catalogmodule.Category, error) {
 	if err := uc.ensureAdmin(actor); err != nil {
 		return nil, err
 	}

@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 	"github.com/evrone/go-clean-template/internal/shared/pagination"
 )
 
 // OrdersUseCase defines application services for querying orders and requesting refunds.
 type OrdersUseCase interface {
-	List(ctx context.Context, actor usermodule.Actor, email string, page pagination.Pagination) ([]Order, int, error)
-	Get(ctx context.Context, actor usermodule.Actor, orderID string) (Order, error)
-	RequestRefund(ctx context.Context, actor usermodule.Actor, orderID, reason string) (RefundRequest, error)
+	List(ctx context.Context, actor Actor, email string, page pagination.Pagination) ([]Order, int, error)
+	Get(ctx context.Context, actor Actor, orderID string) (Order, error)
+	RequestRefund(ctx context.Context, actor Actor, orderID, reason string) (RefundRequest, error)
 }
 
 type ordersUseCase struct {
@@ -25,7 +24,7 @@ func NewOrdersUseCase(r OrderRepo) OrdersUseCase {
 	return &ordersUseCase{repo: r}
 }
 
-func (uc *ordersUseCase) List(ctx context.Context, actor usermodule.Actor, email string, page pagination.Pagination) ([]Order, int, error) {
+func (uc *ordersUseCase) List(ctx context.Context, actor Actor, email string, page pagination.Pagination) ([]Order, int, error) {
 	orders, total, err := uc.repo.ListOrdersByOwner(ctx, actor.UserID, email, page)
 	if err != nil {
 		return nil, 0, fmt.Errorf("OrdersUseCase - List - repo.ListOrdersByOwner: %w", err)
@@ -36,7 +35,7 @@ func (uc *ordersUseCase) List(ctx context.Context, actor usermodule.Actor, email
 	return orders, total, nil
 }
 
-func (uc *ordersUseCase) Get(ctx context.Context, actor usermodule.Actor, orderID string) (Order, error) {
+func (uc *ordersUseCase) Get(ctx context.Context, actor Actor, orderID string) (Order, error) {
 	o, err := uc.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
 		return Order{}, fmt.Errorf("OrdersUseCase - Get - repo.GetOrderByID: %w", err)
@@ -48,7 +47,7 @@ func (uc *ordersUseCase) Get(ctx context.Context, actor usermodule.Actor, orderI
 	return o, nil
 }
 
-func (uc *ordersUseCase) RequestRefund(ctx context.Context, actor usermodule.Actor, orderID, reason string) (RefundRequest, error) {
+func (uc *ordersUseCase) RequestRefund(ctx context.Context, actor Actor, orderID, reason string) (RefundRequest, error) {
 	o, err := uc.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
 		return RefundRequest{}, fmt.Errorf("OrdersUseCase - RequestRefund - repo.GetOrderByID: %w", err)

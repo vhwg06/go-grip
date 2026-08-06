@@ -3,7 +3,6 @@ package catalog
 import (
 	"context"
 
-	usermodule "github.com/evrone/go-clean-template/internal/module/user"
 )
 
 // ProductRepoFilter defines low-level filter criteria for repository queries.
@@ -34,8 +33,8 @@ type CatalogRepo interface {
 // GripCatalogRepo defines persistence port for user-visible storefront catalog operations.
 type GripCatalogRepo interface {
 	ListCategories(ctx context.Context) ([]Category, error)
-	ListVisibleProducts(ctx context.Context, actor usermodule.Actor, filter ProductRepoFilter) ([]Product, int, error)
-	GetVisibleProduct(ctx context.Context, actor usermodule.Actor, productID string) (Product, error)
+	ListVisibleProducts(ctx context.Context, actor Actor, filter ProductRepoFilter) ([]Product, int, error)
+	GetVisibleProduct(ctx context.Context, actor Actor, productID string) (Product, error)
 	ListSettings(ctx context.Context) ([]Setting, error)
 	GetSetting(ctx context.Context, key string) (Setting, error)
 }
