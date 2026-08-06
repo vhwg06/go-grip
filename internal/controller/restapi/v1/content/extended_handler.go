@@ -150,7 +150,12 @@ func getActor(ctx context.Context) usermodule.Actor {
 }
 
 
-// UpdateContentArticle handles PATCH /content/articles/{id}
+// UpdateContentArticle handles PATCH /content/articles/{id}.
+//
+// The handler performs a partial update: it loads the stored article first so
+// that fields absent from the PATCH body are preserved. Sending only
+// { "status": "published" } must not overwrite the stored title, slug, or body
+// with zero-value strings, which would violate the unique slug constraint.
 func (h *Handler) UpdateContentArticle(ctx context.Context, request openapi.UpdateContentArticleRequestObject) (openapi.UpdateContentArticleResponseObject, error) {
 	actor := getActor(ctx)
 	if actor.UserID == "" {
@@ -160,16 +165,49 @@ func (h *Handler) UpdateContentArticle(ctx context.Context, request openapi.Upda
 		return openapi.UpdateContentArticle403JSONResponse{}, nil
 	}
 
-	article := contentmodule.ContentArticle{ID: request.Id}
-	if request.Body != nil {
-		bodyMap := map[string]interface{}(*request.Body)
-		if val, ok := bodyMap["title"].(string); ok { article.Title = val }
-		if val, ok := bodyMap["body"].(string); ok { article.Body = val }
-		if val, ok := bodyMap["slug"].(string); ok { article.Slug = val }
-		if val, ok := bodyMap["status"].(string); ok { article.Status = contentmodule.ContentStatus(val) }
+	// Load the existing article to base the partial update on its current state.
+	existing, err := h.contentUC.GetArticle(ctx, request.Id)
+	if err != nil {
+		return openapi.UpdateContentArticle500JSONResponse{}, nil
 	}
 
-	_, err := h.contentUC.UpdateArticle(ctx, article)
+	// Apply only the fields explicitly present in the PATCH body.
+	article := existing
+	if request.Body != nil {
+		bodyMap := map[string]interface{}(*request.Body)
+		if val, ok := bodyMap["title"].(string); ok {
+			article.Title = val
+		}
+		if val, ok := bodyMap["body"].(string); ok {
+			article.Body = val
+		}
+		if val, ok := bodyMap["slug"].(string); ok {
+			article.Slug = val
+		}
+		if val, ok := bodyMap["status"].(string); ok {
+			article.Status = contentmodule.ContentStatus(val)
+		}
+		if val, ok := bodyMap["image_url"].(string); ok {
+			article.ImageURL = val
+		}
+		if val, ok := bodyMap["topic"].(string); ok {
+			article.Topic = val
+		}
+		if val, ok := bodyMap["priority"].(float64); ok {
+			article.Priority = int(val)
+		}
+		if tags, ok := bodyMap["tags"].([]interface{}); ok {
+			strs := make([]string, 0, len(tags))
+			for _, t := range tags {
+				if s, ok := t.(string); ok {
+					strs = append(strs, s)
+				}
+			}
+			article.Tags = strs
+		}
+	}
+
+	_, err = h.contentUC.UpdateArticle(ctx, article)
 	if err != nil {
 		return openapi.UpdateContentArticle500JSONResponse{}, nil
 	}
