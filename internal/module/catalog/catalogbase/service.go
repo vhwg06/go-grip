@@ -2319,7 +2319,7 @@ func parsePrice(input map[string]any, names ...string) (*CatalogMoney, bool, err
 		return nil, false, nil
 	}
 	if value == nil {
-		return nil, true, bad("sellingPrice must be a positive VND amount")
+		return nil, true, nil
 	}
 	object := recordMap(value)
 	amount, valid := floatValue(object["amount"])
