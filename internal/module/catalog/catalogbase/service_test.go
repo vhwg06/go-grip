@@ -745,6 +745,31 @@ func TestCatalogBaseValidatesVariantTechnicalValuesAgainstDeclaredDefinitions(t 
 	require.Error(t, err, "undeclared technical attributes must not be accepted")
 }
 
+func TestCatalogBaseAllowsRemovingSellingPriceFromVariant(t *testing.T) {
+	service := newCatalogBaseTestService(t)
+	ctx := context.Background()
+	categoryID := catalogCategory(t, service)
+	model, err := service.CreateModel(ctx, map[string]any{"name": "Price removal", "categoryId": categoryID})
+	require.NoError(t, err)
+	modelID := mapString(t, model, "id")
+	definition, err := service.CreateDefinition(ctx, map[string]any{"key": "price-removal-" + t.Name(), "displayName": "Size", "valueKind": "Enum"})
+	require.NoError(t, err)
+	_, err = service.CreateDimension(ctx, modelID, map[string]any{
+		"definitionId":  definition["id"],
+		"allowedValues": []any{map[string]any{"id": "small", "label": "Small", "active": true}},
+	})
+	require.NoError(t, err)
+	variant, err := service.CreateVariant(ctx, modelID, map[string]any{
+		"selectedOptions": map[string]any{"Size": "Small"},
+		"sellingPrice":    map[string]any{"amount": 400000, "currency": "VND"},
+	})
+	require.NoError(t, err)
+
+	updated, err := service.UpdateVariant(ctx, mapString(t, variant, "id"), map[string]any{"sellingPrice": nil})
+	require.NoError(t, err)
+	require.Nil(t, updated["sellingPrice"])
+}
+
 func TestPersistSnapshotSkipsUnchangedRows(t *testing.T) {
 	store := &memoryCatalogStore{snapshot: CatalogSnapshot{
 		Categories:  []CatalogCategory{{ID: "category-1", Name: "Category", Slug: "category"}},
